@@ -9,10 +9,14 @@ class Conversation extends Model
 {
     protected $fillable = [
         'chatwoot_id',
+        'instagram_user_id',      // BARU - untuk Meta API
         'ig_username',
         'display_name',
         'avatar',
         'last_message',
+        'source',                 // BARU - 'chatwoot' atau 'meta_direct'
+        'last_activity_at',       // BARU
+        'status',                 // BARU
         'last_activity_at',
     ];
 

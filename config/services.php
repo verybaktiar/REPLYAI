@@ -52,6 +52,12 @@ return [
     'model' => env('PERPLEXITY_MODEL', 'sonar-pro'),
     'url'   => env('PERPLEXITY_API_URL', 'https://api.perplexity.ai'),
     ],
+    'instagram' => [
+    'access_token' => env('INSTAGRAM_ACCESS_TOKEN'),
+    'webhook_verify_token' => env('WEBHOOK_VERIFY_TOKEN'),
+    'meta_app_secret' => env('META_APP_SECRET'),
+    ],
+
 
 
 

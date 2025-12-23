@@ -7,12 +7,13 @@ use App\Models\AutoReplyLog;
 use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class AutoReplyEngine
 {
     public function __construct(
         protected ChatwootClient $chatwoot,
-        protected AiAnswerService $ai // ✅ AI fallback
+        protected AiAnswerService $ai
     ) {}
 
     /**
@@ -20,7 +21,6 @@ class AutoReplyEngine
      */
     public function runForAllConversations(): array
     {
-        // Ambil latest CONTACT message per conversation yang BELUM ada AutoReplyLog
         $latestUnprocessedMessages = Message::query()
             ->select('messages.*')
             ->where('sender_type', 'contact')
@@ -34,7 +34,6 @@ class AutoReplyEngine
                   ->from('messages as m2')
                   ->whereColumn('m2.conversation_id', 'messages.conversation_id')
                   ->where('m2.sender_type', 'contact')
-                  // ✅ IMPORTANT: MAX id dari yang BELUM punya log
                   ->whereNotExists(function ($q2) {
                       $q2->selectRaw(1)
                           ->from('auto_reply_logs as l2')
@@ -71,19 +70,12 @@ class AutoReplyEngine
     
         return $report;
     }
-    
 
-    /**
-     * Untuk dipakai ulang di tempat lain.
-     */
     public function matchRule(?string $text, ?Conversation $conversation = null): ?AutoReplyRule
     {
         return $this->findMatchingRule($text);
     }
 
-    /**
-     * Jalankan bot untuk 1 conversation.
-     */
     public function runForConversation(Conversation $conv): array
     {
         $report = [
@@ -93,11 +85,6 @@ class AutoReplyEngine
             'failed' => 0,
         ];
 
-        /**
-         * ✅ BURST / DEBOUNCE:
-         * Ambil beberapa pesan contact terbaru dalam window pendek
-         * lalu gabung jadi 1 pertanyaan.
-         */
         $latestMsgs = Message::where('conversation_id', $conv->id)
             ->where('sender_type', 'contact')
             ->orderBy('message_created_at', 'desc')
@@ -109,7 +96,6 @@ class AutoReplyEngine
         }
 
         $latestContactMsg = $latestMsgs->first();
-
         $report['checked_messages']++;
 
         $debounceSeconds = (int) config('ai.debounce_seconds', 90);
@@ -129,7 +115,6 @@ class AutoReplyEngine
             return $report;
         }
 
-        // ✅ cek sudah diproses berdasarkan message lokal ATAU chatwoot_id
         $alreadyProcessed = AutoReplyLog::where('message_id', $latestContactMsg->id)
             ->orWhereIn('message_id', function ($q) use ($latestContactMsg) {
                 if ($latestContactMsg->chatwoot_id) {
@@ -142,11 +127,10 @@ class AutoReplyEngine
             })
             ->exists();
 
-       // ✅ guard: abaikan log child burst
         $lastLog = AutoReplyLog::where('conversation_id', $conv->id)
-        ->where('status', '!=', 'skipped_burst') // ✅ INI PENTING
-        ->orderByDesc('id')
-        ->first();
+            ->where('status', '!=', 'skipped_burst')
+            ->orderByDesc('id')
+            ->first();
 
         if ($lastLog) {
             $lastMsgTime = optional($lastLog->message)->message_created_at ?? 0;
@@ -157,7 +141,6 @@ class AutoReplyEngine
         }
 
         if ($alreadyProcessed) {
-            // ✅ penting: tetap log supaya message ini dianggap processed
             AutoReplyLog::create([
                 'conversation_id' => $conv->id,
                 'message_id' => $latestContactMsg->id,
@@ -168,14 +151,10 @@ class AutoReplyEngine
                 'ai_used' => false,
                 'response_source' => 'manual',
             ]);
-            
-        
             $report['skipped']++;
             return $report;
         }
-        
 
-        // 1) Cari rule manual
         $rule = $this->findMatchingRule($messageText);
 
         if ($rule) {
@@ -196,7 +175,6 @@ class AutoReplyEngine
                     'response_source' => 'manual',
                 ]);
 
-                // ✅ tandai pesan burst lain sebagai sudah diproses
                 $this->logBurstChildren(
                     $conv,
                     $burstMsgs,
@@ -222,7 +200,6 @@ class AutoReplyEngine
                     'error_message' => $e->getMessage(),
                 ]);
 
-                // ✅ tandai burst lain biar gak diproses ulang
                 $this->logBurstChildren(
                     $conv,
                     $burstMsgs,
@@ -237,9 +214,6 @@ class AutoReplyEngine
             }
         }
 
-        // 2) Rule manual gak ada → AI fallback dari KB
-
-        // ✅ COOLDOWN CHECK
         if ($this->isAiCooldownActive($conv->id)) {
             AutoReplyLog::create([
                 'conversation_id' => $conv->id,
@@ -252,7 +226,6 @@ class AutoReplyEngine
                 'response_source' => 'ai',
             ]);
 
-            // ✅ tandai burst lain
             $this->logBurstChildren(
                 $conv,
                 $burstMsgs,
@@ -283,7 +256,6 @@ class AutoReplyEngine
                     'ai_sources' => $aiRes['sources'] ?? null,
                 ]);
 
-                // ✅ tandai burst lain
                 $this->logBurstChildren(
                     $conv,
                     $burstMsgs,
@@ -299,7 +271,6 @@ class AutoReplyEngine
 
             $confidence = (float) ($aiRes['confidence'] ?? 0);
 
-            // AI confident → kirim
             $this->chatwoot->sendMessage(
                 (int) $conv->chatwoot_id,
                 $aiRes['answer']
@@ -318,7 +289,6 @@ class AutoReplyEngine
                 'ai_sources' => $aiRes['sources'] ?? null,
             ]);
 
-            // ✅ tandai burst lain
             $this->logBurstChildren(
                 $conv,
                 $burstMsgs,
@@ -343,7 +313,6 @@ class AutoReplyEngine
                 'error_message' => $e->getMessage(),
             ]);
 
-            // ✅ tandai burst lain
             $this->logBurstChildren(
                 $conv,
                 $burstMsgs,
@@ -359,9 +328,6 @@ class AutoReplyEngine
         return $report;
     }
 
-    /**
-     * ✅ Tandai pesan burst selain message utama sebagai sudah diproses.
-     */
     protected function logBurstChildren(
         Conversation $conv,
         $burstMsgs,
@@ -386,9 +352,6 @@ class AutoReplyEngine
         }
     }
 
-    /**
-     * Cari rule match berdasarkan keyword sederhana.
-     */
     protected function findMatchingRule(?string $text): ?AutoReplyRule
     {
         if (!$text) return null;
@@ -450,9 +413,6 @@ class AutoReplyEngine
         }
     }
 
-    /**
-     * ✅ Cooldown AI supaya tidak spam reply dalam window tertentu
-     */
     protected function isAiCooldownActive(int $conversationId): bool
     {
         $cooldownMinutes = (int) config('ai.ai_cooldown_minutes', 3);
@@ -468,5 +428,157 @@ class AutoReplyEngine
         if (!$lastAiSent) return false;
 
         return $lastAiSent->created_at->diffInMinutes(now()) < $cooldownMinutes;
+    }
+
+    /**
+     * Handle message baru dari Instagram Direct (Meta)
+     * Return: array dengan response, rule_id, source, ai_used
+     * atau null jika tidak perlu balas
+     */
+    public function handleIncomingInstagramMessage(Message $message, Conversation $conversation): ?array
+    {
+        $messageText = trim($message->content ?? '');
+        
+        if (!$messageText) {
+            return null;
+        }
+
+        Log::info('🤖 Processing Instagram message', ['message_id' => $message->id]);
+
+        // Cek sudah diproses?
+        $alreadyProcessed = AutoReplyLog::where('message_id', $message->id)->exists();
+        if ($alreadyProcessed) {
+            Log::info('⏭️ Message already processed');
+            return null;
+        }
+
+        // 1️⃣ CARI RULE MANUAL DULU
+        $rule = $this->findMatchingRule($messageText);
+
+        if ($rule) {
+            Log::info('✅ Found manual rule', ['rule_id' => $rule->id]);
+            
+            AutoReplyLog::create([
+                'conversation_id' => $conversation->id,
+                'message_id' => $message->id,
+                'rule_id' => $rule->id,
+                'trigger_text' => $messageText,
+                'response_text' => $rule->response_text,
+                'status' => 'sent',
+                'response_source' => 'manual',
+                'ai_used' => false,
+            ]);
+
+            return [
+                'response' => $rule->response_text,
+                'rule_id' => $rule->id,
+                'source' => 'manual',
+                'ai_used' => false,
+            ];
+        }
+
+        // 2️⃣ RULE TIDAK ADA → FALLBACK KE AI
+        Log::info('❓ No manual rule, trying AI...');
+
+        // Cek cooldown AI
+        if ($this->isAiCooldownActive($conversation->id)) {
+            Log::info('⏸️ AI cooldown active');
+            
+            AutoReplyLog::create([
+                'conversation_id' => $conversation->id,
+                'message_id' => $message->id,
+                'rule_id' => null,
+                'trigger_text' => $messageText,
+                'response_text' => null,
+                'status' => 'skipped_ai_cooldown',
+                'response_source' => 'ai',
+                'ai_used' => true,
+            ]);
+
+            return null;
+        }
+
+        try {
+            $aiResult = $this->ai->answerFromKb($messageText);
+
+            if (!$aiResult || empty($aiResult['answer'])) {
+                Log::info('📚 AI no answer found');
+                
+                AutoReplyLog::create([
+                    'conversation_id' => $conversation->id,
+                    'message_id' => $message->id,
+                    'rule_id' => null,
+                    'trigger_text' => $messageText,
+                    'response_text' => null,
+                    'status' => 'skipped',
+                    'response_source' => 'ai',
+                    'ai_used' => true,
+                    'ai_confidence' => $aiResult['confidence'] ?? 0,
+                ]);
+
+                return null;
+            }
+
+            $confidence = floatval($aiResult['confidence'] ?? 0);
+
+            // AI ragu? Skip
+            if ($confidence < $this->ai->minConfidence) {
+                Log::info('😕 AI confidence too low', ['confidence' => $confidence]);
+                
+                AutoReplyLog::create([
+                    'conversation_id' => $conversation->id,
+                    'message_id' => $message->id,
+                    'rule_id' => null,
+                    'trigger_text' => $messageText,
+                    'response_text' => null,
+                    'status' => 'skipped',
+                    'response_source' => 'ai',
+                    'ai_used' => true,
+                    'ai_confidence' => $confidence,
+                ]);
+
+                return null;
+            }
+
+            // AI yakin! Kirim
+            Log::info('🎯 AI confident, sending', ['confidence' => $confidence]);
+
+            AutoReplyLog::create([
+                'conversation_id' => $conversation->id,
+                'message_id' => $message->id,
+                'rule_id' => null,
+                'trigger_text' => $messageText,
+                'response_text' => $aiResult['answer'],
+                'status' => 'sent_ai',
+                'response_source' => 'ai',
+                'ai_used' => true,
+                'ai_confidence' => $confidence,
+            ]);
+
+            return [
+                'response' => $aiResult['answer'],
+                'rule_id' => null,
+                'source' => 'ai',
+                'ai_used' => true,
+                'ai_confidence' => $confidence,
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('❌ AI error', ['error' => $e->getMessage()]);
+            
+            AutoReplyLog::create([
+                'conversation_id' => $conversation->id,
+                'message_id' => $message->id,
+                'rule_id' => null,
+                'trigger_text' => $messageText,
+                'response_text' => null,
+                'status' => 'failed_ai',
+                'response_source' => 'ai',
+                'ai_used' => true,
+                'error_message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 }
