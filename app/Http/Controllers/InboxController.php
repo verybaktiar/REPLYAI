@@ -14,26 +14,25 @@ class InboxController extends Controller
     public function index(Request $request)
     {
         $conversations = Conversation::orderByDesc('last_activity_at')->get();
-
-        $selectedId = $request->query('conversation_id')
-            ?? ($conversations->first()->id ?? null);
-
-        $selectedConversation = $selectedId
-            ? Conversation::with(['messages' => function ($q) {
-                $q->orderBy('message_created_at'); // urutkan sesuai waktu chatwoot
-            }])->find($selectedId)
-            : null;
-
+        
+        // Ambil ID dari query atau pakai conversation terbaru
+        $selectedId = $request->query('conversation_id');
+        if (!$selectedId && $conversations->isNotEmpty()) {
+            $selectedId = $conversations->first()->id;
+        }
+        
+        $selectedConversation = $selectedId ? Conversation::find($selectedId) : null;
+        
         return view('pages.inbox.index', [
             'title' => 'Inbox Instagram',
             'conversations' => $conversations,
             'selectedId' => $selectedId,
-            'messages' => $selectedConversation?->messages ?? collect(),
-            'contact' => [
-                'name' => $selectedConversation?->display_name,
-                'avatar' => $selectedConversation?->avatar,
-                'ig_username' => $selectedConversation?->ig_username,
-            ],
+            'messages' => $selectedConversation?->messages()->orderBy('message_created_at')->get() ?? collect(),
+            'contact' => $selectedConversation ? [
+                'name' => $selectedConversation->display_name,
+                'avatar' => $selectedConversation->avatar,
+                'ig_username' => $selectedConversation->ig_username,
+            ] : null,
         ]);
     }
 

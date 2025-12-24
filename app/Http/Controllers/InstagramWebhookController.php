@@ -82,8 +82,18 @@ class InstagramWebhookController extends Controller
 
     protected function processMessage(string $senderId, string $messageText, ?string $messageId, string $recipientId)
     {
-        // 1. Ambil username Instagram
-        $username = $this->getInstagramUsername($senderId);
+        // 1. Ambil username, name & avatar dari Instagram API
+        $userInfo = $this->getInstagramUserInfo($senderId);
+        $username = $userInfo['username'] ?? null;
+        $name = $userInfo['name'] ?? null;
+        $avatar = $userInfo['profile_pic'] ?? null; // ← PAKAI profile_pic
+
+        Log::info('👤 Got user info from Instagram API', [
+            'username' => $username,
+            'name' => $name,
+            'has_avatar' => !empty($avatar),
+            'avatar_url' => $avatar
+        ]);
 
         // 2. Cari atau buat conversation
         $conversation = Conversation::firstOrCreate(
@@ -91,8 +101,8 @@ class InstagramWebhookController extends Controller
             [
                 'chatwoot_id' => null,
                 'ig_username' => $username,
-                'display_name' => $username ?? 'Instagram User',
-                'avatar' => null,
+                'display_name' => $name ?? $username ?? 'Instagram User',
+                'avatar' => $avatar,
                 'last_message' => $messageText,
                 'source' => 'meta_direct',
                 'last_activity_at' => now()->toDateTimeString(),
@@ -100,8 +110,11 @@ class InstagramWebhookController extends Controller
             ]
         );
 
-        // 3. Update conversation
+        // 3. Update conversation dengan data terbaru
         $conversation->update([
+            'ig_username' => $username ?? $conversation->ig_username,
+            'display_name' => $name ?? $username ?? $conversation->display_name,
+            'avatar' => $avatar ?? $conversation->avatar,
             'last_message' => $messageText,
             'last_activity_at' => now()->toDateTimeString(),
         ]);
@@ -120,7 +133,7 @@ class InstagramWebhookController extends Controller
 
         Log::info('💾 Message saved to database', ['message_id' => $message->id]);
 
-        // 5️⃣ GUNAKAN AUTO REPLY ENGINE (Manual Rule + AI Fallback)
+        // 5. GUNAKAN AUTO REPLY ENGINE (Manual Rule + AI Fallback)
         $engineResult = $this->engine->handleIncomingInstagramMessage($message, $conversation);
 
         if ($engineResult) {
@@ -195,24 +208,45 @@ class InstagramWebhookController extends Controller
         }
     }
 
-    protected function getInstagramUsername(string $userId): ?string
+    /**
+     * Fetch Instagram user info (username, name, profile_pic)
+     * Docs: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api/user-profile
+     */
+    protected function getInstagramUserInfo(string $userId): array
     {
         $accessToken = config('services.instagram.access_token');
 
         try {
             $response = Http::get("https://graph.instagram.com/v21.0/{$userId}", [
-                'fields' => 'username',
+                'fields' => 'name,username,profile_pic', // ← FIELDS YANG BENAR
                 'access_token' => $accessToken,
             ]);
 
             if ($response->successful()) {
-                return $response->json('username');
+                $data = $response->json();
+                Log::info('✅ Instagram User Profile API success', $data);
+                return $data;
             }
+
+            Log::error('❌ Failed to get Instagram user info', [
+                'status' => $response->status(),
+                'body' => $response->json()
+            ]);
+            
         } catch (\Exception $e) {
-            Log::error('Failed to get username', ['error' => $e->getMessage()]);
+            Log::error('❌ Exception getting Instagram user info', [
+                'error' => $e->getMessage()
+            ]);
         }
 
-        return null;
+        return [];
+    }
+
+    // Backward compatibility method
+    protected function getInstagramUsername(string $userId): ?string
+    {
+        $info = $this->getInstagramUserInfo($userId);
+        return $info['username'] ?? null;
     }
 
     public function getConversations()
