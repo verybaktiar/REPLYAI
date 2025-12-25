@@ -3,76 +3,61 @@
 namespace App\Services;
 
 use App\Models\KbArticle;
+use App\Models\AutoReplyRule;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AiAnswerService
 {
-    /**
-     * Minimum confidence biar AI boleh kirim ke user.
-     */
     public float $minConfidence = 0.55;
 
-    /**
-     * Cari jawaban AI dari KB.
-     * Return:
-     * [
-     *   'answer' => string,
-     *   'confidence' => float (0-1),
-     *   'sources' => array of ['id','title','source_url']
-     * ]
-     * atau null kalau tidak yakin / tidak ada KB / tidak ada api key.
-     */
     public function answerFromKb(string $question): ?array
     {
         $question = trim($question);
         if ($question === '') return null;
 
-        // ✅ ambil KB aktif yang relevan (MVP scoring sederhana)
-        $articles = $this->searchRelevantArticles($question, limit: 4);
-        if ($articles->isEmpty()) return null;
+        // ✅ hanya ambil KB yang AKTIF
+        $articles = $this->searchRelevantArticles($question, 4);
+        if ($articles->isEmpty()) {
+            Log::info('📚 KB candidates empty', ['question' => $question]);
+            return null;
+        }
 
-        $context = $this->buildContext($articles);
-
-        // ✅ kalau belum set API key, stop di sini (fallback rule manual aja)
         $apiKey = config('services.perplexity.key');
         if (!$apiKey) return null;
+
+        $context = $this->buildContext($articles);
 
         $res = $this->callPerplexity($question, $context, $apiKey);
         if (!$res) return null;
 
         $conf = (float)($res['confidence'] ?? 0);
-
-        // ✅ sesuai komentar kamu: kalau gak yakin -> null
-        if ($conf < $this->minConfidence) {
-            return null;
-        }
+        if ($conf < $this->minConfidence) return null;
 
         return [
-            'answer' => $res['answer'],
+            'answer' => (string)($res['answer'] ?? ''),
             'confidence' => $conf,
-            'sources' => $articles->map(fn($a)=>[
-                'id'=>$a->id,
-                'title'=>$a->title,
-                'source_url'=>$a->source_url,
+            'sources' => $articles->map(fn($a) => [
+                'id' => $a->id,
+                'title' => $a->title,
+                'source_url' => $a->source_url,
             ])->values()->all(),
         ];
     }
-
-    // ================== Internal helpers ==================
 
     protected function searchRelevantArticles(string $question, int $limit = 4)
     {
         $q = Str::lower($question);
 
-        // scoring sederhana: banyak keyword question muncul di content/title
         $keywords = collect(preg_split('/\s+/u', $q))
-            ->map(fn($k)=>trim($k))
-            ->filter(fn($k)=>mb_strlen($k) >= 3)
+            ->map(fn($k) => trim($k))
+            ->filter(fn($k) => mb_strlen($k) >= 3)
             ->unique()
             ->values();
 
-        $articles = KbArticle::where('is_active', true)->get();
+        // ✅ penting: is_active = 1
+        $articles = KbArticle::where('is_active', 1)->get();
 
         $scored = $articles->map(function($a) use ($keywords){
             $hay = Str::lower(($a->title ?? '')." ".$a->content." ".$a->tags);
@@ -84,10 +69,10 @@ class AiAnswerService
 
             return [$a, $score];
         })
-        ->filter(fn($pair)=>$pair[1] > 0)
-        ->sortByDesc(fn($pair)=>$pair[1])
+        ->filter(fn($pair) => $pair[1] > 0)
+        ->sortByDesc(fn($pair) => $pair[1])
         ->take($limit)
-        ->map(fn($pair)=>$pair[0]);
+        ->map(fn($pair) => $pair[0]);
 
         return $scored->values();
     }
@@ -97,7 +82,7 @@ class AiAnswerService
         $chunks = [];
         foreach ($articles as $a) {
             $title = $a->title ?: '(Tanpa judul)';
-            $content = Str::limit(trim($a->content), 1500);
+            $content = Str::limit(trim($a->content), 1800);
             $src = $a->source_url ?: '-';
 
             $chunks[] = "### {$title}\nSumber: {$src}\nIsi:\n{$content}";
@@ -112,16 +97,14 @@ class AiAnswerService
             $system = <<<SYS
 Kamu adalah asisten customer service rumah sakit.
 Jawab hanya berdasarkan KONTEKS yang diberikan.
-Jika jawaban tidak ada di konteks, bilang "Tidak ditemukan di data resmi."
+Jika jawaban tidak ada di konteks, jawab: "Tidak ditemukan di data resmi."
 Jawab singkat, jelas, ramah, bahasa Indonesia.
-Kembalikan output JSON valid dengan format:
+Output HARUS JSON valid:
 
 {
   "answer": "...",
   "confidence": 0.0-1.0
 }
-
-confidence tinggi jika jawaban jelas tertulis di konteks.
 SYS;
 
             $payload = [
@@ -139,8 +122,13 @@ SYS;
                 ->post(config('services.perplexity.url', 'https://api.perplexity.ai').'/chat/completions', $payload);
 
             if (!$http->ok()) {
+                Log::error('❌ Perplexity HTTP not ok', [
+                    'status' => $http->status(),
+                    'body' => $http->body(),
+                ]);
                 return null;
             }
+
 
             $text = $http->json('choices.0.message.content');
             if (!$text) return null;
@@ -157,8 +145,8 @@ SYS;
                 'answer' => $answer,
                 'confidence' => max(0, min(1, $confidence)),
             ];
-
         } catch (\Throwable $e) {
+            Log::error('❌ AI call error', ['err' => $e->getMessage()]);
             return null;
         }
     }
@@ -167,7 +155,6 @@ SYS;
     {
         $text = trim($text);
 
-        // cari blok json pertama kalau model nambahin teks lain
         if (!Str::startsWith($text, '{')) {
             if (preg_match('/\{.*\}/s', $text, $m)) {
                 $text = $m[0];
@@ -178,5 +165,87 @@ SYS;
         if (json_last_error() !== JSON_ERROR_NONE) return null;
 
         return $json;
+    }
+
+    /**
+     * AI pilih 1 rule terbaik dari banyak rule yang match (opsi C)
+     */
+    public function pickBestRuleId(string $userText, $matchedRules): ?int
+    {
+        $userText = trim($userText);
+        if ($userText === '') return null;
+
+        $apiKey = config('services.perplexity.key');
+        if (!$apiKey) return null;
+
+        $candidates = collect($matchedRules)->map(function ($r) {
+            return [
+                'id' => (int) $r->id,
+                'priority' => (int) ($r->priority ?? 0),
+                'match_type' => (string) ($r->match_type ?? 'contains'),
+                'trigger_keyword' => (string) ($r->trigger_keyword ?? ''),
+                'response_preview' => Str::limit((string) ($r->response_text ?? ''), 120),
+            ];
+        })->values()->all();
+
+        try {
+            $system = <<<SYS
+Kamu adalah classifier intent chatbot.
+Pilih 1 RULE paling sesuai dengan pesan user.
+
+Balas HARUS JSON:
+{
+  "rule_id": number|null,
+  "confidence": 0.0-1.0,
+  "reason": "singkat"
+}
+
+Jika ragu, gunakan priority tertinggi sebagai tie-breaker.
+Jika tidak ada yang cocok, rule_id=null.
+SYS;
+
+            $payload = [
+                "model" => config('services.perplexity.model', 'sonar-pro'),
+                "temperature" => 0.0,
+                "messages" => [
+                    ["role"=>"system","content"=>$system],
+                    ["role"=>"user","content"=>json_encode([
+                        "user_message" => $userText,
+                        "candidates" => $candidates,
+                    ], JSON_UNESCAPED_UNICODE)]
+                ],
+            ];
+
+            $http = Http::timeout(30)
+                ->withToken($apiKey)
+                ->acceptJson()
+                ->post(config('services.perplexity.url', 'https://api.perplexity.ai').'/chat/completions', $payload);
+
+                if (!$http->ok()) {
+                    Log::error('❌ Perplexity HTTP not ok (pickBestRuleId)', [
+                        'status' => $http->status(),
+                        'body' => $http->body(),
+                    ]);
+                    return null;
+                }
+                
+
+            $text = $http->json('choices.0.message.content');
+            if (!$text) return null;
+
+            $json = $this->safeJsonDecode($text);
+            if (!$json) return null;
+
+            $ruleId = $json['rule_id'] ?? null;
+            $conf = (float) ($json['confidence'] ?? 0);
+
+            if ($ruleId === null) return null;
+            if ($conf < 0.35) return null;
+
+            return (int) $ruleId;
+        } catch (\Throwable $e) {
+            Log::error('❌ pickBestRuleId error', ['err' => $e->getMessage()]);
+            return null;
+        }
     }
 }

@@ -16,358 +16,218 @@ class AutoReplyEngine
         protected AiAnswerService $ai
     ) {}
 
-    /**
-     * Jalankan bot untuk semua conversation.
-     */
-    public function runForAllConversations(): array
+    public function handleIncomingInstagramMessage(Message $message, Conversation $conversation): ?array
     {
-        $latestUnprocessedMessages = Message::query()
-            ->select('messages.*')
-            ->where('sender_type', 'contact')
-            ->whereNotExists(function ($q) {
-                $q->selectRaw(1)
-                  ->from('auto_reply_logs')
-                  ->whereColumn('auto_reply_logs.message_id', 'messages.id');
-            })
-            ->whereIn('id', function ($q) {
-                $q->selectRaw('MAX(m2.id)')
-                  ->from('messages as m2')
-                  ->whereColumn('m2.conversation_id', 'messages.conversation_id')
-                  ->where('m2.sender_type', 'contact')
-                  ->whereNotExists(function ($q2) {
-                      $q2->selectRaw(1)
-                          ->from('auto_reply_logs as l2')
-                          ->whereColumn('l2.message_id', 'm2.id');
-                  })
-                  ->groupBy('m2.conversation_id');
-            })
-            ->orderByDesc('message_created_at')
-            ->limit(200)
-            ->get();
-    
-        $conversationIds = $latestUnprocessedMessages
-            ->pluck('conversation_id')
-            ->unique()
-            ->values();
-    
-        $conversations = Conversation::whereIn('id', $conversationIds)
-            ->orderByDesc('updated_at')
-            ->get();
-    
-        $report = [
-            'checked_conversations' => 0,
-            'checked_messages' => 0,
-            'replied' => 0,
-            'skipped' => 0,
-            'failed' => 0,
-        ];
-    
-        foreach ($conversations as $conv) {
-            $report['checked_conversations']++;
-            $r = $this->runForConversation($conv);
-            foreach ($r as $k => $v) $report[$k] += $v;
-        }
-    
-        return $report;
-    }
+        $rawText = trim((string) ($message->content ?? ''));
+        if ($rawText === '') return null;
 
-    public function matchRule(?string $text, ?Conversation $conversation = null): ?AutoReplyRule
-    {
-        return $this->findMatchingRule($text);
-    }
+        Log::info('🤖 Processing Instagram message', [
+            'message_id' => $message->id,
+            'raw_text' => $rawText,
+        ]);
 
-    public function runForConversation(Conversation $conv): array
-    {
-        $report = [
-            'checked_messages' => 0,
-            'replied' => 0,
-            'skipped' => 0,
-            'failed' => 0,
-        ];
-
-        $latestMsgs = Message::where('conversation_id', $conv->id)
-            ->where('sender_type', 'contact')
-            ->orderBy('message_created_at', 'desc')
-            ->limit(5)
-            ->get();
-
-        if ($latestMsgs->isEmpty()) {
-            return $report;
+        // Cek sudah diproses?
+        if (AutoReplyLog::where('message_id', $message->id)->exists()) {
+            Log::info('⏭️ Message already processed');
+            return null;
         }
 
-        $latestContactMsg = $latestMsgs->first();
-        $report['checked_messages']++;
-
-        $debounceSeconds = (int) config('ai.debounce_seconds', 90);
-
-        $burstMsgs = $latestMsgs->filter(function ($m) use ($latestContactMsg, $debounceSeconds) {
-            return abs(($latestContactMsg->message_created_at ?? 0) - ($m->message_created_at ?? 0)) <= $debounceSeconds;
-        });
-
-        $messageText = $burstMsgs
-            ->sortBy('message_created_at')
-            ->pluck('content')
-            ->filter()
-            ->implode("\n");
-
-        if (trim($messageText) === '') {
-            $report['skipped']++;
-            return $report;
-        }
-
-        $alreadyProcessed = AutoReplyLog::where('message_id', $latestContactMsg->id)
-            ->orWhereIn('message_id', function ($q) use ($latestContactMsg) {
-                if ($latestContactMsg->chatwoot_id) {
-                    $q->select('id')
-                        ->from('messages')
-                        ->where('chatwoot_id', $latestContactMsg->chatwoot_id);
-                } else {
-                    $q->selectRaw('0');
-                }
-            })
-            ->exists();
-
-        $lastLog = AutoReplyLog::where('conversation_id', $conv->id)
-            ->where('status', '!=', 'skipped_burst')
-            ->orderByDesc('id')
-            ->first();
-
-        if ($lastLog) {
-            $lastMsgTime = optional($lastLog->message)->message_created_at ?? 0;
-            if (($latestContactMsg->message_created_at ?? 0) <= $lastMsgTime) {
-                $report['skipped']++;
-                return $report;
-            }
-        }
-
-        if ($alreadyProcessed) {
-            AutoReplyLog::create([
-                'conversation_id' => $conv->id,
-                'message_id' => $latestContactMsg->id,
-                'rule_id' => null,
-                'trigger_text' => $messageText,
-                'response_text' => null,
-                'status' => 'skipped_duplicate',
-                'ai_used' => false,
-                'response_source' => 'manual',
-            ]);
-            $report['skipped']++;
-            return $report;
-        }
-
-        $rule = $this->findMatchingRule($messageText);
+        // 1️⃣ MANUAL RULE: pakai RAW user text (tanpa merge)
+        $rule = $this->findMatchingRule($rawText);
 
         if ($rule) {
-            try {
-                $this->chatwoot->sendMessage(
-                    (int) $conv->chatwoot_id,
-                    $rule->response_text
-                );
+            Log::info('✅ Found manual rule', ['rule_id' => $rule->id]);
 
-                AutoReplyLog::create([
-                    'conversation_id' => $conv->id,
-                    'message_id' => $latestContactMsg->id,
-                    'rule_id' => $rule->id,
-                    'trigger_text' => $messageText,
-                    'response_text' => $rule->response_text,
-                    'status' => 'sent',
-                    'ai_used' => false,
-                    'response_source' => 'manual',
-                ]);
+            AutoReplyLog::create([
+                'conversation_id' => $conversation->id,
+                'message_id' => $message->id,
+                'rule_id' => $rule->id,
+                'trigger_text' => $rawText,
+                'response_text' => $rule->response_text,
+                'status' => 'sent',
+                'response_source' => 'manual',
+                'ai_used' => false,
+            ]);
 
-                $this->logBurstChildren(
-                    $conv,
-                    $burstMsgs,
-                    $latestContactMsg,
-                    $rule->id,
-                    'manual',
-                    false
-                );
+            return [
+                'response' => $rule->response_text,
+                'rule_id' => $rule->id,
+                'source' => 'manual',
+                'ai_used' => false,
+            ];
+        }
 
-                $report['replied']++;
-                return $report;
+        // 2️⃣ Kalau manual gak ketemu → SIAPKAN TEKS UNTUK AI (boleh merge konteks)
+        $aiText = $rawText;
 
-            } catch (\Throwable $e) {
-                AutoReplyLog::create([
-                    'conversation_id' => $conv->id,
-                    'message_id' => $latestContactMsg->id,
-                    'rule_id' => $rule->id,
-                    'trigger_text' => $messageText,
-                    'response_text' => $rule->response_text,
-                    'status' => 'failed',
-                    'ai_used' => false,
-                    'response_source' => 'manual',
-                    'error_message' => $e->getMessage(),
-                ]);
+        // ✅ merge hanya untuk AI, dan hanya kalau user pesan pendek
+        if (mb_strlen($rawText) <= 25) {
+            $prev = Message::where('conversation_id', $conversation->id)
+                ->where('id', '<', $message->id)
+                ->orderByDesc('id')
+                ->first();
 
-                $this->logBurstChildren(
-                    $conv,
-                    $burstMsgs,
-                    $latestContactMsg,
-                    $rule->id,
-                    'manual',
-                    false
-                );
+            // merge hanya kalau sebelumnya agent/bot DAN itu pertanyaan follow-up
+            if ($prev && $prev->sender_type === 'agent' && $prev->content) {
+                $prevLower = Str::lower($prev->content);
 
-                $report['failed']++;
-                return $report;
+                $isFollowupQuestion =
+                    Str::contains($prevLower, 'sebutkan') ||
+                    Str::contains($prevLower, 'pilih') ||
+                    Str::contains($prevLower, 'mau yang mana') ||
+                    Str::contains($prevLower, 'nama poli') ||
+                    Str::contains($prevLower, 'spesialis') ||
+                    Str::contains($prevLower, 'yang mana ya');
+
+                if ($isFollowupQuestion) {
+                    $aiText = trim($prev->content . "\n" . $rawText);
+                    Log::info('🧠 Context merged (AI only)', ['ai_text' => $aiText]);
+                }
             }
         }
 
-        if ($this->isAiCooldownActive($conv->id)) {
+        // 3️⃣ AI COOLDOWN
+        if ($this->isAiCooldownActive($conversation->id)) {
             AutoReplyLog::create([
-                'conversation_id' => $conv->id,
-                'message_id' => $latestContactMsg->id,
+                'conversation_id' => $conversation->id,
+                'message_id' => $message->id,
                 'rule_id' => null,
-                'trigger_text' => $messageText,
+                'trigger_text' => $aiText,
                 'response_text' => null,
                 'status' => 'skipped_ai_cooldown',
-                'ai_used' => true,
                 'response_source' => 'ai',
+                'ai_used' => true,
             ]);
-
-            $this->logBurstChildren(
-                $conv,
-                $burstMsgs,
-                $latestContactMsg,
-                null,
-                'ai',
-                true
-            );
-
-            $report['skipped']++;
-            return $report;
+            return null;
         }
 
+        // 4️⃣ AI ANSWER
         try {
-            $aiRes = $this->ai->answerFromKb($messageText);
+            $aiResult = $this->ai->answerFromKb($aiText);
 
-            if (!$aiRes || empty($aiRes['answer'])) {
+            if (!$aiResult || empty($aiResult['answer'])) {
+                Log::info('📚 AI no answer found');
+
                 AutoReplyLog::create([
-                    'conversation_id' => $conv->id,
-                    'message_id' => $latestContactMsg->id,
+                    'conversation_id' => $conversation->id,
+                    'message_id' => $message->id,
                     'rule_id' => null,
-                    'trigger_text' => $messageText,
+                    'trigger_text' => $aiText,
                     'response_text' => null,
                     'status' => 'skipped',
-                    'ai_used' => true,
                     'response_source' => 'ai',
-                    'ai_confidence' => $aiRes['confidence'] ?? 0,
-                    'ai_sources' => $aiRes['sources'] ?? null,
+                    'ai_used' => true,
+                    'ai_confidence' => $aiResult['confidence'] ?? 0,
                 ]);
 
-                $this->logBurstChildren(
-                    $conv,
-                    $burstMsgs,
-                    $latestContactMsg,
-                    null,
-                    'ai',
-                    true
-                );
-
-                $report['skipped']++;
-                return $report;
+                return null;
             }
 
-            $confidence = (float) ($aiRes['confidence'] ?? 0);
-
-            $this->chatwoot->sendMessage(
-                (int) $conv->chatwoot_id,
-                $aiRes['answer']
-            );
-
             AutoReplyLog::create([
-                'conversation_id' => $conv->id,
-                'message_id' => $latestContactMsg->id,
+                'conversation_id' => $conversation->id,
+                'message_id' => $message->id,
                 'rule_id' => null,
-                'trigger_text' => $messageText,
-                'response_text' => $aiRes['answer'],
+                'trigger_text' => $aiText,
+                'response_text' => $aiResult['answer'],
                 'status' => 'sent_ai',
-                'ai_used' => true,
                 'response_source' => 'ai',
-                'ai_confidence' => $confidence,
-                'ai_sources' => $aiRes['sources'] ?? null,
+                'ai_used' => true,
+                'ai_confidence' => (float)($aiResult['confidence'] ?? 0),
             ]);
 
-            $this->logBurstChildren(
-                $conv,
-                $burstMsgs,
-                $latestContactMsg,
-                null,
-                'ai',
-                true
-            );
-
-            $report['replied']++;
-
-        } catch (\Throwable $e) {
-            AutoReplyLog::create([
-                'conversation_id' => $conv->id,
-                'message_id' => $latestContactMsg->id,
+            return [
+                'response' => $aiResult['answer'],
                 'rule_id' => null,
-                'trigger_text' => $messageText,
+                'source' => 'ai',
+                'ai_used' => true,
+                'ai_confidence' => (float)($aiResult['confidence'] ?? 0),
+            ];
+        } catch (\Throwable $e) {
+            Log::error('❌ AI error', ['error' => $e->getMessage()]);
+
+            AutoReplyLog::create([
+                'conversation_id' => $conversation->id,
+                'message_id' => $message->id,
+                'rule_id' => null,
+                'trigger_text' => $aiText,
                 'response_text' => null,
                 'status' => 'failed_ai',
-                'ai_used' => true,
                 'response_source' => 'ai',
+                'ai_used' => true,
                 'error_message' => $e->getMessage(),
             ]);
 
-            $this->logBurstChildren(
-                $conv,
-                $burstMsgs,
-                $latestContactMsg,
-                null,
-                'ai',
-                true
-            );
-
-            $report['failed']++;
-        }
-
-        return $report;
-    }
-
-    protected function logBurstChildren(
-        Conversation $conv,
-        $burstMsgs,
-        Message $latestContactMsg,
-        ?int $ruleId,
-        string $source,
-        bool $aiUsed
-    ): void {
-        foreach ($burstMsgs as $bm) {
-            if ($bm->id === $latestContactMsg->id) continue;
-
-            AutoReplyLog::create([
-                'conversation_id' => $conv->id,
-                'message_id' => $bm->id,
-                'rule_id' => $ruleId,
-                'trigger_text' => $bm->content,
-                'response_text' => null,
-                'status' => 'skipped_burst',
-                'ai_used' => $aiUsed,
-                'response_source' => $source,
-            ]);
+            return null;
         }
     }
+
+
+    /**
+     * ✅ Jangan merge kalau pesan itu salam/basa-basi.
+     * Merge hanya untuk jawaban singkat yang biasanya balasan pilihan.
+     */
+    protected function shouldTryMergeContext(string $messageText): bool
+    {
+        $t = Str::lower(trim($messageText));
+
+        // greeting / smalltalk → jangan merge
+        $greetings = ['halo', 'hai', 'hi', 'pagi', 'siang', 'sore', 'malam', 'assalam', 'permisi', 'test', 'tes'];
+        if (in_array($t, $greetings, true)) return false;
+
+        // kalau pendek banget & berpotensi jawaban pilihan → boleh merge
+        if (mb_strlen($t) > 25) return false;
+
+        // contoh jawaban pilihan (poli anak, gigi, umum, angka 1/2/3)
+        $looksLikeChoice =
+            preg_match('/^\d+$/', $t) ||
+            Str::contains($t, 'poli') ||
+            Str::contains($t, 'anak') ||
+            Str::contains($t, 'gigi') ||
+            Str::contains($t, 'umum') ||
+            Str::contains($t, 'igd') ||
+            Str::contains($t, 'spesialis') ||
+            Str::contains($t, 'promo');
+
+        return (bool) $looksLikeChoice;
+    }
+
+    // ===================== RULE MATCHER (FULL) =====================
 
     protected function findMatchingRule(?string $text): ?AutoReplyRule
     {
-        if (!$text) return null;
+        $text = trim((string) $text);
+        if ($text === '') return null;
 
         $rules = AutoReplyRule::where('is_active', true)
             ->orderByDesc('priority')
             ->orderByDesc('created_at')
             ->get();
 
+        // 1) kumpulkan semua kandidat yang match
+        $matched = [];
         foreach ($rules as $rule) {
             if ($this->isRuleMatch($text, $rule)) {
-                return $rule;
+                $matched[] = $rule;
             }
         }
 
-        return null;
+        if (count($matched) === 0) return null;
+        if (count($matched) === 1) return $matched[0];
+
+        // 2) kandidat > 1 → AI pilih 1 (opsi C)
+        $pickedId = $this->ai->pickBestRuleId($text, $matched);
+
+        if ($pickedId) {
+            foreach ($matched as $r) {
+                if ((int) $r->id === (int) $pickedId) {
+                    Log::info('🤖 AI picked rule', ['rule_id' => $pickedId]);
+                    return $r;
+                }
+            }
+        }
+
+        // 3) fallback: priority tertinggi
+        return collect($matched)->sortByDesc('priority')->first();
     }
 
     private function isRuleMatch(string $message, $rule): bool
@@ -412,7 +272,6 @@ class AutoReplyEngine
             return false;
         }
     }
-
     protected function isAiCooldownActive(int $conversationId): bool
     {
         $cooldownMinutes = (int) config('ai.ai_cooldown_minutes', 3);
@@ -430,155 +289,4 @@ class AutoReplyEngine
         return $lastAiSent->created_at->diffInMinutes(now()) < $cooldownMinutes;
     }
 
-    /**
-     * Handle message baru dari Instagram Direct (Meta)
-     * Return: array dengan response, rule_id, source, ai_used
-     * atau null jika tidak perlu balas
-     */
-    public function handleIncomingInstagramMessage(Message $message, Conversation $conversation): ?array
-    {
-        $messageText = trim($message->content ?? '');
-        
-        if (!$messageText) {
-            return null;
-        }
-
-        Log::info('🤖 Processing Instagram message', ['message_id' => $message->id]);
-
-        // Cek sudah diproses?
-        $alreadyProcessed = AutoReplyLog::where('message_id', $message->id)->exists();
-        if ($alreadyProcessed) {
-            Log::info('⏭️ Message already processed');
-            return null;
-        }
-
-        // 1️⃣ CARI RULE MANUAL DULU
-        $rule = $this->findMatchingRule($messageText);
-
-        if ($rule) {
-            Log::info('✅ Found manual rule', ['rule_id' => $rule->id]);
-            
-            AutoReplyLog::create([
-                'conversation_id' => $conversation->id,
-                'message_id' => $message->id,
-                'rule_id' => $rule->id,
-                'trigger_text' => $messageText,
-                'response_text' => $rule->response_text,
-                'status' => 'sent',
-                'response_source' => 'manual',
-                'ai_used' => false,
-            ]);
-
-            return [
-                'response' => $rule->response_text,
-                'rule_id' => $rule->id,
-                'source' => 'manual',
-                'ai_used' => false,
-            ];
-        }
-
-        // 2️⃣ RULE TIDAK ADA → FALLBACK KE AI
-        Log::info('❓ No manual rule, trying AI...');
-
-        // Cek cooldown AI
-        if ($this->isAiCooldownActive($conversation->id)) {
-            Log::info('⏸️ AI cooldown active');
-            
-            AutoReplyLog::create([
-                'conversation_id' => $conversation->id,
-                'message_id' => $message->id,
-                'rule_id' => null,
-                'trigger_text' => $messageText,
-                'response_text' => null,
-                'status' => 'skipped_ai_cooldown',
-                'response_source' => 'ai',
-                'ai_used' => true,
-            ]);
-
-            return null;
-        }
-
-        try {
-            $aiResult = $this->ai->answerFromKb($messageText);
-
-            if (!$aiResult || empty($aiResult['answer'])) {
-                Log::info('📚 AI no answer found');
-                
-                AutoReplyLog::create([
-                    'conversation_id' => $conversation->id,
-                    'message_id' => $message->id,
-                    'rule_id' => null,
-                    'trigger_text' => $messageText,
-                    'response_text' => null,
-                    'status' => 'skipped',
-                    'response_source' => 'ai',
-                    'ai_used' => true,
-                    'ai_confidence' => $aiResult['confidence'] ?? 0,
-                ]);
-
-                return null;
-            }
-
-            $confidence = floatval($aiResult['confidence'] ?? 0);
-
-            // AI ragu? Skip
-            if ($confidence < $this->ai->minConfidence) {
-                Log::info('😕 AI confidence too low', ['confidence' => $confidence]);
-                
-                AutoReplyLog::create([
-                    'conversation_id' => $conversation->id,
-                    'message_id' => $message->id,
-                    'rule_id' => null,
-                    'trigger_text' => $messageText,
-                    'response_text' => null,
-                    'status' => 'skipped',
-                    'response_source' => 'ai',
-                    'ai_used' => true,
-                    'ai_confidence' => $confidence,
-                ]);
-
-                return null;
-            }
-
-            // AI yakin! Kirim
-            Log::info('🎯 AI confident, sending', ['confidence' => $confidence]);
-
-            AutoReplyLog::create([
-                'conversation_id' => $conversation->id,
-                'message_id' => $message->id,
-                'rule_id' => null,
-                'trigger_text' => $messageText,
-                'response_text' => $aiResult['answer'],
-                'status' => 'sent_ai',
-                'response_source' => 'ai',
-                'ai_used' => true,
-                'ai_confidence' => $confidence,
-            ]);
-
-            return [
-                'response' => $aiResult['answer'],
-                'rule_id' => null,
-                'source' => 'ai',
-                'ai_used' => true,
-                'ai_confidence' => $confidence,
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('❌ AI error', ['error' => $e->getMessage()]);
-            
-            AutoReplyLog::create([
-                'conversation_id' => $conversation->id,
-                'message_id' => $message->id,
-                'rule_id' => null,
-                'trigger_text' => $messageText,
-                'response_text' => null,
-                'status' => 'failed_ai',
-                'response_source' => 'ai',
-                'ai_used' => true,
-                'error_message' => $e->getMessage(),
-            ]);
-
-            return null;
-        }
-    }
 }
