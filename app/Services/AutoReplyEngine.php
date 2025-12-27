@@ -8,67 +8,98 @@ use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class AutoReplyEngine
 {
     public function __construct(
-        protected ChatwootClient $chatwoot,
-        protected AiAnswerService $ai
+        protected AiAnswerService $ai,
+        protected ReplyTemplate $tpl
     ) {}
 
     public function handleIncomingInstagramMessage(Message $message, Conversation $conversation): ?array
     {
+        // ✅ jangan respon pesan agent/bot/echo
+        $senderType = (string) ($message->sender_type ?? '');
+        if (!in_array($senderType, ['user', 'contact'], true)) {
+            return null;
+        }
+
         $rawText = trim((string) ($message->content ?? ''));
         if ($rawText === '') return null;
 
         Log::info('🤖 Processing Instagram message', [
             'message_id' => $message->id,
+            'sender_type' => $senderType,
             'raw_text' => $rawText,
         ]);
 
-        // Cek sudah diproses?
+        // anti double-process
         if (AutoReplyLog::where('message_id', $message->id)->exists()) {
             Log::info('⏭️ Message already processed');
             return null;
         }
 
-        // 1️⃣ MANUAL RULE: pakai RAW user text (tanpa merge)
-        $rule = $this->findMatchingRule($rawText);
+        // 0) menu/help selalu ditangani
+        $lower = Str::lower($rawText);
+        if (in_array($lower, ['bantuan', 'menu', 'help'], true)) {
+            $resp = $this->tpl->menu();
 
+            AutoReplyLog::create([
+                'conversation_id' => $conversation->id,
+                'message_id' => $message->id,
+                'rule_id' => null,
+                'trigger_text' => $rawText,
+                'response_text' => $resp,
+                'status' => 'sent_menu',
+                'response_source' => 'menu',
+                'ai_used' => false,
+            ]);
+
+            return [
+                'response' => $resp,
+                'rule_id' => null,
+                'source' => 'menu',
+                'ai_used' => false,
+            ];
+        }
+
+        // 1) MANUAL RULE
+        $rule = $this->findMatchingRule($rawText);
         if ($rule) {
             Log::info('✅ Found manual rule', ['rule_id' => $rule->id]);
+
+            $resp = $this->tpl->appendFooter((string) $rule->response_text);
 
             AutoReplyLog::create([
                 'conversation_id' => $conversation->id,
                 'message_id' => $message->id,
                 'rule_id' => $rule->id,
                 'trigger_text' => $rawText,
-                'response_text' => $rule->response_text,
+                'response_text' => $resp,
                 'status' => 'sent',
                 'response_source' => 'manual',
                 'ai_used' => false,
             ]);
 
             return [
-                'response' => $rule->response_text,
+                'response' => $resp,
                 'rule_id' => $rule->id,
                 'source' => 'manual',
                 'ai_used' => false,
             ];
         }
 
-        // 2️⃣ Kalau manual gak ketemu → SIAPKAN TEKS UNTUK AI (boleh merge konteks)
+        // 2) AI text (merge context jika cocok)
         $aiText = $rawText;
 
-        // ✅ merge hanya untuk AI, dan hanya kalau user pesan pendek
-        if (mb_strlen($rawText) <= 25) {
+        if ($this->shouldTryMergeContext($rawText)) {
             $prev = Message::where('conversation_id', $conversation->id)
                 ->where('id', '<', $message->id)
                 ->orderByDesc('id')
                 ->first();
 
-            // merge hanya kalau sebelumnya agent/bot DAN itu pertanyaan follow-up
-            if ($prev && $prev->sender_type === 'agent' && $prev->content) {
+            if ($prev && in_array($prev->sender_type, ['agent', 'bot'], true) && $prev->content) {
                 $prevLower = Str::lower($prev->content);
 
                 $isFollowupQuestion =
@@ -86,28 +117,40 @@ class AutoReplyEngine
             }
         }
 
-        // 3️⃣ AI COOLDOWN
+        // 3) AI enable?
+        if (!env('AI_REPLY_ENABLED', true)) {
+            return $this->fallbackToCS($conversation, $message, $aiText);
+        }
+
+        // 4) AI cooldown (✅ jangan diam)
         if ($this->isAiCooldownActive($conversation->id)) {
+            $resp = $this->tpl->cooldown();
+
             AutoReplyLog::create([
                 'conversation_id' => $conversation->id,
                 'message_id' => $message->id,
                 'rule_id' => null,
                 'trigger_text' => $aiText,
-                'response_text' => null,
-                'status' => 'skipped_ai_cooldown',
+                'response_text' => $resp,
+                'status' => 'sent_ai_cooldown',
                 'response_source' => 'ai',
                 'ai_used' => true,
             ]);
-            return null;
+
+            return [
+                'response' => $resp,
+                'rule_id' => null,
+                'source' => 'ai_cooldown',
+                'ai_used' => false,
+            ];
         }
 
-        // 4️⃣ AI ANSWER
+        // 5) AI answer
         try {
             $aiResult = $this->ai->answerFromKb($aiText);
 
             if (!$aiResult || empty($aiResult['answer'])) {
                 Log::info('📚 AI no answer found');
-
                 AutoReplyLog::create([
                     'conversation_id' => $conversation->id,
                     'message_id' => $message->id,
@@ -120,15 +163,20 @@ class AutoReplyEngine
                     'ai_confidence' => $aiResult['confidence'] ?? 0,
                 ]);
 
-                return null;
+                return $this->fallbackToCS($conversation, $message, $aiText);
             }
+
+            $this->markAiCooldown($conversation->id);
+
+            $title = $this->tpl->titleFromIntent($aiText);
+            $resp = $this->tpl->wrap($title, $this->limitReply($aiResult['answer']));
 
             AutoReplyLog::create([
                 'conversation_id' => $conversation->id,
                 'message_id' => $message->id,
                 'rule_id' => null,
                 'trigger_text' => $aiText,
-                'response_text' => $aiResult['answer'],
+                'response_text' => $resp,
                 'status' => 'sent_ai',
                 'response_source' => 'ai',
                 'ai_used' => true,
@@ -136,7 +184,7 @@ class AutoReplyEngine
             ]);
 
             return [
-                'response' => $aiResult['answer'],
+                'response' => $resp,
                 'rule_id' => null,
                 'source' => 'ai',
                 'ai_used' => true,
@@ -157,27 +205,72 @@ class AutoReplyEngine
                 'error_message' => $e->getMessage(),
             ]);
 
-            return null;
+            return $this->fallbackToCS($conversation, $message, $aiText);
         }
     }
 
+    protected function limitReply(string $text): string
+    {
+        $max = (int) env('AI_REPLY_MAX_CHARS', 600);
+        $text = trim($text);
+        if ($max > 0 && mb_strlen($text) > $max) {
+            $text = mb_substr($text, 0, $max - 3) . '...';
+        }
+        return $text;
+    }
 
-    /**
-     * ✅ Jangan merge kalau pesan itu salam/basa-basi.
-     * Merge hanya untuk jawaban singkat yang biasanya balasan pilihan.
-     */
+    protected function fallbackToCS(Conversation $conversation, Message $message, string $triggerText): ?array
+    {
+        if (!env('DEFAULT_FALLBACK_ENABLED', true)) return null;
+
+        $fallback = trim((string) env('DEFAULT_FALLBACK_TEXT', ''));
+        if ($fallback === '') return null;
+
+        $resp = $this->tpl->wrap("📩 Kami teruskan ke CS", $fallback);
+
+        AutoReplyLog::create([
+            'conversation_id' => $conversation->id,
+            'message_id' => $message->id,
+            'rule_id' => null,
+            'trigger_text' => $triggerText,
+            'response_text' => $resp,
+            'status' => 'sent_fallback',
+            'response_source' => 'fallback',
+            'ai_used' => false,
+        ]);
+
+        return [
+            'response' => $resp,
+            'rule_id' => null,
+            'source' => 'fallback',
+            'ai_used' => false,
+        ];
+    }
+
+    protected function isAiCooldownActive(int $conversationId): bool
+    {
+        $minutes = (int) env('AI_COOLDOWN_MINUTES', 1);
+        if ($minutes <= 0) return false;
+
+        return Cache::has("ai_cooldown:conv:{$conversationId}");
+    }
+
+    protected function markAiCooldown(int $conversationId): void
+    {
+        $minutes = (int) env('AI_COOLDOWN_MINUTES', 1);
+        if ($minutes <= 0) return;
+
+        Cache::put("ai_cooldown:conv:{$conversationId}", 1, now()->addMinutes($minutes));
+    }
+
     protected function shouldTryMergeContext(string $messageText): bool
     {
         $t = Str::lower(trim($messageText));
+        $greetings = ['halo','hai','hi','pagi','siang','sore','malam','assalam','permisi','test','tes'];
 
-        // greeting / smalltalk → jangan merge
-        $greetings = ['halo', 'hai', 'hi', 'pagi', 'siang', 'sore', 'malam', 'assalam', 'permisi', 'test', 'tes'];
         if (in_array($t, $greetings, true)) return false;
-
-        // kalau pendek banget & berpotensi jawaban pilihan → boleh merge
         if (mb_strlen($t) > 25) return false;
 
-        // contoh jawaban pilihan (poli anak, gigi, umum, angka 1/2/3)
         $looksLikeChoice =
             preg_match('/^\d+$/', $t) ||
             Str::contains($t, 'poli') ||
@@ -191,8 +284,6 @@ class AutoReplyEngine
         return (bool) $looksLikeChoice;
     }
 
-    // ===================== RULE MATCHER (FULL) =====================
-
     protected function findMatchingRule(?string $text): ?AutoReplyRule
     {
         $text = trim((string) $text);
@@ -203,30 +294,14 @@ class AutoReplyEngine
             ->orderByDesc('created_at')
             ->get();
 
-        // 1) kumpulkan semua kandidat yang match
         $matched = [];
         foreach ($rules as $rule) {
-            if ($this->isRuleMatch($text, $rule)) {
-                $matched[] = $rule;
-            }
+            if ($this->isRuleMatch($text, $rule)) $matched[] = $rule;
         }
 
         if (count($matched) === 0) return null;
         if (count($matched) === 1) return $matched[0];
 
-        // 2) kandidat > 1 → AI pilih 1 (opsi C)
-        $pickedId = $this->ai->pickBestRuleId($text, $matched);
-
-        if ($pickedId) {
-            foreach ($matched as $r) {
-                if ((int) $r->id === (int) $pickedId) {
-                    Log::info('🤖 AI picked rule', ['rule_id' => $pickedId]);
-                    return $r;
-                }
-            }
-        }
-
-        // 3) fallback: priority tertinggi
         return collect($matched)->sortByDesc('priority')->first();
     }
 
@@ -244,9 +319,7 @@ class AutoReplyEngine
         $type = $rule->match_type ?? 'contains';
 
         foreach ($triggers as $trigger) {
-            if ($this->matchByType($message, $trigger, $type)) {
-                return true;
-            }
+            if ($this->matchByType($message, $trigger, $type)) return true;
         }
 
         return false;
@@ -272,21 +345,4 @@ class AutoReplyEngine
             return false;
         }
     }
-    protected function isAiCooldownActive(int $conversationId): bool
-    {
-        $cooldownMinutes = (int) config('ai.ai_cooldown_minutes', 3);
-
-        if ($cooldownMinutes <= 0) return false;
-
-        $lastAiSent = AutoReplyLog::where('conversation_id', $conversationId)
-            ->where('response_source', 'ai')
-            ->whereIn('status', ['sent_ai'])
-            ->orderByDesc('id')
-            ->first();
-
-        if (!$lastAiSent) return false;
-
-        return $lastAiSent->created_at->diffInMinutes(now()) < $cooldownMinutes;
-    }
-
 }

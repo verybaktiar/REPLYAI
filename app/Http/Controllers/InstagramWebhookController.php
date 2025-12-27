@@ -4,39 +4,33 @@ namespace App\Http\Controllers;
 
 use App\Models\Conversation;
 use App\Models\Message;
-use App\Models\AutoReplyRule;
 use App\Models\AutoReplyLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Services\AutoReplyEngine;
-
+use App\Services\ReplyTemplate;
 class InstagramWebhookController extends Controller
 {
-    protected $engine;
+    protected AutoReplyEngine $engine;
+    protected ReplyTemplate $tpl;
 
-    public function __construct(AutoReplyEngine $engine)
+        // di constructor inject ReplyTemplate $tpl
+    public function __construct(AutoReplyEngine $engine, ReplyTemplate $tpl)
     {
         $this->engine = $engine;
+        $this->tpl = $tpl;
     }
-
     public function verify(Request $request)
     {
         $mode = $request->query('hub_mode');
         $token = $request->query('hub_verify_token');
         $challenge = $request->query('hub_challenge');
 
-        Log::info('🔍 Webhook verification', [
-            'mode' => $mode,
-            'token' => $token,
-        ]);
-
         if ($mode === 'subscribe' && $token === config('services.instagram.webhook_verify_token')) {
-            Log::info('✅ Webhook verified successfully');
             return response($challenge, 200)->header('Content-Type', 'text/plain');
         }
 
-        Log::error('❌ Webhook verification failed');
         return response('Forbidden', 403);
     }
 
@@ -52,50 +46,47 @@ class InstagramWebhookController extends Controller
 
             foreach ($payload['entry'] ?? [] as $entry) {
                 foreach ($entry['messaging'] ?? [] as $event) {
-                    if (isset($event['message']) && !isset($event['message']['is_echo'])) {
-                        $senderId = $event['sender']['id'];
-                        $recipientId = $event['recipient']['id'];
-                        $messageText = $event['message']['text'] ?? '';
-                        $messageId = $event['message']['mid'] ?? null;
 
-                        Log::info('Processing message', [
-                            'sender' => $senderId,
-                            'text' => $messageText,
-                        ]);
-
-                        $this->processMessage($senderId, $messageText, $messageId, $recipientId);
+                    // only real incoming message (not echo)
+                    if (!isset($event['message']) || isset($event['message']['is_echo'])) {
+                        continue;
                     }
+
+                    $senderId    = (string) ($event['sender']['id'] ?? '');
+                    $recipientId = (string) ($event['recipient']['id'] ?? ''); // ig user id
+                    $messageText = (string) ($event['message']['text'] ?? '');
+                    $mid         = $event['message']['mid'] ?? null;
+
+                    if ($senderId === '' || $recipientId === '' || trim($messageText) === '') continue;
+
+                    Log::info('Processing message', [
+                        'sender' => $senderId,
+                        'text' => $messageText,
+                        'mid' => $mid,
+                    ]);
+
+                    $this->processMessage($senderId, $messageText, $mid, $recipientId);
                 }
             }
 
             return response()->json(['status' => 'ok']);
-            
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('❌ Webhook handler error', [
                 'error' => $e->getMessage(),
                 'line' => $e->getLine(),
             ]);
-            
             return response()->json(['status' => 'error'], 200);
         }
     }
 
-    protected function processMessage(string $senderId, string $messageText, ?string $messageId, string $recipientId)
+    protected function processMessage(string $senderId, string $messageText, ?string $messageId, string $igUserId)
     {
-        // 1. Ambil username, name & avatar dari Instagram API
         $userInfo = $this->getInstagramUserInfo($senderId);
+
         $username = $userInfo['username'] ?? null;
-        $name = $userInfo['name'] ?? null;
-        $avatar = $userInfo['profile_pic'] ?? null; // ← PAKAI profile_pic
+        $name     = $userInfo['name'] ?? null;
+        $avatar   = $userInfo['profile_pic'] ?? null;
 
-        Log::info('👤 Got user info from Instagram API', [
-            'username' => $username,
-            'name' => $name,
-            'has_avatar' => !empty($avatar),
-            'avatar_url' => $avatar
-        ]);
-
-        // 2. Cari atau buat conversation
         $conversation = Conversation::firstOrCreate(
             ['instagram_user_id' => $senderId],
             [
@@ -110,7 +101,6 @@ class InstagramWebhookController extends Controller
             ]
         );
 
-        // 3. Update conversation dengan data terbaru
         $conversation->update([
             'ig_username' => $username ?? $conversation->ig_username,
             'display_name' => $name ?? $username ?? $conversation->display_name,
@@ -119,12 +109,40 @@ class InstagramWebhookController extends Controller
             'last_activity_at' => now()->toDateTimeString(),
         ]);
 
-        // 4. Simpan message user
+                // ✅ Welcome 1x per conversation
+        if (property_exists($conversation, 'has_sent_welcome') && !$conversation->has_sent_welcome) {
+            $welcome = $this->tpl->welcome();
+
+            $sentWelcome = $this->sendInstagramMessage($senderId, $welcome, $igUserId);
+            if ($sentWelcome) {
+                // simpan message bot welcome
+                Message::create([
+                    'conversation_id' => $conversation->id,
+                    'chatwoot_id' => null,
+                    'instagram_message_id' => null,
+                    'sender_type' => 'agent',
+                    'content' => $welcome,
+                    'source' => 'meta_direct',
+                    'message_created_at' => now()->toDateTimeString(),
+                    'sent_at' => now()->toDateTimeString(),
+                ]);
+
+                // tandai sudah welcome
+                $conversation->update([
+                    'has_sent_welcome' => true,
+                    'last_message' => $welcome,
+                    'last_activity_at' => now()->toDateTimeString(),
+                ]);
+            }
+        }
+
+
+        // ✅ sender_type harus 'user' supaya engine jalan
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'chatwoot_id' => null,
             'instagram_message_id' => $messageId,
-            'sender_type' => 'contact',
+            'sender_type' => 'user',
             'content' => $messageText,
             'source' => 'meta_direct',
             'message_created_at' => now()->toDateTimeString(),
@@ -133,92 +151,84 @@ class InstagramWebhookController extends Controller
 
         Log::info('💾 Message saved to database', ['message_id' => $message->id]);
 
-        // 5. GUNAKAN AUTO REPLY ENGINE (Manual Rule + AI Fallback)
         $engineResult = $this->engine->handleIncomingInstagramMessage($message, $conversation);
 
-        if ($engineResult) {
-            Log::info('🚀 Got response from engine', [
-                'source' => $engineResult['source'],
-                'response' => $engineResult['response'],
+        if (!$engineResult) {
+            Log::info('⏭️ Engine returned null (no rule / AI skipped)');
+            return;
+        }
+
+        $replyText = (string) $engineResult['response'];
+        Log::info('🚀 Got response from engine', [
+            'source' => $engineResult['source'],
+            'response' => $replyText,
+        ]);
+
+        $sent = $this->sendInstagramMessage($senderId, $replyText, $igUserId);
+
+        if ($sent) {
+            Message::create([
+                'conversation_id' => $conversation->id,
+                'chatwoot_id' => null,
+                'instagram_message_id' => null,
+                'sender_type' => 'agent',
+                'content' => $replyText,
+                'source' => 'meta_direct',
+                'message_created_at' => now()->toDateTimeString(),
+                'sent_at' => now()->toDateTimeString(),
             ]);
 
-            // Kirim ke Instagram
-            $sent = $this->sendInstagramMessage($senderId, $engineResult['response'], $recipientId);
+            $conversation->update([
+                'last_message' => $replyText,
+                'last_activity_at' => now()->toDateTimeString(),
+            ]);
 
-            if ($sent) {
-                // Simpan message bot
-                Message::create([
-                    'conversation_id' => $conversation->id,
-                    'chatwoot_id' => null,
-                    'instagram_message_id' => null,
-                    'sender_type' => 'agent',
-                    'content' => $engineResult['response'],
-                    'source' => 'meta_direct',
-                    'message_created_at' => now()->toDateTimeString(),
-                    'sent_at' => now()->toDateTimeString(),
-                ]);
-
-                // Update conversation
-                $conversation->update([
-                    'last_message' => $engineResult['response'],
-                    'last_activity_at' => now()->toDateTimeString(),
-                ]);
-
-                Log::info('✅ Bot reply sent and saved', [
-                    'source' => $engineResult['source'],
-                ]);
-            } else {
-                Log::error('❌ Failed to send bot reply to Instagram');
-                
-                // Update AutoReplyLog status jadi failed
-                $log = AutoReplyLog::where('message_id', $message->id)->first();
-                if ($log) {
-                    $log->update(['status' => 'failed']);
-                }
-            }
+            Log::info('✅ Bot reply sent and saved', ['source' => $engineResult['source']]);
         } else {
-            Log::info('⏭️ Engine returned null (no rule, AI skipped or confident = false)');
+            Log::error('❌ Failed to send bot reply to Instagram');
+
+            $log = AutoReplyLog::where('message_id', $message->id)->first();
+            if ($log) $log->update(['status' => 'failed']);
         }
     }
 
-    protected function sendInstagramMessage(string $recipientId, string $message, string $igUserId): bool
+    protected function sendInstagramMessage(string $toUserId, string $message, string $igUserId): bool
     {
         $accessToken = config('services.instagram.access_token');
 
         try {
-            $response = Http::post("https://graph.instagram.com/v21.0/{$igUserId}/messages", [
-                'recipient' => ['id' => $recipientId],
-                'message' => ['text' => $message],
-                'access_token' => $accessToken,
-            ]);
+            $response = Http::acceptJson()->asJson()->post(
+                "https://graph.instagram.com/v21.0/{$igUserId}/messages",
+                [
+                    'recipient' => ['id' => $toUserId],
+                    'message' => ['text' => $message],
+                    'access_token' => $accessToken,
+                ]
+            );
 
             if ($response->failed()) {
                 Log::error('❌ Failed to send Instagram message', [
+                    'status' => $response->status(),
                     'error' => $response->json(),
                 ]);
                 return false;
             }
 
-            Log::info('✅ Message sent to Instagram');
+            Log::info('✅ Message sent to Instagram', ['to' => $toUserId]);
             return true;
-            
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('❌ Exception sending message', ['error' => $e->getMessage()]);
             return false;
         }
     }
 
-    /**
-     * Fetch Instagram user info (username, name, profile_pic)
-     * Docs: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api/user-profile
-     */
     protected function getInstagramUserInfo(string $userId): array
     {
         $accessToken = config('services.instagram.access_token');
 
         try {
-            $response = Http::get("https://graph.instagram.com/v21.0/{$userId}", [
-                'fields' => 'name,username,profile_pic', // ← FIELDS YANG BENAR
+            $response = Http::acceptJson()->get("https://graph.instagram.com/v21.0/{$userId}", [
+                'fields' => 'name,username,profile_pic',
                 'access_token' => $accessToken,
             ]);
 
@@ -232,34 +242,12 @@ class InstagramWebhookController extends Controller
                 'status' => $response->status(),
                 'body' => $response->json()
             ]);
-            
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('❌ Exception getting Instagram user info', [
                 'error' => $e->getMessage()
             ]);
         }
 
         return [];
-    }
-
-    // Backward compatibility method
-    protected function getInstagramUsername(string $userId): ?string
-    {
-        $info = $this->getInstagramUserInfo($userId);
-        return $info['username'] ?? null;
-    }
-
-    public function getConversations()
-    {
-        $conversations = Conversation::orderByDesc('last_activity_at')->get();
-        return response()->json($conversations);
-    }
-
-    public function getMessages($id)
-    {
-        $messages = Message::where('conversation_id', $id)
-            ->orderBy('sent_at')
-            ->get();
-        return response()->json($messages);
     }
 }

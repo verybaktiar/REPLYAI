@@ -5,14 +5,14 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Message;
 use App\Services\AutoReplyEngine;
-use App\Services\ChatwootClient;
+
 
 class RunAutoReplyBot extends Command
 {
     protected $signature = 'bot:autoreply';
     protected $description = 'Check new incoming messages and auto reply based on rules';
 
-    public function handle(AutoReplyEngine $engine, ChatwootClient $chatwoot)
+    public function handle(AutoReplyEngine $engine,)
     {
         $incomingMessages = Message::query()
             ->where('sender_type', 'contact')

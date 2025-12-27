@@ -18,6 +18,8 @@ class Conversation extends Model
         'last_activity_at',       // BARU
         'status',                 // BARU
         'last_activity_at',
+        'waiting_for',
+        'greeted_at',
     ];
 
     protected $casts = [

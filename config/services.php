@@ -51,12 +51,26 @@ return [
     'key'   => env('PERPLEXITY_API_KEY'),
     'model' => env('PERPLEXITY_MODEL', 'sonar-pro'),
     'url'   => env('PERPLEXITY_API_URL', 'https://api.perplexity.ai'),
+    'timeout' => (int) env('PERPLEXITY_TIMEOUT', 30),
     ],
     'instagram' => [
-    'access_token' => env('INSTAGRAM_ACCESS_TOKEN'),
-    'webhook_verify_token' => env('WEBHOOK_VERIFY_TOKEN'),
-    'meta_app_secret' => env('META_APP_SECRET'),
+        'access_token' => env('INSTAGRAM_ACCESS_TOKEN'),
+        'webhook_verify_token' => env('WEBHOOK_VERIFY_TOKEN'),
+        'meta_app_secret' => env('META_APP_SECRET'),
+        'instagram_user_id' => env('INSTAGRAM_USER_ID'),
     ],
+
+    // 'megallm' => [
+    //     'key' => env('MEGALLM_API_KEY'),
+    //     'url' => env('MEGALLM_BASE_URL', 'https://ai.megallm.io/v1'),
+    //     'model' => env('MEGALLM_MODEL', 'mistral-large-3-675b-instruct-2512'),
+    //     'timeout' => (int) env('MEGALLM_TIMEOUT', 90),
+    //     'retries' => (int) env('MEGALLM_RETRIES', 2),
+    //     'retry_sleep_ms' => (int) env('MEGALLM_RETRY_SLEEP_MS', 700),
+    //     'fallback_models' => env('MEGALLM_FALLBACK_MODELS', ''),
+    // ],
+
+
 
 
 
