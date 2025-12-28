@@ -59,6 +59,12 @@ class InstagramWebhookController extends Controller
 
                     if ($senderId === '' || $recipientId === '' || trim($messageText) === '') continue;
 
+                    // ✅ Skip jika mid sudah pernah diproses (anti duplikat)
+                    if ($mid && Message::where('instagram_message_id', $mid)->exists()) {
+                        Log::info('⏭️ Skipping duplicate message', ['mid' => $mid]);
+                        continue;
+                    }
+
                     Log::info('Processing message', [
                         'sender' => $senderId,
                         'text' => $messageText,
@@ -110,7 +116,7 @@ class InstagramWebhookController extends Controller
         ]);
 
                 // ✅ Welcome 1x per conversation
-        if (property_exists($conversation, 'has_sent_welcome') && !$conversation->has_sent_welcome) {
+        if (!$conversation->has_sent_welcome) {
             $welcome = $this->tpl->welcome();
 
             $sentWelcome = $this->sendInstagramMessage($senderId, $welcome, $igUserId);

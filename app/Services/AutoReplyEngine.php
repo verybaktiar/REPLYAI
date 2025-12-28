@@ -102,6 +102,12 @@ class AutoReplyEngine
             if ($prev && in_array($prev->sender_type, ['agent', 'bot'], true) && $prev->content) {
                 $prevLower = Str::lower($prev->content);
 
+                // ❌ Jangan merge jika prev adalah menu bantuan (terlalu panjang)
+                $isMenuOrTooLong = 
+                    Str::contains($prevLower, 'menu bantuan') ||
+                    Str::contains($prevLower, 'ketik *bantuan*') ||
+                    mb_strlen($prev->content) > 300;
+
                 $isFollowupQuestion =
                     Str::contains($prevLower, 'sebutkan') ||
                     Str::contains($prevLower, 'pilih') ||
@@ -110,7 +116,7 @@ class AutoReplyEngine
                     Str::contains($prevLower, 'spesialis') ||
                     Str::contains($prevLower, 'yang mana ya');
 
-                if ($isFollowupQuestion) {
+                if ($isFollowupQuestion && !$isMenuOrTooLong) {
                     $aiText = trim($prev->content . "\n" . $rawText);
                     Log::info('🧠 Context merged (AI only)', ['ai_text' => $aiText]);
                 }

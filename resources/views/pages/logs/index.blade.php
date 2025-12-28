@@ -1,347 +1,353 @@
-@extends('layouts.app')
-
-@section('content')
-<div class="space-y-6">
-
-  {{-- Header --}}
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
-        Auto Reply Logs
-      </h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-        Riwayat bot membaca pesan dan mengirim balasan.
-      </p>
-    </div>
-    <div class="text-xs text-gray-500">
-      Total: {{ $logs->count() }}
-    </div>
-  </div>
-
-  {{-- ✅ FILTER BAR (AUTO SEARCH) --}}
-  <form id="logFilterForm" method="GET" class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-4">
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-
-      {{-- source --}}
-      <div>
-        <label class="text-xs text-gray-500">Source</label>
-        <select
-          name="source"
-          class="w-full mt-1 rounded-lg border-gray-200 dark:border-gray-800 dark:bg-gray-900 text-sm"
-          data-auto-submit
-        >
-          <option value="">All</option>
-          <option value="manual" @selected(($filters['source'] ?? '')==='manual')>Manual</option>
-          <option value="ai" @selected(($filters['source'] ?? '')==='ai')>AI</option>
-        </select>
-      </div>
-
-      {{-- status --}}
-      <div>
-        <label class="text-xs text-gray-500">Status</label>
-        <select
-          name="status"
-          class="w-full mt-1 rounded-lg border-gray-200 dark:border-gray-800 dark:bg-gray-900 text-sm"
-          data-auto-submit
-        >
-          <option value="">All</option>
-          <option value="sent" @selected(($filters['status'] ?? '')==='sent')>sent</option>
-          <option value="sent_ai" @selected(($filters['status'] ?? '')==='sent_ai')>sent_ai</option>
-          <option value="skipped" @selected(($filters['status'] ?? '')==='skipped')>skipped</option>
-          <option value="skipped_ai" @selected(($filters['status'] ?? '')==='skipped_ai')>skipped_ai</option>
-          <option value="failed" @selected(($filters['status'] ?? '')==='failed')>failed</option>
-          <option value="failed_ai" @selected(($filters['status'] ?? '')==='failed_ai')>failed_ai</option>
-        </select>
-      </div>
-
-      {{-- min confidence --}}
-      <div>
-        <label class="text-xs text-gray-500">Min Confidence (AI)</label>
-        <input
-          type="number"
-          name="min_conf"
-          step="0.01"
-          min="0"
-          max="1"
-          value="{{ $filters['min_conf'] ?? '' }}"
-          placeholder="contoh: 0.55"
-          class="w-full mt-1 rounded-lg border-gray-200 dark:border-gray-800 dark:bg-gray-900 text-sm"
-          data-auto-submit
-        />
-      </div>
-
-      {{-- search --}}
-      <div class="md:col-span-2">
-        <label class="text-xs text-gray-500">Search</label>
-        <input
-          type="text"
-          name="search"
-          id="searchInput"
-          value="{{ $filters['search'] ?? '' }}"
-          placeholder="cari trigger / response / error..."
-          class="w-full mt-1 rounded-lg border-gray-200 dark:border-gray-800 dark:bg-gray-900 text-sm"
-          autocomplete="off"
-        />
-      </div>
-
-      {{-- limit --}}
-      <div>
-        <label class="text-xs text-gray-500">Limit</label>
-        <select
-          name="limit"
-          class="w-full mt-1 rounded-lg border-gray-200 dark:border-gray-800 dark:bg-gray-900 text-sm"
-          data-auto-submit
-        >
-          @foreach([50,100,200,500,1000] as $l)
-            <option value="{{ $l }}" @selected(($filters['limit'] ?? 200)==$l)>{{ $l }}</option>
-          @endforeach
-        </select>
-      </div>
-
-    </div>
-
-    {{-- hanya reset --}}
-    <div class="flex items-center gap-2 mt-4">
-      <a href="{{ url()->current() }}"
-         class="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm">
-        Reset
-      </a>
-      <span class="text-xs text-gray-400">Filter otomatis diterapkan</span>
-    </div>
-  </form>
-
-
-  <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead>
-          <tr class="text-left text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800">
-            <th class="px-5 py-3 w-14">#</th>
-            <th class="px-5 py-3 w-40">Conversation</th>
-            <th class="px-5 py-3">Trigger Text (User)</th>
-            <th class="px-5 py-3">Matched Rule</th>
-            <th class="px-5 py-3">Response Text (Bot)</th>
-
-            <th class="px-5 py-3 w-20">Source</th>
-            <th class="px-5 py-3 w-24">Confidence</th>
-            <th class="px-5 py-3 w-28">KB Sources</th>
-
-            <th class="px-5 py-3 w-28">Status</th>
-            <th class="px-5 py-3 w-40">Time</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-
-          @forelse($logs as $i => $log)
-            @php
-              $convName = data_get($log, 'conversation.display_name')
-                        ?? data_get($log, 'conversation.ig_username')
-                        ?? 'Conversation #' . ($log->conversation_id ?? '-');
-
-              $ruleTrigger = data_get($log, 'rule.trigger')
-                            ?? data_get($log, 'rule.trigger_keyword')
-                            ?? '-';
-
-              $rulePriority = data_get($log, 'rule.priority', 0);
-
-              $status = $log->status ?? 'unknown';
-              $time = $log->created_at ? $log->created_at->format('d M Y H:i:s') : '-';
-
-              $responseSource = $log->response_source ?: ($log->ai_used ? 'ai' : 'manual');
-              $confidence = $log->ai_confidence;
-              $sources = $log->ai_sources;
-            @endphp
-
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40">
-              <td class="px-5 py-4 text-gray-500 dark:text-gray-400">
-                {{ $i + 1 }}
-              </td>
-
-              <td class="px-5 py-4 font-medium text-gray-900 dark:text-white">
-                {{ $convName }}
-              </td>
-
-              <td class="px-5 py-4 text-gray-800 dark:text-gray-200 whitespace-pre-line">
-                {{ $log->trigger_text ?? '-' }}
-              </td>
-
-              <td class="px-5 py-4">
-                <div class="font-medium text-gray-900 dark:text-white">
-                  {{ $ruleTrigger }}
-                </div>
-                <div class="text-xs text-gray-500 mt-1">
-                  priority: {{ $rulePriority }}
-                </div>
-              </td>
-
-              <td class="px-5 py-4 text-gray-800 dark:text-gray-200 whitespace-pre-line">
-                {{ $log->response_text ?? '-' }}
-              </td>
-
-              {{-- Source --}}
-              <td class="px-5 py-4">
-                @if($responseSource === 'ai')
-                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">
-                    AI
-                  </span>
-                @else
-                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-                    Manual
-                  </span>
-                @endif
-              </td>
-
-              {{-- Confidence --}}
-              <td class="px-5 py-4 text-xs text-gray-700 dark:text-gray-200">
-                @if($responseSource === 'ai' && $confidence !== null)
-                  {{ number_format((float)$confidence, 2) }}
-                @else
-                  -
-                @endif
-              </td>
-
-              {{-- KB Sources --}}
-              <td class="px-5 py-4 text-xs">
-                @if($responseSource === 'ai' && !empty($sources))
-                  <button
-                    class="text-indigo-600 hover:underline"
-                    data-sources='@json($sources)'
-                    onclick="openSourcesModal(this)"
-                    type="button"
-                  >
-                    Lihat
-                  </button>
-                @else
-                  -
-                @endif
-              </td>
-
-              {{-- status --}}
-              <td class="px-5 py-4">
-                @if($status === 'sent' || $status === 'sent_ai')
-                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200">
-                    <span class="h-2 w-2 rounded-full bg-green-500"></span>
-                    {{ $status }}
-                  </span>
-
-                @elseif($status === 'skipped' || $status === 'skipped_ai')
-                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                    <span class="h-2 w-2 rounded-full bg-gray-400"></span>
-                    {{ $status }}
-                  </span>
-
-                @elseif($status === 'failed' || $status === 'failed_ai')
-                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200">
-                    <span class="h-2 w-2 rounded-full bg-red-500"></span>
-                    {{ $status }}
-                  </span>
-                  @if($log->error_message)
-                    <div class="text-[10px] text-red-600 mt-1 whitespace-pre-line">
-                      {{ \Illuminate\Support\Str::limit($log->error_message, 80) }}
-                    </div>
-                  @endif
-
-                @else
-                  <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-200">
-                    {{ $status }}
-                  </span>
-                @endif
-              </td>
-
-              {{-- time --}}
-              <td class="px-5 py-4 text-xs text-gray-500 dark:text-gray-400">
-                {{ $time }}
-              </td>
-            </tr>
-          @empty
-            <tr>
-              <td colspan="10" class="px-5 py-8 text-center text-gray-500">
-                Log masih kosong. Jalankan bot dulu.
-              </td>
-            </tr>
-          @endforelse
-
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-</div>
-
-
-{{-- MODAL KB SOURCES --}}
-<div id="sourcesModal" class="fixed inset-0 z-50 hidden">
-  <div class="absolute inset-0 bg-black/40" onclick="closeSourcesModal()"></div>
-
-  <div class="relative mx-auto mt-20 w-full max-w-xl bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-5">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">KB Sources</h2>
-      <button class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200" onclick="closeSourcesModal()">✕</button>
-    </div>
-
-    <div id="sourcesContent" class="space-y-3 max-h-[60vh] overflow-auto text-sm"></div>
-  </div>
-</div>
-
-<script>
-/* =========================
-   Auto-submit filter form
-   ========================= */
-(function () {
-  const form = document.getElementById('logFilterForm');
-  if (!form) return;
-
-  let debounceTimer = null;
-
-  // select + number auto submit (debounced)
-  form.querySelectorAll('[data-auto-submit]').forEach(el => {
-    const evt = el.tagName === 'INPUT' ? 'input' : 'change';
-    el.addEventListener(evt, () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => form.submit(), 300);
-    });
-  });
-
-  // search input debounce submit
-  const searchInput = document.getElementById('searchInput');
-  if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => form.submit(), 450);
-    });
-  }
-})();
-
-/* =========================
-   Modal sources
-   ========================= */
-function openSourcesModal(btn) {
-  const modal = document.getElementById('sourcesModal');
-  const content = document.getElementById('sourcesContent');
-
-  let sources = [];
-  try { sources = JSON.parse(btn.dataset.sources || '[]'); } catch(e) {}
-
-  if (!sources.length) {
-    content.innerHTML = `<div class="text-gray-500">Tidak ada sources.</div>`;
-  } else {
-    content.innerHTML = sources.map((s, i) => {
-      const title = s.title || '(Tanpa judul)';
-      const url = s.source_url || '-';
-      return `
-        <div class="p-3 border border-gray-200 dark:border-gray-800 rounded-xl">
-          <div class="font-medium text-gray-900 dark:text-white">${i+1}. ${title}</div>
-          <div class="text-xs text-gray-500 break-all mt-1">${url}</div>
+@php
+    // Simple Stats Calculation based on fetched logs
+    $totalLogs = $logs->count();
+    $errorLogs = $logs->where('status', 'failed')->count();
+    $aiLogs = $logs->where('response_source', 'ai')->count();
+    $errorRate = $totalLogs > 0 ? round(($errorLogs / $totalLogs) * 100, 1) : 0;
+    
+    // Most active source (Dummy logic for now)
+    $topSource = 'Rule-based Bot';
+    if ($aiLogs > ($totalLogs / 2)) {
+        $topSource = 'AI Assistant';
+    }
+@endphp
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Log Aktivitas - REPLYAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "surface-dark": "#111722",
+                        "surface-highlight": "#232f48",
+                        "text-secondary": "#92a4c9",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+         ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #101622; }
+        ::-webkit-scrollbar-thumb { background: #232f48; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased overflow-x-hidden">
+<div class="relative flex h-screen w-full bg-background-light dark:bg-background-dark overflow-hidden">
+    
+    <!-- Sidebar -->
+<!-- Sidebar Navigation -->
+<aside class="hidden lg:flex flex-col w-72 h-full bg-[#111722] border-r border-[#232f48] shrink-0 fixed lg:static top-0 bottom-0 left-0 z-40">
+    <!-- Brand -->
+    <div class="flex items-center gap-3 px-6 py-6 mb-2">
+        <div class="bg-center bg-no-repeat bg-cover rounded-full size-10 shadow-lg relative" style='background-image: url("https://ui-avatars.com/api/?name=Reply+AI&background=0D8ABC&color=fff");'></div>
+        <div>
+            <h1 class="text-base font-bold leading-none text-white">ReplyAI Admin</h1>
+            <p class="text-xs text-[#92a4c9] mt-1">RS PKU Solo Bot</p>
         </div>
-      `;
-    }).join('');
-  }
+    </div>
+    <!-- Navigation Links -->
+    <nav class="flex flex-col gap-1 flex-1 overflow-y-auto px-4">
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('dashboard') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('dashboard') }}">
+            <span class="material-symbols-outlined text-[24px]">grid_view</span>
+            <span class="text-sm font-medium">Dashboard</span>
+        </a>
+        
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('analytics*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('analytics.index') }}">
+            <span class="material-symbols-outlined text-[24px]">pie_chart</span>
+            <span class="text-sm font-medium">Analisis & Laporan</span>
+        </a>
 
-  modal.classList.remove('hidden');
-}
-function closeSourcesModal() {
-  document.getElementById('sourcesModal').classList.add('hidden');
-}
-</script>
-@endsection
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('contacts*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('contacts.index') }}">
+            <span class="material-symbols-outlined text-[24px]">groups</span>
+            <span class="text-sm font-medium">Data Kontak (CRM)</span>
+        </a>
+
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('inbox*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('inbox') }}">
+            <span class="material-symbols-outlined text-[24px]">chat_bubble</span>
+            <span class="text-sm font-medium">Kotak Masuk</span>
+            @if(isset($conversations) && $conversations instanceof \Illuminate\Database\Eloquent\Collection && $conversations->count() > 0)
+                <span class="ml-auto bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md text-center min-w-[20px]">{{ $conversations->count() }}</span>
+            @elseif(isset($stats['pending_inbox']) && $stats['pending_inbox'] > 0)
+                 <span class="ml-auto bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md text-center min-w-[20px]">{{ $stats['pending_inbox'] }}</span>
+            @endif
+        </a>
+        
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('rules*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('rules.index') }}">
+            <span class="material-symbols-outlined text-[24px]">smart_toy</span>
+            <span class="text-sm font-medium">Manajemen Bot</span>
+        </a>
+        
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('kb*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('kb.index') }}">
+            <span class="material-symbols-outlined text-[24px]">menu_book</span>
+            <span class="text-sm font-medium">Knowledge Base</span>
+        </a>
+
+        <!-- New Links -->
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('simulator*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('simulator.index') }}">
+            <span class="material-symbols-outlined text-[24px]">science</span>
+            <span class="text-sm font-medium">Simulator</span>
+        </a>
+        
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('settings*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('settings.index') }}">
+            <span class="material-symbols-outlined text-[24px]">settings</span>
+            <span class="text-sm font-medium">Settings (Hours)</span>
+        </a>
+
+        <div class="mt-4 mb-2 px-3">
+            <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">System</p>
+        </div>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('logs*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('logs.index') }}">
+            <span class="material-symbols-outlined text-[24px]">history</span>
+            <span class="text-sm font-medium">Log Aktivitas</span>
+        </a>
+    </nav>
+    <!-- User Profile (Bottom) -->
+    <div class="border-t border-[#232f48] p-4">
+            <div class="p-3 rounded-lg bg-[#232f48]/50 flex items-center gap-3">
+            <div class="size-8 rounded-full bg-gradient-to-tr from-purple-500 to-primary flex items-center justify-center text-xs font-bold text-white">DM</div>
+            <div class="flex flex-col overflow-hidden">
+                <p class="text-white text-sm font-medium truncate">Admin</p>
+                <p class="text-[#92a4c9] text-xs truncate">admin@rspkusolo.com</p>
+            </div>
+            <button class="ml-auto text-[#92a4c9] hover:text-white">
+                <span class="material-symbols-outlined text-[20px]">logout</span>
+            </button>
+        </div>
+    </div>
+</aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+        <!-- Top Navbar -->
+        <header class="flex items-center justify-between border-b border-surface-highlight bg-surface-dark px-6 py-3 shrink-0 z-20">
+            <div class="flex items-center gap-4 text-white lg:hidden">
+                <button class="p-1 rounded-md hover:bg-surface-highlight">
+                    <span class="material-symbols-outlined text-[24px]">menu</span>
+                </button>
+                <h2 class="text-lg font-bold leading-tight tracking-tight">REPLYAI Logs</h2>
+            </div>
+            <!-- Breadcrumbs/Title (Desktop) -->
+            <div class="hidden lg:flex items-center gap-2 text-text-secondary text-sm">
+                <span>Admin</span>
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                <span class="text-white font-medium">Log Aktivitas</span>
+            </div>
+        </header>
+
+        <!-- Scrollable Page Content -->
+        <main class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark scrollbar-thin scrollbar-thumb-surface-highlight scrollbar-track-transparent">
+            <div class="container mx-auto max-w-[1200px] p-6 pb-20 flex flex-col gap-6">
+                <!-- Page Heading -->
+                <div class="flex flex-wrap justify-between items-end gap-4">
+                    <div class="flex flex-col gap-2">
+                        <h1 class="text-white text-3xl font-black leading-tight tracking-tight">Log Aktivitas</h1>
+                        <p class="text-text-secondary text-base font-normal max-w-2xl">Rekaman kronologis semua event, interaksi bot, dan error sistem.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="window.location.reload()" class="flex items-center justify-center gap-2 h-10 px-4 rounded-lg border border-surface-highlight bg-surface-dark text-white text-sm font-bold hover:bg-surface-highlight transition-colors">
+                            <span class="material-symbols-outlined text-[20px]">refresh</span>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="flex flex-col gap-1 rounded-xl p-5 border border-surface-highlight bg-surface-dark shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <p class="text-text-secondary text-sm font-medium">Total Log (Limit)</p>
+                            <span class="material-symbols-outlined text-text-secondary text-[20px]">bar_chart</span>
+                        </div>
+                        <div class="flex items-end gap-3 mt-2">
+                            <p class="text-white text-3xl font-bold leading-none">{{ number_format($totalLogs) }}</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-1 rounded-xl p-5 border border-surface-highlight bg-surface-dark shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <p class="text-text-secondary text-sm font-medium">Error Rate</p>
+                            <span class="material-symbols-outlined text-text-secondary text-[20px]">warning</span>
+                        </div>
+                        <div class="flex items-end gap-3 mt-2">
+                            <p class="text-white text-3xl font-bold leading-none">{{ $errorRate }}%</p>
+                            <p class="{{ $errorRate > 0 ? 'text-rose-500' : 'text-emerald-500' }} text-sm font-medium mb-1 flex items-center">
+                                <span class="material-symbols-outlined text-[16px]">trending_up</span>
+                                {{ $errorLogs }} errors
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-1 rounded-xl p-5 border border-surface-highlight bg-surface-dark shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <p class="text-text-secondary text-sm font-medium">Top Source</p>
+                            <span class="material-symbols-outlined text-text-secondary text-[20px]">smart_toy</span>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-white text-2xl font-bold leading-tight truncate">{{ $topSource }}</p>
+                            <p class="text-text-secondary text-xs mt-1">Based on recent activity</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters & Search Toolbar (Visual Only for now) -->
+                <div class="flex flex-col gap-4 bg-surface-dark border border-surface-highlight rounded-xl p-4">
+                    <form action="{{ route('logs.index') }}" method="GET" class="flex flex-col lg:flex-row gap-4">
+                        <!-- Search -->
+                        <div class="flex-1 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="material-symbols-outlined text-text-secondary">search</span>
+                            </div>
+                            <input name="search" value="{{ request('search') }}" class="block w-full pl-10 pr-3 py-2.5 border border-surface-highlight rounded-lg leading-5 bg-[#1a2436] text-white placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm" placeholder="Cari Log ID, Keyword, atau Pesan..." type="text"/>
+                        </div>
+                        <!-- Filters -->
+                         <div class="flex flex-wrap gap-2">
+                            <div class="relative min-w-[140px]">
+                                <select name="status" onchange="this.form.submit()" class="appearance-none block w-full pl-3 pr-10 py-2.5 border border-surface-highlight rounded-lg leading-5 bg-[#1a2436] text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm cursor-pointer">
+                                    <option value="">Semua Status</option>
+                                    <option value="success" {{ request('status') == 'success' ? 'selected' : '' }}>Success</option>
+                                    <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Error</option>
+                                    <option value="no_match" {{ request('status') == 'no_match' ? 'selected' : '' }}>No Match</option>
+                                </select>
+                            </div>
+                            
+                             <div class="relative min-w-[100px]">
+                                <select name="limit" onchange="this.form.submit()" class="appearance-none block w-full pl-3 pr-8 py-2.5 border border-surface-highlight rounded-lg leading-5 bg-[#1a2436] text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm cursor-pointer" title="Baris per halaman">
+                                    <option value="10" {{ request('limit') == '10' ? 'selected' : '' }}>10</option>
+                                    <option value="20" {{ (request('limit') == '20' || !request('limit')) ? 'selected' : '' }}>20</option>
+                                    <option value="50" {{ request('limit') == '50' ? 'selected' : '' }}>50</option>
+                                    <option value="100" {{ request('limit') == '100' ? 'selected' : '' }}>100</option>
+                                    <option value="all" {{ request('limit') == 'all' ? 'selected' : '' }}>Semua</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-text-secondary">
+                                     <span class="material-symbols-outlined text-[20px]">expand_more</span>
+                                </div>
+                            </div>
+                         </div>
+                    </form>
+                </div>
+
+                <!-- Logs Table -->
+                <div class="bg-surface-dark border border-surface-highlight rounded-xl overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-text-secondary">
+                            <thead class="bg-[#1a2436] text-xs uppercase font-semibold text-white">
+                                <tr>
+                                    <th class="px-6 py-4" scope="col">Timestamp</th>
+                                    <th class="px-6 py-4" scope="col">Status</th>
+                                    <th class="px-6 py-4" scope="col">Platform</th>
+                                    <th class="px-6 py-4" scope="col">Trigger / User</th>
+                                    <th class="px-6 py-4 w-1/3" scope="col">Response / Error</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-surface-highlight">
+                                @forelse($logs as $log)
+                                    @php
+                                        // Mapping Status Color
+                                        $statusColor = 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+                                        $statusDot = 'bg-gray-500';
+                                        
+                                        if($log->status == 'success'){
+                                            $statusColor = 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+                                            $statusDot = 'bg-emerald-500';
+                                        } elseif($log->status == 'failed'){
+                                            $statusColor = 'bg-rose-500/10 text-rose-500 border-rose-500/20';
+                                            $statusDot = 'bg-rose-500';
+                                        } elseif($log->status == 'no_match' || $log->status == 'fallback'){
+                                            $statusColor = 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+                                            $statusDot = 'bg-amber-500';
+                                        }
+                                        
+                                        // Platform Icon
+                                        $platform = strtolower($log->conversation->source ?? 'system');
+                                        $pIcon = 'dns'; $pColor = 'text-gray-400';
+                                        if(str_contains($platform, 'whatsapp')) { $pIcon = 'chat'; $pColor = 'text-emerald-500'; }
+                                        elseif(str_contains($platform, 'instagram')) { $pIcon = 'photo_camera'; $pColor = 'text-pink-500'; }
+                                    @endphp
+                                    <tr class="hover:bg-[#1a2436]/50 transition-colors group">
+                                        <!-- Timestamp -->
+                                        <td class="px-6 py-4 whitespace-nowrap font-mono text-xs text-white">
+                                            {{ $log->created_at->format('Y-m-d') }} 
+                                            <span class="text-text-secondary">{{ $log->created_at->format('H:i:s') }}</span>
+                                        </td>
+                                        
+                                        <!-- Status -->
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }} border">
+                                                <span class="size-1.5 rounded-full {{ $statusDot }}"></span>
+                                                {{ ucfirst($log->status) }}
+                                            </span>
+                                        </td>
+                                        
+                                        <!-- Platform -->
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center gap-2 text-white capitalize">
+                                                <span class="material-symbols-outlined {{ $pColor }}" style="font-size: 18px;">{{ $pIcon }}</span>
+                                                {{ $platform }}
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- User/Trigger -->
+                                        <td class="px-6 py-4">
+                                            <div class="text-white font-medium truncate max-w-[150px]" title="{{ $log->trigger_text }}">
+                                                "{{ \Illuminate\Support\Str::limit($log->trigger_text, 20) }}"
+                                            </div>
+                                            <div class="text-xs text-text-secondary mt-0.5">
+                                                by {{ $log->conversation->display_name ?? 'Unknown User' }}
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Details -->
+                                        <td class="px-6 py-4">
+                                            @if($log->status == 'failed')
+                                                <p class="text-rose-400 font-medium truncate">System Error</p>
+                                                <p class="text-xs truncate max-w-[300px] text-text-secondary" title="{{ $log->error_message }}">{{ $log->error_message ?? 'Unknown Error' }}</p>
+                                            @else
+                                                <p class="text-white font-medium truncate capitalize">via {{ $log->response_source }}</p>
+                                                <p class="text-xs truncate max-w-[300px] text-text-secondary" title="{{ $log->response_text }}">
+                                                    {{ \Illuminate\Support\Str::limit($log->response_text, 50) }}
+                                                </p>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-8 text-center text-text-secondary">
+                                            Tidak ada log aktivitas hari ini.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Footer Info similar to user's pagination -->
+                    <div class="flex items-center justify-between border-t border-surface-highlight bg-[#1a2436] px-6 py-3">
+                        <div class="text-sm text-text-secondary">
+                            Menampilkan {{ $logs->firstItem() ?? 0 }} sampai {{ $logs->lastItem() ?? 0 }} dari {{ $logs->total() }} log.
+                        </div>
+                        <div class="flex gap-1">
+                            {{ $logs->appends(request()->query())->links() }} 
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>

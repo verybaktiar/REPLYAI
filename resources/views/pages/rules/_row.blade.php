@@ -1,105 +1,73 @@
 @php
-  // fallback field lama kalau field baru masih kosong
-  $trigger = $rule->trigger
-            ?? $rule->trigger_keyword
-            ?? '';
-
-  $reply   = $rule->reply
-            ?? $rule->response_text
-            ?? '';
-
+  // fallback field
+  $trigger = $rule->trigger ?? $rule->trigger_keyword ?? '';
+  $reply   = $rule->reply ?? $rule->response_text ?? '';
   $priority = $rule->priority ?? 0;
   $active = (bool)($rule->is_active ?? false);
-  $created = $rule->created_at ? $rule->created_at->format('d M Y H:i') : '-';
+  $matches = $rule->match_type ?? 'contains';
+  $created = $rule->created_at ? $rule->created_at->diffForHumans() : '-';
 @endphp
 
-<tr
+<!-- Card Row -->
+<div 
+  class="group flex flex-col md:grid md:grid-cols-12 gap-4 items-center bg-[#232f48] hover:bg-[#2a3652] transition-colors p-4 rounded-xl border border-transparent hover:border-primary/20 shadow-sm"
   id="rule-row-{{ $rule->id }}"
   data-id="{{ $rule->id }}"
   data-trigger="{{ e($trigger) }}"
   data-reply="{{ e($reply) }}"
   data-priority="{{ $priority }}"
   data-active="{{ $active ? '1' : '0' }}"
+  data-match-type="{{ $matches }}"
   data-created-at="{{ $rule->created_at?->toIso8601String() }}"
-  class="hover:bg-gray-50 dark:hover:bg-gray-800/40"
 >
-  <td class="px-5 py-4 text-gray-500 dark:text-gray-400" data-cell="num">
-    {{ ($i ?? 0) + 1 }}
-  </td>
-
-  {{-- Trigger --}}
-  <td class="px-5 py-4">
-    <div class="font-medium text-gray-900 dark:text-white">
-      {{ $trigger !== '' ? $trigger : '-' }}
-    </div>
-    <div class="text-xs text-gray-500 mt-1">
-      Match: contains keyword
+    <!-- Info -->
+    <div class="col-span-4 flex items-center gap-4 w-full">
+        <div class="size-12 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0 text-blue-500">
+            <span class="material-symbols-outlined">smart_toy</span>
+        </div>
+        <div class="flex flex-col min-w-0">
+            <h3 class="text-white font-semibold text-base truncate" title="{{ $trigger }}">{{ Str::limit($trigger, 25) }}</h3>
+            <p class="text-[#92a4c9] text-xs truncate">ID: #RULE-{{ $rule->id }} • {{ $created }}</p>
+        </div>
     </div>
 
-    {{-- Actions --}}
-    <div class="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-      <button
-        type="button"
-        data-action="toggle"
-        class="px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-      >
-        {{ $active ? 'Disable' : 'Enable' }}
-      </button>
-
-      <button
-        type="button"
-        data-action="edit"
-        class="px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-      >
-        Edit
-      </button>
-
-      <button
-        type="button"
-        data-action="delete"
-        class="px-2 py-1 rounded-md border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-200 hover:bg-red-100 dark:hover:bg-red-900/30"
-      >
-        Delete
-      </button>
+    <!-- Platform -->
+    <div class="col-span-2 w-full flex items-center gap-2">
+        <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-[#111722] border border-[#232f48]">
+            <span class="size-2 rounded-full bg-green-500"></span>
+            <span class="text-xs font-medium text-gray-300">WA</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-[#111722] border border-[#232f48]">
+            <span class="size-2 rounded-full bg-pink-500"></span>
+            <span class="text-xs font-medium text-gray-300">IG</span>
+        </div>
     </div>
-  </td>
 
-  {{-- Reply --}}
-  <td class="px-5 py-4">
-    <div class="text-gray-800 dark:text-gray-200 whitespace-pre-line">
-      {{ $reply !== '' ? \Illuminate\Support\Str::limit($reply, 180) : '-' }}
+    <!-- Dept (Match Type) -->
+    <div class="col-span-2 w-full flex items-center">
+        <span class="px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 text-xs font-medium border border-purple-500/20 uppercase">
+            {{ $matches }}
+        </span>
     </div>
-  </td>
 
-  {{-- Priority (INLINE EDIT ENABLED) --}}
-  <td class="px-5 py-4">
-    <span
-      data-action="edit-priority"
-      title="Klik untuk edit priority"
-      class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold cursor-pointer
-        {{ $priority >= 5 ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200' }}"
-    >
-      {{ $priority }}
-    </span>
-  </td>
+    <!-- Status Toggle -->
+    <div class="col-span-2 w-full flex items-center">
+        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in cursor-pointer" data-action="toggle">
+            <input type="checkbox" name="toggle" id="toggle-{{ $rule->id }}" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-[#232f48] checked:border-primary transition-all duration-300" {{ $active ? 'checked' : '' }}/>
+            <label for="toggle-{{ $rule->id }}" class="toggle-label block overflow-hidden h-5 rounded-full bg-[#111722] cursor-pointer border border-[#232f48]"></label>
+        </div>
+        <span class="text-xs font-medium {{ $active ? 'text-white' : 'text-[#92a4c9]' }} ml-2">
+            {{ $active ? 'Aktif' : 'Nonaktif' }}
+        </span>
+    </div>
 
-  {{-- Status --}}
-  <td class="px-5 py-4">
-    @if($active)
-      <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200">
-        <span class="h-2 w-2 rounded-full bg-green-500"></span>
-        Active
-      </span>
-    @else
-      <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-        <span class="h-2 w-2 rounded-full bg-gray-400"></span>
-        Inactive
-      </span>
-    @endif
-  </td>
-
-  {{-- Created --}}
-  <td class="px-5 py-4 text-xs text-gray-500 dark:text-gray-400">
-    {{ $created }}
-  </td>
-</tr>
+    <!-- Actions -->
+    <div class="col-span-2 w-full flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+        <button class="p-2 rounded-lg text-[#92a4c9] hover:text-white hover:bg-[#111722] transition-colors" data-action="edit" title="Edit Rule">
+            <span class="material-symbols-outlined text-[20px]">edit</span>
+        </button>
+        <button class="p-2 rounded-lg text-[#92a4c9] hover:text-red-400 hover:bg-[#111722] transition-colors" data-action="delete" title="Hapus Rule">
+            <span class="material-symbols-outlined text-[20px]">delete</span>
+        </button>
+    </div>
+</div>

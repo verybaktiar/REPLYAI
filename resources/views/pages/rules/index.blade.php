@@ -1,806 +1,564 @@
-@extends('layouts.app')
-
-@section('content')
-<div class="space-y-6">
-
-  {{-- Header --}}
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
-        Auto Reply Rules
-      </h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-        Daftar keyword pemicu dan balasan otomatis bot.
-      </p>
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Manajemen Bot REPLYAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+          tailwind.config = {
+            darkMode: "class",
+            theme: {
+              extend: {
+                colors: {
+                  "primary": "#135bec",
+                  "background-light": "#f6f6f8",
+                  "background-dark": "#101622",
+                  "surface-dark": "#1e293b", 
+                  "surface-lighter": "#232f48", 
+                  "text-secondary": "#92a4c9", 
+                },
+                fontFamily: {
+                  "display": ["Inter", "sans-serif"]
+                },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+              },
+            },
+          }
+    </script>
+    <style>
+            /* Custom scrollbar for dark theme */
+            ::-webkit-scrollbar { width: 8px; height: 8px; }
+            ::-webkit-scrollbar-track { background: #101622; }
+            ::-webkit-scrollbar-thumb { background: #232f48; border-radius: 4px; }
+            ::-webkit-scrollbar-thumb:hover { background: #334155; }
+            
+            .material-symbols-outlined {
+                font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24
+            }
+            .material-symbols-outlined.filled {
+                font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24
+            }
+            
+            /* Toggle Switch Styling */
+            .toggle-checkbox:checked { right: 0; border-color: #135bec; }
+            .toggle-checkbox:checked + .toggle-label { background-color: #135bec; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden">
+<div class="flex h-screen w-full">
+    <!-- SIDEBAR -->
+<!-- Sidebar Navigation -->
+<aside class="hidden lg:flex flex-col w-72 h-full bg-[#111722] border-r border-[#232f48] shrink-0 fixed lg:static top-0 bottom-0 left-0 z-40">
+    <!-- Brand -->
+    <div class="flex items-center gap-3 px-6 py-6 mb-2">
+        <div class="bg-center bg-no-repeat bg-cover rounded-full size-10 shadow-lg relative" style='background-image: url("https://ui-avatars.com/api/?name=Reply+AI&background=0D8ABC&color=fff");'></div>
+        <div>
+            <h1 class="text-base font-bold leading-none text-white">ReplyAI Admin</h1>
+            <p class="text-xs text-[#92a4c9] mt-1">RS PKU Solo Bot</p>
+        </div>
     </div>
+    <!-- Navigation Links -->
+    <nav class="flex flex-col gap-1 flex-1 overflow-y-auto px-4">
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('dashboard') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('dashboard') }}">
+            <span class="material-symbols-outlined text-[24px]">grid_view</span>
+            <span class="text-sm font-medium">Dashboard</span>
+        </a>
+        
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('analytics*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('analytics.index') }}">
+            <span class="material-symbols-outlined text-[24px]">pie_chart</span>
+            <span class="text-sm font-medium">Analisis & Laporan</span>
+        </a>
 
-    <div class="flex items-center gap-2">
-      <div class="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-300">
-        Tambah rule via modal (no redirect)
-      </div>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('contacts*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('contacts.index') }}">
+            <span class="material-symbols-outlined text-[24px]">groups</span>
+            <span class="text-sm font-medium">Data Kontak (CRM)</span>
+        </a>
 
-      {{-- tombol pemicu modal --}}
-      <button
-        type="button"
-        data-modal-open="rule-modal"
-        id="btn-open-create"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-600 transition"
-      >
-        + Tambah Rule
-      </button>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('inbox*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('inbox') }}">
+            <span class="material-symbols-outlined text-[24px]">chat_bubble</span>
+            <span class="text-sm font-medium">Kotak Masuk</span>
+            @if(isset($conversations) && $conversations instanceof \Illuminate\Database\Eloquent\Collection && $conversations->count() > 0)
+                <span class="ml-auto bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md text-center min-w-[20px]">{{ $conversations->count() }}</span>
+            @elseif(isset($stats['pending_inbox']) && $stats['pending_inbox'] > 0)
+                 <span class="ml-auto bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md text-center min-w-[20px]">{{ $stats['pending_inbox'] }}</span>
+            @endif
+        </a>
+        
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('rules*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('rules.index') }}">
+            <span class="material-symbols-outlined text-[24px]">smart_toy</span>
+            <span class="text-sm font-medium">Manajemen Bot</span>
+        </a>
+        
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('kb*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('kb.index') }}">
+            <span class="material-symbols-outlined text-[24px]">menu_book</span>
+            <span class="text-sm font-medium">Knowledge Base</span>
+        </a>
+
+        <!-- New Links -->
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('simulator*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('simulator.index') }}">
+            <span class="material-symbols-outlined text-[24px]">science</span>
+            <span class="text-sm font-medium">Simulator</span>
+        </a>
+        
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('settings*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('settings.index') }}">
+            <span class="material-symbols-outlined text-[24px]">settings</span>
+            <span class="text-sm font-medium">Settings (Hours)</span>
+        </a>
+
+        <div class="mt-4 mb-2 px-3">
+            <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">System</p>
+        </div>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('logs*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('logs.index') }}">
+            <span class="material-symbols-outlined text-[24px]">history</span>
+            <span class="text-sm font-medium">Log Aktivitas</span>
+        </a>
+    </nav>
+    <!-- User Profile (Bottom) -->
+    <div class="border-t border-[#232f48] p-4">
+            <div class="p-3 rounded-lg bg-[#232f48]/50 flex items-center gap-3">
+            <div class="size-8 rounded-full bg-gradient-to-tr from-purple-500 to-primary flex items-center justify-center text-xs font-bold text-white">DM</div>
+            <div class="flex flex-col overflow-hidden">
+                <p class="text-white text-sm font-medium truncate">Admin</p>
+                <p class="text-[#92a4c9] text-xs truncate">admin@rspkusolo.com</p>
+            </div>
+            <button class="ml-auto text-[#92a4c9] hover:text-white">
+                <span class="material-symbols-outlined text-[20px]">logout</span>
+            </button>
+        </div>
     </div>
-  </div>
+</aside>
 
-  {{-- Card Table --}}
-  <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
-
-    {{-- Table Header --}}
-    <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <p class="font-medium text-gray-900 dark:text-white">
-        Rules Aktif & Nonaktif
-      </p>
-
-      <div class="flex items-center gap-2 w-full sm:w-auto">
-        {{-- search input --}}
-        <div class="relative w-full sm:w-72">
-          <input
-            id="rules-search"
-            type="text"
-            placeholder="Cari trigger / response..."
-            class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
-          >
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <!-- Mobile Header -->
+        <div class="md:hidden flex items-center justify-between p-4 bg-[#111722] border-b border-[#232f48]">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-white">menu</span>
+                <span class="text-white font-bold">REPLYAI</span>
+            </div>
+            <div class="size-8 rounded-full bg-primary"></div>
         </div>
 
-        {{-- total badge --}}
-        <div class="text-xs text-gray-500 whitespace-nowrap">
-          Total: <span id="rules-total">{{ $rules->count() }}</span>
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12">
+            <div class="max-w-[1200px] mx-auto flex flex-col gap-6">
+                <!-- Page Heading -->
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div class="flex flex-col gap-2 max-w-2xl">
+                        <h1 class="text-white text-3xl md:text-4xl font-black leading-tight tracking-tight">Manajemen Bot</h1>
+                        <p class="text-text-secondary text-base font-normal">
+                            Kelola dan pantau otomatisasi chat untuk Instagram dan WhatsApp di RS PKU Solo.
+                        </p>
+                    </div>
+                    <button id="btn-open-create" class="flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-primary hover:bg-blue-600 transition-colors text-white text-sm font-bold shadow-lg shadow-blue-900/20">
+                        <span class="material-symbols-outlined text-[20px]">add</span>
+                        <span>Buat Bot Baru</span>
+                    </button>
+                </div>
+
+                <!-- Filters & Search Toolbar -->
+                <div class="bg-surface-lighter rounded-xl p-2 flex flex-col lg:flex-row gap-2">
+                    <!-- Search -->
+                    <div class="flex-1 min-w-[280px]">
+                        <div class="relative h-10 w-full group">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="material-symbols-outlined text-text-secondary group-focus-within:text-white transition-colors">search</span>
+                            </div>
+                            <input id="rules-search" class="block w-full h-full pl-10 pr-3 py-2 border-none rounded-lg bg-[#111722] text-white placeholder-text-secondary focus:ring-1 focus:ring-primary focus:bg-[#0f1520] transition-all text-sm" placeholder="Cari keyword bot..." type="text"/>
+                        </div>
+                    </div>
+                    <div class="w-px h-6 bg-[#232f48] mx-2 self-center hidden lg:block"></div>
+                     <div class="flex items-center px-2 text-text-secondary text-sm">
+                        Total: <span id="rules-total" class="ml-1 text-white font-bold">{{ $rules->count() }}</span> Rules
+                    </div>
+                </div>
+
+                <!-- Bot List / Grid -->
+                <div class="flex flex-col gap-3">
+                    <!-- Header (Desktop) -->
+                    <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                        <div class="col-span-4">Bot Info (Trigger)</div>
+                        <div class="col-span-2">Platform</div>
+                        <div class="col-span-2">Match Type</div>
+                        <div class="col-span-2">Status</div>
+                        <div class="col-span-2 text-right">Aksi</div>
+                    </div>
+
+                    <!-- Container for Loop -->
+                    <div id="rules-container" class="flex flex-col gap-3">
+                         @forelse($rules as $i => $rule)
+                            @include('pages.rules._row', ['rule' => $rule, 'i' => $i])
+                         @empty
+                            <div id="rules-empty" class="p-8 text-center text-text-secondary bg-surface-lighter rounded-xl border border-dashed border-[#232f48]">
+                                Belum ada rule bot. Klik tombol "Buat Bot Baru" di atas.
+                            </div>
+                         @endforelse
+                    </div>
+                </div>
+
+                <!-- Pagination / Footer Info -->
+                <div class="flex items-center justify-between mt-4 text-text-secondary text-sm">
+                    <p>Menampilkan semua rules.</p>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-
-
-    {{-- Table --}}
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead>
-          <tr class="text-left text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800">
-            <th class="px-5 py-3 w-14">#</th>
-            <th class="px-5 py-3">Trigger Keyword</th>
-            <th class="px-5 py-3">Response Text</th>
-            <th class="px-5 py-3 w-28">Priority</th>
-            <th class="px-5 py-3 w-28">Status</th>
-            <th class="px-5 py-3 w-40">Created</th>
-          </tr>
-        </thead>
-
-        <tbody id="rules-tbody" class="divide-y divide-gray-100 dark:divide-gray-800">
-          @forelse($rules as $i => $rule)
-            @include('pages.rules._row', ['rule' => $rule, 'i' => $i])
-          @empty
-            <tr id="rules-empty">
-              <td colspan="6" class="px-5 py-8 text-center text-gray-500">
-                Belum ada rule. Tambahkan dulu via tombol "Tambah Rule".
-              </td>
-            </tr>
-          @endforelse
-        </tbody>
-      </table>
-    </div>
-
-    {{-- Footer note --}}
-    <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400">
-      * Urutan eksekusi bot mengikuti <b>priority tertinggi</b> lalu waktu dibuat terbaru.
-    </div>
-  </div>
-
+    </main>
 </div>
 
 {{-- ================= MODAL CREATE / EDIT RULE ================= --}}
 <div id="rule-modal" class="hidden fixed inset-0 z-50">
-  {{-- backdrop --}}
-  <div data-modal-close="rule-modal" class="absolute inset-0 bg-black/40"></div>
+    <!-- backdrop -->
+    <div data-modal-close="rule-modal" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <!-- modal box -->
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="w-full max-w-xl rounded-2xl bg-[#1e293b] border border-[#232f48] shadow-2xl">
+             <!-- header -->
+            <div class="flex items-center justify-between px-6 py-5 border-b border-[#232f48]">
+                <div>
+                    <h3 id="rule-modal-title" class="text-xl font-bold text-white">Tambah Bot Rule Baru</h3>
+                    <p class="text-sm text-text-secondary mt-1">Konfigurasi keyword dan balasan otomatis.</p>
+                </div>
+                <button type="button" data-modal-close="rule-modal" class="p-2 rounded-lg hover:bg-[#232f48] text-text-secondary hover:text-white transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+             <!-- body -->
+            <form id="rule-form" class="px-6 py-5 space-y-5">
+                <input type="hidden" id="rule-id" value="">
+                <div>
+                     <label class="block text-sm font-medium text-gray-200 mb-2">Trigger Keyword</label>
+                     <input id="rule-trigger" type="text" placeholder="contoh: jadwal dokter, biaya, lokasi" class="w-full rounded-lg border border-[#232f48] bg-[#111722] px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-text-secondary/50">
+                     <p class="text-xs text-text-secondary mt-1.5">Pisahkan keyword dengan tanda | (pipe) untuk banyak trigger sekaligus.</p>
+                     <p id="err-trigger" class="text-xs text-red-400 mt-1 hidden"></p>
+                </div>
+                 
+                 <div class="grid grid-cols-2 gap-4">
+                     <div>
+                        <label class="block text-sm font-medium text-gray-200 mb-2">Match Type</label>
+                        <select id="rule-match-type" class="w-full rounded-lg border border-[#232f48] bg-[#111722] px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="contains">Contains (Default)</option>
+                            <option value="exact">Exact Match</option>
+                            <option value="regex">Regex Pattern</option>
+                        </select>
+                     </div>
+                     <div>
+                        <label class="block text-sm font-medium text-gray-200 mb-2">Priority</label>
+                        <input id="rule-priority" type="number" value="0" min="0" class="w-full rounded-lg border border-[#232f48] bg-[#111722] px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                     </div>
+                 </div>
 
-  {{-- modal box --}}
-  <div class="absolute inset-0 flex items-center justify-center p-4">
-    <div class="w-full max-w-xl rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl">
-      {{-- header --}}
-      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-800">
-        <div>
-          <h3 id="rule-modal-title" class="text-lg font-semibold text-gray-900 dark:text-white">Tambah Auto Reply Rule</h3>
-          <p class="text-xs text-gray-500 mt-1">Rule baru akan langsung dipakai bot jika aktif.</p>
+                 <div>
+                      <label class="block text-sm font-medium text-gray-200 mb-2">Balasan Bot</label>
+                      <textarea id="rule-reply" rows="5" placeholder="Tulis pesan balasan di sini..." class="w-full rounded-lg border border-[#232f48] bg-[#111722] px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary placeholder-text-secondary/50"></textarea>
+                      <p id="err-reply" class="text-xs text-red-400 mt-1 hidden"></p>
+                 </div>
+
+                 <div class="flex items-center gap-2">
+                     <input id="rule-active" type="checkbox" checked class="rounded bg-[#111722] border-[#232f48] text-primary focus:ring-primary">
+                     <label for="rule-active" class="text-sm text-gray-200">Aktifkan rule ini segera</label>
+                 </div>
+            </form>
+             <!-- footer -->
+             <div class="flex items-center justify-end gap-3 px-6 py-5 border-t border-[#232f48] bg-[#111722]/30 rounded-b-2xl">
+                 <button type="button" data-modal-close="rule-modal" class="px-5 py-2.5 rounded-lg border border-[#232f48] text-gray-300 hover:text-white hover:bg-[#232f48] text-sm font-medium transition-colors">Batal</button>
+                 <button type="submit" form="rule-form" id="btn-save-rule" class="px-5 py-2.5 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-900/20 transition-all">Simpan Bot</button>
+             </div>
         </div>
-        <button type="button" data-modal-close="rule-modal"
-          class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
-          ✕
-        </button>
-      </div>
-
-      {{-- body --}}
-      <form id="rule-form" class="px-5 py-4 space-y-4">
-        @csrf
-        <input type="hidden" id="rule-id" value="">
-
-        <div>
-          <label class="text-sm font-medium text-gray-800 dark:text-gray-200">Trigger Keyword</label>
-          <input id="rule-trigger" name="trigger" type="text" required
-            placeholder="contoh: pelayanan, biaya, jadwal dokter"
-            class="mt-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40">
-            <p class="text-[11px] text-gray-500 mt-1">
-              Bot akan reply jika pesan user match keyword ini.
-              Bisa isi banyak keyword pisahkan dengan <b>|</b>, contoh: <code>biaya|harga|tarif</code>
-            </p>
-          <p id="err-trigger" class="text-[11px] text-red-500 mt-1 hidden"></p>
-        </div>
-
-        {{-- ✅ TAMBAHAN: MATCH TYPE --}}
-        <div>
-          <label class="text-sm font-medium text-gray-800 dark:text-gray-200">Match Type</label>
-          <select id="rule-match-type" name="match_type"
-            class="mt-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40">
-            <option value="contains">Contains (default)</option>
-            <option value="exact">Exact (persis)</option>
-            <option value="regex">Regex (pola)</option>
-          </select>
-          <p class="text-[11px] text-gray-500 mt-1">
-            Contains: pesan mengandung keyword. Exact: harus sama persis. Regex: pakai pola regex.
-          </p>
-          <p id="err-match-type" class="text-[11px] text-red-500 mt-1 hidden"></p>
-        </div>
-        {{-- ✅ END TAMBAHAN MATCH TYPE --}}
-
-        <div>
-          <label class="text-sm font-medium text-gray-800 dark:text-gray-200">Response Text</label>
-          <textarea id="rule-reply" name="reply" rows="5" required
-            placeholder="Tulis balasan otomatis bot..."
-            class="mt-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"></textarea>
-          <p id="err-reply" class="text-[11px] text-red-500 mt-1 hidden"></p>
-        </div>
-
-        <div class="grid grid-cols-12 gap-3">
-          <div class="col-span-6">
-            <label class="text-sm font-medium text-gray-800 dark:text-gray-200">Priority</label>
-            <input id="rule-priority" name="priority" type="number" min="0" value="0"
-              class="mt-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40">
-            <p class="text-[11px] text-gray-500 mt-1">Semakin tinggi, semakin didahulukan.</p>
-            <p id="err-priority" class="text-[11px] text-red-500 mt-1 hidden"></p>
-          </div>
-
-          <div class="col-span-6 flex items-end">
-            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-              <input id="rule-active" name="is_active" type="checkbox" value="1" checked
-                class="rounded border-gray-300 text-brand-500 focus:ring-brand-500">
-              <span class="text-sm text-gray-800 dark:text-gray-200 font-medium">Aktifkan rule</span>
-            </label>
-          </div>
-        </div>
-
-        {{-- ✅ TAMBAHAN: TEST / PREVIEW --}}
-        <hr class="border-gray-200 dark:border-gray-800">
-
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-gray-800 dark:text-gray-200">
-            Test Pesan (Preview)
-          </label>
-
-          <textarea
-            id="test-text"
-            rows="3"
-            placeholder="Tulis contoh pesan user di sini..."
-            class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
-          ></textarea>
-
-          <div class="flex items-center justify-between">
-            <p class="text-[11px] text-gray-500">
-              Klik Test untuk lihat rule mana yang akan kepakai bot.
-            </p>
-
-            <button
-              type="button"
-              id="btn-test-rule"
-              class="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium hover:opacity-90"
-            >
-              Test
-            </button>
-          </div>
-
-          <div id="test-result" class="hidden rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 text-sm">
-            <div id="test-result-meta" class="text-xs text-gray-500 mb-2"></div>
-            <div id="test-result-reply" class="whitespace-pre-line text-gray-900 dark:text-gray-100"></div>
-          </div>
-        </div>
-        {{-- ✅ END TAMBAHAN TEST/PREVIEW --}}
-
-      </form>
-
-      {{-- footer --}}
-      <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-200 dark:border-gray-800">
-        <button type="button" data-modal-close="rule-modal"
-          class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-200 hover:opacity-80">
-          Batal
-        </button>
-        <button type="submit" form="rule-form" id="btn-save-rule"
-          class="px-4 py-2 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-600">
-          Simpan Rule
-        </button>
-      </div>
     </div>
-  </div>
 </div>
-
 
 {{-- ================= MODAL DELETE ================= --}}
 <div id="delete-modal" class="hidden fixed inset-0 z-50">
-  <div data-modal-close="delete-modal" class="absolute inset-0 bg-black/40"></div>
-
-  <div class="absolute inset-0 flex items-center justify-center p-4">
-    <div class="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-800">
-        <div>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Hapus Rule?</h3>
-          <p class="text-xs text-gray-500 mt-1">Tindakan ini tidak bisa dibatalkan.</p>
+    <div data-modal-close="delete-modal" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="w-full max-w-sm rounded-2xl bg-[#1e293b] border border-[#232f48] shadow-2xl p-6 text-center">
+            <div class="size-14 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-3xl">delete_forever</span>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Hapus Bot Rule?</h3>
+            <p class="text-sm text-text-secondary mb-6">Rule yang dihapus tidak dapat dikembalikan. Bot tidak akan membalas keyword ini lagi.</p>
+            <input type="hidden" id="delete-id" value="">
+            <div class="flex gap-3 justify-center">
+                <button type="button" data-modal-close="delete-modal" class="px-5 py-2.5 rounded-lg border border-[#232f48] text-gray-300 hover:text-white hover:bg-[#232f48] text-sm font-medium transition-colors">Batal</button>
+                <button type="button" id="btn-confirm-delete" class="px-5 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-bold shadow-lg shadow-red-900/20 transition-all">Ya, Hapus</button>
+            </div>
         </div>
-        <button type="button" data-modal-close="delete-modal"
-          class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">✕</button>
-      </div>
-
-      <input type="hidden" id="delete-id" value="">
-
-      <div class="flex items-center justify-end gap-2 px-5 py-4">
-        <button type="button" data-modal-close="delete-modal"
-          class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-200 hover:opacity-80">
-          Batal
-        </button>
-        <button type="button" id="btn-confirm-delete"
-          class="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700">
-          Hapus
-        </button>
-      </div>
     </div>
-  </div>
 </div>
 
-
-{{-- ================= TOAST (simple) ================= --}}
-<div id="toast"
-     class="hidden fixed bottom-5 right-5 z-[60] rounded-xl bg-gray-900 px-4 py-3 text-sm text-white shadow-lg">
+<div id="toast" class="hidden fixed bottom-5 right-5 z-[60] rounded-xl bg-[#1e293b] border border-[#232f48] px-4 py-3 text-sm text-white shadow-xl flex items-center gap-3">
+    <span class="material-symbols-outlined text-green-500">check_circle</span>
+    <span id="toast-msg">Success</span>
 </div>
 
-
-{{-- ================= SCRIPT MODAL + CRUD AJAX + SEARCH + SORT + INLINE PRIORITY + MATCH TYPE + TEST PREVIEW ================= --}}
 <script>
 (function(){
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-  const tbody = document.getElementById('rules-tbody');
+  const container = document.getElementById('rules-container'); // Ganti tbody
   const totalEl = document.getElementById('rules-total');
   const emptyRow = document.getElementById('rules-empty');
-
-  // ===== Toast
+  
+  // Toast
   const toastEl = document.getElementById('toast');
+  const toastMsg = document.getElementById('toast-msg');
   let toastTimer = null;
   function toast(msg){
-    toastEl.textContent = msg;
+    toastMsg.textContent = msg;
     toastEl.classList.remove('hidden');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastEl.classList.add('hidden'), 1800);
+    toastTimer = setTimeout(() => toastEl.classList.add('hidden'), 2000);
   }
 
-  // ===== modal open/close
+  // Modal Handling
   document.addEventListener('click', function (e) {
-    const openBtn = e.target.closest('[data-modal-open]');
-    if (openBtn) {
-      const id = openBtn.getAttribute('data-modal-open');
-      const modal = document.getElementById(id);
-      if (modal) modal.classList.remove('hidden');
-      return;
-    }
-
+    const openBtn = e.target.closest('#btn-open-create'); // ID Specific for create
     const closeBtn = e.target.closest('[data-modal-close]');
+    
+    if (openBtn) {
+        resetForm();
+        document.getElementById('rule-modal').classList.remove('hidden');
+    }
     if (closeBtn) {
-      const id = closeBtn.getAttribute('data-modal-close');
-      const modal = document.getElementById(id);
-      if (modal) modal.classList.add('hidden');
+        document.getElementById(closeBtn.getAttribute('data-modal-close')).classList.add('hidden');
     }
   });
 
   function openModal(id){ document.getElementById(id)?.classList.remove('hidden'); }
   function closeModal(id){ document.getElementById(id)?.classList.add('hidden'); }
 
-  // ===== Form refs
+  // Form Refs
   const form = document.getElementById('rule-form');
-  const modalTitle = document.getElementById('rule-modal-title');
   const ruleId = document.getElementById('rule-id');
   const fTrigger = document.getElementById('rule-trigger');
   const fReply = document.getElementById('rule-reply');
+  const fMatchType = document.getElementById('rule-match-type');
   const fPriority = document.getElementById('rule-priority');
   const fActive = document.getElementById('rule-active');
   const btnSave = document.getElementById('btn-save-rule');
-
-  // ✅ TAMBAHAN REFS match type
-  const fMatchType = document.getElementById('rule-match-type');
-
+  
+  // Errors
   const errTrigger = document.getElementById('err-trigger');
   const errReply = document.getElementById('err-reply');
-  const errPriority = document.getElementById('err-priority');
-  // ✅ TAMBAHAN error match type
-  const errMatchType = document.getElementById('err-match-type');
-
-  // ✅ TAMBAHAN REFS test preview
-  const testText = document.getElementById('test-text');
-  const btnTestRule = document.getElementById('btn-test-rule');
-  const testResult = document.getElementById('test-result');
-  const testResultMeta = document.getElementById('test-result-meta');
-  const testResultReply = document.getElementById('test-result-reply');
-
-  function hideTestResult(){
-    testResult?.classList.add('hidden');
-    if(testResultMeta) testResultMeta.textContent = '';
-    if(testResultReply) testResultReply.textContent = '';
-  }
 
   function clearErrors(){
-    [errTrigger, errReply, errPriority, errMatchType].forEach(x => { x.classList.add('hidden'); x.textContent=''; });
+      [errTrigger, errReply].forEach(el => { el.classList.add('hidden'); el.textContent=''; });
   }
+
   function setError(el, msg){
-    el.textContent = msg;
-    el.classList.remove('hidden');
+      el.textContent = msg;
+      el.classList.remove('hidden');
   }
 
   function resetForm(){
-    ruleId.value = '';
-    fTrigger.value = '';
-    fReply.value = '';
-    fPriority.value = 0;
-    fActive.checked = true;
-    // ✅ default match type
-    if (fMatchType) fMatchType.value = 'contains';
-    // ✅ reset preview area
-    if (testText) testText.value = '';
-    hideTestResult();
-    clearErrors();
+      ruleId.value = '';
+      fTrigger.value = '';
+      fReply.value = '';
+      fPriority.value = 0;
+      fActive.checked = true;
+      if(fMatchType) fMatchType.value = 'contains';
+      clearErrors();
+      document.getElementById('rule-modal-title').textContent = 'Tambah Bot Rule Baru';
+      btnSave.textContent = 'Simpan Bot';
   }
 
-  // open create
-  document.getElementById('btn-open-create').addEventListener('click', () => {
-    resetForm();
-    modalTitle.textContent = 'Tambah Auto Reply Rule';
-    btnSave.textContent = 'Simpan Rule';
-  });
-
-  // ===== helper update numbering + total
-  function renumber(){
-    const visibleRows = Array.from(tbody.querySelectorAll('tr[data-id]'))
-      .filter(tr => tr.style.display !== 'none');
-
-    visibleRows.forEach((tr, idx) => {
-      const numCell = tr.querySelector('[data-cell="num"]');
-      if (numCell) numCell.textContent = idx + 1;
-    });
-  }
-
-  function setTotal(n){ if(totalEl) totalEl.textContent = n; }
-
-  function sortRowsByPriorityAndCreated(){
-    const rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
-
-    rows.sort((a, b) => {
-      const pa = Number(a.dataset.priority || 0);
-      const pb = Number(b.dataset.priority || 0);
-
-      if (pb !== pa) return pb - pa;
-
-      const ca = a.dataset.createdAt ? new Date(a.dataset.createdAt).getTime() : 0;
-      const cb = b.dataset.createdAt ? new Date(b.dataset.createdAt).getTime() : 0;
-      return cb - ca;
-    });
-
-    rows.forEach(r => tbody.appendChild(r));
-    renumber();
-  }
-
-  function flashRow(tr){
-    tr.classList.add('bg-yellow-50', 'dark:bg-yellow-900/20');
-    setTimeout(() => tr.classList.remove('bg-yellow-50', 'dark:bg-yellow-900/20'), 1200);
-  }
-
-  // ===== Search filter
+  // SEARCH FILTER
   const searchInput = document.getElementById('rules-search');
-  let searchTimer = null;
-
-  function applySearchFilter(q){
-    q = (q || '').toLowerCase().trim();
-
-    const rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
-    let visibleCount = 0;
-
-    rows.forEach(tr => {
-      const trigger = (tr.dataset.trigger || '').toLowerCase();
-      const reply   = (tr.dataset.reply || '').toLowerCase();
-      const active  = (tr.dataset.active === '1') ? 'active' : 'inactive';
-
-      const haystack = `${trigger} ${reply} ${active}`;
-      const match = q === '' || haystack.includes(q);
-
-      tr.style.display = match ? '' : 'none';
-      if (match) visibleCount++;
-    });
-
-    setTotal(visibleCount);
-
-    const empty = document.getElementById('rules-empty');
-    if (!visibleCount) {
-      if (!empty) {
-        const tr = document.createElement('tr');
-        tr.id = 'rules-empty';
-        tr.innerHTML = `
-          <td colspan="6" class="px-5 py-8 text-center text-gray-500">
-            Tidak ada rule yang cocok dengan pencarian.
-          </td>
-        `;
-        tbody.appendChild(tr);
-      }
-    } else {
-      empty?.remove();
-    }
-
-    renumber();
-  }
-
   searchInput?.addEventListener('input', (e) => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => applySearchFilter(e.target.value), 120);
-  });
-
-  // ===== Delegation actions (edit/delete/toggle)
-  tbody.addEventListener('click', async (e) => {
-    const editBtn = e.target.closest('[data-action="edit"]');
-    const deleteBtn = e.target.closest('[data-action="delete"]');
-    const toggleBtn = e.target.closest('[data-action="toggle"]');
-
-    if (editBtn){
-      const tr = editBtn.closest('tr');
-      resetForm();
-      modalTitle.textContent = 'Edit Auto Reply Rule';
-      btnSave.textContent = 'Update Rule';
-
-      ruleId.value = tr.dataset.id;
-      fTrigger.value = tr.dataset.trigger;
-      fReply.value = tr.dataset.reply;
-      fPriority.value = tr.dataset.priority;
-      fActive.checked = tr.dataset.active === '1';
-      // ✅ isi match type dari dataset row
-      if (fMatchType) fMatchType.value = tr.dataset.matchType || 'contains';
-
-      openModal('rule-modal');
-    }
-
-    if (deleteBtn){
-      const tr = deleteBtn.closest('tr');
-      document.getElementById('delete-id').value = tr.dataset.id;
-      openModal('delete-modal');
-    }
-
-    if (toggleBtn){
-      const tr = toggleBtn.closest('tr');
-      const id = tr.dataset.id;
-      toggleBtn.disabled = true;
-
-      try{
-        const res = await fetch(`/rules/${id}/toggle`, {
-          method: 'PATCH',
-          headers: {
-            'X-CSRF-TOKEN': csrf,
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
+      const q = e.target.value.toLowerCase();
+      const rows = Array.from(container.querySelectorAll('.group[data-id]'));
+      let visible = 0;
+      
+      rows.forEach(row => {
+          const content = (row.dataset.trigger + ' ' + row.dataset.reply).toLowerCase();
+          if(content.includes(q)){
+              row.style.display = '';
+              visible++;
+          } else {
+              row.style.display = 'none';
           }
-        });
-        const data = await res.json();
-        if(!data.ok) throw data;
-
-        const temp = document.createElement('tbody');
-        temp.innerHTML = data.rowHtml.trim();
-        const newRow = temp.firstElementChild;
-        tr.replaceWith(newRow);
-
-        sortRowsByPriorityAndCreated();
-        flashRow(newRow);
-        applySearchFilter(searchInput?.value || '');
-        toast('Status rule diubah');
-      }catch(err){
-        console.error(err);
-        toast('Gagal toggle rule');
-      }finally{
-        toggleBtn.disabled = false;
-      }
-    }
+      });
+      if(totalEl) totalEl.textContent = visible;
   });
 
-  // ===== Inline edit priority
-  tbody.addEventListener('click', (e) => {
-    const badge = e.target.closest('[data-action="edit-priority"]');
-    if (!badge) return;
+  // DELEGATION
+  container.addEventListener('click', async (e) => {
+      const editBtn = e.target.closest('[data-action="edit"]');
+      const deleteBtn = e.target.closest('[data-action="delete"]');
+      const toggleWrapper = e.target.closest('[data-action="toggle"]'); // Wrapper div for checkbox
 
-    const tr = badge.closest('tr');
-    if (!tr) return;
-
-    if (tr.querySelector('input[data-priority-input]')) return;
-
-    const currentVal = Number(tr.dataset.priority || 0);
-
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.min = '0';
-    input.value = currentVal;
-    input.setAttribute('data-priority-input', '1');
-    input.className = `
-      w-16 px-2 py-1 rounded-md text-xs font-semibold
-      border border-gray-200 dark:border-gray-700
-      bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-      focus:outline-none focus:ring-2 focus:ring-brand-500/40
-    `.trim();
-
-    badge.replaceWith(input);
-    input.focus();
-    input.select();
-
-    async function savePriority(){
-      const newVal = Number(input.value ?? 0);
-      if (Number.isNaN(newVal) || newVal < 0) {
-        toast('Priority tidak valid');
-        input.value = currentVal;
-        input.focus();
-        return;
+      if(editBtn){
+          const row = editBtn.closest('.group');
+          resetForm();
+          document.getElementById('rule-modal-title').textContent = 'Edit Bot Rule';
+          btnSave.textContent = 'Update Bot';
+          
+          ruleId.value = row.dataset.id;
+          fTrigger.value = row.dataset.trigger;
+          fReply.value = row.dataset.reply;
+          fPriority.value = row.dataset.priority;
+          fActive.checked = row.dataset.active === '1';
+          if(fMatchType) fMatchType.value = row.dataset.matchType;
+          
+          openModal('rule-modal');
       }
 
-      if (newVal === currentVal) {
-        input.replaceWith(badge);
-        return;
+      if(deleteBtn){
+          const row = deleteBtn.closest('.group');
+          document.getElementById('delete-id').value = row.dataset.id;
+          openModal('delete-modal');
       }
+      
+      // Handle Toggle Click (on the wrapper, to avoid double event with checkbox)
+      if(toggleWrapper){
+          const checkbox = toggleWrapper.querySelector('input[type="checkbox"]');
+          // e.preventDefault(); // Don't prevent default, let checkbox change visually first or handle logic
+          // Actually, checkbox inside label/div behavior is tricky.
+          // Let's rely on change event of the checkbox itself if possible, but delegation is on container.
+      }
+  });
 
-      input.disabled = true;
-      const id = tr.dataset.id;
+  // Better toggle handling with change event on container
+  container.addEventListener('change', async (e) => {
+      if(e.target.classList.contains('toggle-checkbox')){
+          const checkbox = e.target;
+          const row = checkbox.closest('.group');
+          const id = row.dataset.id;
+          
+          checkbox.disabled = true;
+          try {
+             // AJAX TOGGLE
+             const res = await fetch(`/rules/${id}/toggle`, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': csrf,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+             });
+             const data = await res.json();
+             if(!data.ok) throw data;
+             
+             // Replace Row (karena _row blade sekarang return Div Card)
+             const temp = document.createElement('div');
+             temp.innerHTML = data.rowHtml.trim();
+             const newRow = temp.firstElementChild;
+             row.replaceWith(newRow);
+             toast('Status bot diupdate');
+          } catch(err){
+              console.error(err);
+              toast('Gagal update status');
+              checkbox.checked = !checkbox.checked; // Revert
+              checkbox.disabled = false;
+          }
+      }
+  });
 
+  // SUBMIT FORM
+  form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      clearErrors();
+      
+      const id = ruleId.value;
+      const isEdit = !!id;
+      const url = isEdit ? `/rules/${id}` : `/rules`;
+      const method = isEdit ? 'PATCH' : 'POST';
+      
       const payload = {
-        trigger_keyword: tr.dataset.trigger || '',
-        response_text: tr.dataset.reply || '',
-        // ✅ ikut simpan match type biar validasi update lolos
-        match_type: tr.dataset.matchType || 'contains',
-        priority: newVal,
-        is_active: tr.dataset.active === '1' ? 1 : 0,
+        trigger_keyword: fTrigger.value.trim(),
+        response_text: fReply.value.trim(),
+        match_type: fMatchType.value,
+        priority: fPriority.value,
+        is_active: fActive.checked ? 1 : 0
       };
 
-      try{
-        const res = await fetch(`/rules/${id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrf,
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-          },
-          body: JSON.stringify(payload),
-        });
+      btnSave.disabled = true;
+      btnSave.textContent = 'Menyimpan...';
 
-        if (res.status === 422){
-          toast('Validasi gagal');
-          input.disabled = false;
-          return;
-        }
+      try {
+          const res = await fetch(url, {
+              method,
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRF-TOKEN': csrf,
+                  'Accept': 'application/json',
+                  'X-Requested-With': 'XMLHttpRequest',
+              },
+              body: JSON.stringify(payload),
+          });
 
-        const data = await res.json();
-        if(!data.ok) throw data;
+          if(res.status === 422){
+              const v = await res.json();
+              if(v.errors?.trigger_keyword) setError(errTrigger, v.errors.trigger_keyword[0]);
+              if(v.errors?.response_text) setError(errReply, v.errors.response_text[0]);
+              btnSave.textContent = 'Simpan Bot';
+              return;
+          }
 
-        const temp = document.createElement('tbody');
-        temp.innerHTML = data.rowHtml.trim();
-        const newRow = temp.firstElementChild;
+          const data = await res.json();
+          if(!data.ok) throw data;
 
-        tr.replaceWith(newRow);
+          const temp = document.createElement('div');
+          temp.innerHTML = data.rowHtml.trim();
+          const newRow = temp.firstElementChild;
 
-        sortRowsByPriorityAndCreated();
-        flashRow(newRow);
-        applySearchFilter(searchInput?.value || '');
-        toast('Priority diupdate');
+          if(isEdit){
+              document.getElementById(`rule-row-${id}`)?.replaceWith(newRow);
+              toast('Bot berhasil diupdate');
+          } else {
+              if(emptyRow) emptyRow.remove();
+              // Prepend to make it look like newest first (if controller sorts that way)
+              container.insertBefore(newRow, container.firstChild);
+              toast('Bot baru berhasil dibuat');
+              if(totalEl) totalEl.textContent = Number(totalEl.textContent) + 1;
+          }
+          closeModal('rule-modal');
 
-      }catch(err){
-        console.error(err);
-        toast('Gagal update priority');
-        input.disabled = false;
-        input.value = currentVal;
-        input.focus();
+      } catch(err){
+          console.error(err);
+          toast('Terjadi kesalahan');
+      } finally {
+          btnSave.disabled = false;
+          btnSave.textContent = 'Simpan Bot';
       }
-    }
-
-    input.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter') {
-        ev.preventDefault();
-        savePriority();
-      }
-      if (ev.key === 'Escape') {
-        input.replaceWith(badge);
-      }
-    });
-
-    input.addEventListener('blur', () => savePriority());
   });
-
-  // ===== Submit create/edit via fetch
-  form.addEventListener('submit', async function(e){
-    e.preventDefault();
-    clearErrors();
-
-    const id = ruleId.value;
-    const isEdit = !!id;
-
-    const payload = {
-      trigger_keyword: fTrigger.value.trim(),
-      response_text: fReply.value.trim(),
-      // ✅ kirim match type
-      match_type: fMatchType?.value || 'contains',
-      priority: Number(fPriority.value ?? 0),
-      is_active: fActive.checked ? 1 : 0,
-    };
-
-    const url = isEdit ? `/rules/${id}` : `/rules`;
-    const method = isEdit ? 'PATCH' : 'POST';
-
-    btnSave.disabled = true;
-
-    try{
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrf,
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.status === 422){
-        const v = await res.json();
-        if(v.errors?.trigger_keyword) setError(errTrigger, v.errors.trigger_keyword[0]);
-        if(v.errors?.response_text) setError(errReply, v.errors.response_text[0]);
-        if(v.errors?.match_type) setError(errMatchType, v.errors.match_type[0]);
-        if(v.errors?.priority) setError(errPriority, v.errors.priority[0]);
-        return;
-      }
-
-      const data = await res.json();
-      if(!data.ok) throw data;
-
-      const temp = document.createElement('tbody');
-      temp.innerHTML = data.rowHtml.trim();
-      const newRow = temp.firstElementChild;
-
-      if (isEdit){
-        document.getElementById(`rule-row-${id}`)?.replaceWith(newRow);
-        toast('Rule diupdate');
-      } else {
-        if (emptyRow) emptyRow.remove();
-        tbody.appendChild(newRow);
-        toast('Rule dibuat');
-        setTotal(Number(totalEl.textContent || 0) + 1);
-      }
-
-      closeModal('rule-modal');
-
-      sortRowsByPriorityAndCreated();
-      flashRow(newRow);
-      applySearchFilter(searchInput?.value || '');
-
-    }catch(err){
-      console.error(err);
-      toast('Gagal simpan rule');
-    }finally{
-      btnSave.disabled = false;
-    }
-  });
-
-  // ===== Confirm delete
+  
+  // CONFIRM DELETE
   document.getElementById('btn-confirm-delete').addEventListener('click', async () => {
-    const id = document.getElementById('delete-id').value;
-    if(!id) return;
-
-    const btn = document.getElementById('btn-confirm-delete');
-    btn.disabled = true;
-
-    try{
-      const res = await fetch(`/rules/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'X-CSRF-TOKEN': csrf,
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        }
-      });
-      const data = await res.json();
-      if(!data.ok) throw data;
-
-      document.getElementById(`rule-row-${id}`)?.remove();
-
-      setTotal(Math.max(0, Number(totalEl.textContent || 0) - 1));
-
-      sortRowsByPriorityAndCreated();
-      applySearchFilter(searchInput?.value || '');
-
-      if (!tbody.querySelector('tr[data-id]')){
-        const tr = document.createElement('tr');
-        tr.id = 'rules-empty';
-        tr.innerHTML = `
-          <td colspan="6" class="px-5 py-8 text-center text-gray-500">
-            Belum ada rule. Tambahkan dulu via tombol "Tambah Rule".
-          </td>
-        `;
-        tbody.appendChild(tr);
+      const id = document.getElementById('delete-id').value;
+      const btn = document.getElementById('btn-confirm-delete');
+      btn.disabled = true;
+      btn.textContent = 'Menghapus...';
+      
+      try {
+          const res = await fetch(`/rules/${id}`, {
+              method: 'DELETE',
+              headers: {
+                  'X-CSRF-TOKEN': csrf,
+                  'Accept': 'application/json',
+                  'X-Requested-With': 'XMLHttpRequest',
+              }
+          });
+          const data = await res.json();
+          if(!data.ok) throw data;
+          
+          document.getElementById(`rule-row-${id}`)?.remove();
+          toast('Bot berhasil dihapus');
+          if(totalEl) totalEl.textContent = Math.max(0, Number(totalEl.textContent) - 1);
+          
+      } catch(err){
+          console.error(err);
+          toast('Gagal menghapus bot');
+      } finally {
+          btn.disabled = false;
+          btn.textContent = 'Ya, Hapus';
+          closeModal('delete-modal');
       }
-
-      closeModal('delete-modal');
-      toast('Rule dihapus');
-
-    }catch(err){
-      console.error(err);
-      toast('Gagal hapus rule');
-    }finally{
-      btn.disabled = false;
-    }
   });
-
-  // ===== ✅ TAMBAHAN: TEST PREVIEW HANDLER
-  btnTestRule?.addEventListener('click', async () => {
-    const text = testText?.value?.trim();
-    if (!text) {
-      toast('Isi contoh pesan dulu');
-      return;
-    }
-
-    btnTestRule.disabled = true;
-    hideTestResult();
-
-    try {
-      const res = await fetch('/rules/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrf,
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: JSON.stringify({ text }),
-      });
-
-      if (res.status === 422) {
-        toast('Pesan test wajib diisi');
-        return;
-      }
-
-      const data = await res.json();
-      if (!data.ok) throw data;
-
-      testResult.classList.remove('hidden');
-
-      if (!data.matched) {
-        testResultMeta.textContent = 'No match';
-        testResultReply.textContent = data.message || 'Tidak ada rule yang cocok.';
-        return;
-      }
-
-      const r = data.rule;
-      testResultMeta.textContent =
-        `Match: Rule #${r.id} | trigger: "${r.trigger_keyword}" | type: ${r.match_type} | priority: ${r.priority}`;
-
-      testResultReply.textContent = data.reply || '-';
-
-    } catch (err) {
-      console.error(err);
-      toast('Gagal test rule');
-    } finally {
-      btnTestRule.disabled = false;
-    }
-  });
-  // ===== END TEST PREVIEW
 
 })();
 </script>
-@endsection
+</body>
+</html>

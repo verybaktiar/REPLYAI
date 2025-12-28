@@ -12,10 +12,12 @@ use App\Http\Controllers\KbArticleController;
 |--------------------------------------------------------------------------
 */
 
-// Dashboard (tailadmin default)
-Route::get('/', function () {
-    return view('pages.dashboard.ecommerce', ['title' => 'E-commerce Dashboard']);
-})->name('dashboard');
+// Dashboard (ReplyAI)
+Route::get('/', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+Route::get('/analytics', [App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics.index');
+Route::get('/contacts', [App\Http\Controllers\ContactController::class, 'index'])->name('contacts.index');
+Route::get('/settings', function() { return view('pages.settings.index'); })->name('settings.index');
+Route::get('/simulator', function() { return view('pages.simulator.index'); })->name('simulator.index');
 
 // ============================
 // INBOX INSTAGRAM

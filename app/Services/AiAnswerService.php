@@ -33,7 +33,7 @@ class AiAnswerService
             return null;
         }
 
-        $context = $this->buildContext($articles);
+        $context = $this->buildContext($articles, $question);
 
         $res = $this->callPerplexity($question, $context);
         if (!$res) return null;
@@ -59,9 +59,19 @@ class AiAnswerService
     {
         $q = Str::lower($question);
 
+        // Stopwords Indonesia - kata yang tidak penting untuk pencarian
+        $stopwords = [
+            'halo', 'hai', 'hi', 'kak', 'aku', 'saya', 'mau', 'ingin', 'tanya', 
+            'bertanya', 'minta', 'tolong', 'dong', 'yah', 'ya', 'nih', 'yang',
+            'ini', 'itu', 'ada', 'tidak', 'bisa', 'boleh', 'gimana', 'bagaimana',
+            'kapan', 'berapa', 'dimana', 'apakah', 'apaan', 'apa', 'kenapa',
+            'mengapa', 'siapa', 'dengan', 'untuk', 'dari', 'dan', 'atau',
+        ];
+
         $keywords = collect(preg_split('/\s+/u', $q))
             ->map(fn($k) => trim($k))
             ->filter(fn($k) => mb_strlen($k) >= 3)
+            ->filter(fn($k) => !in_array($k, $stopwords, true)) // filter stopwords
             ->unique()
             ->values();
 
@@ -85,18 +95,96 @@ class AiAnswerService
         return $scored->values();
     }
 
-    protected function buildContext($articles): string
+    protected function buildContext($articles, string $question = ''): string
     {
         $chunks = [];
+        $questionLower = Str::lower($question);
+        
+        // Extract important keywords from question
+        $importantKeywords = collect(preg_split('/\s+/u', $questionLower))
+            ->filter(fn($k) => mb_strlen($k) >= 4)
+            ->filter(fn($k) => !in_array($k, ['halo', 'kak', 'aku', 'mau', 'tanya', 'buka', 'jam', 'berapa', 'besok'], true))
+            ->values()
+            ->all();
+        
         foreach ($articles as $a) {
             $title = $a->title ?: '(Tanpa judul)';
-            $content = Str::limit(trim((string)$a->content), 1800);
+            $fullContent = trim((string)$a->content);
             $src = $a->source_url ?: '-';
+            
+            // Bersihkan konten yang menempel (misal: 16:00DALAM -> 16:00 DALAM)
+            $fullContent = preg_replace('/(\d{2}:\d{2})([a-zA-Z])/', '$1 $2', $fullContent);
+            $fullContent = preg_replace('/([a-zA-Z])(\d{2}:\d{2})/', '$1 $2', $fullContent);
+            
+            // Jika konten panjang dan ada keyword penting, cari bagian relevan
+            if (mb_strlen($fullContent) > 2000 && !empty($importantKeywords)) {
+                $relevantParts = $this->extractRelevantParts($fullContent, $importantKeywords, 1500);
+                $content = $relevantParts ?: Str::limit($fullContent, 1200);
+            } else {
+                $content = Str::limit($fullContent, 1200);
+            }
 
             $chunks[] = "### {$title}\nSumber: {$src}\nIsi:\n{$content}";
         }
 
         return implode("\n\n", $chunks);
+    }
+    
+    /**
+     * Ekstrak bagian konten yang mengandung keyword
+     */
+    protected function extractRelevantParts(string $content, array $keywords, int $maxLength): ?string
+    {
+        $contentLower = Str::lower($content);
+        $parts = [];
+        $usedRanges = [];
+        
+        foreach ($keywords as $keyword) {
+            $pos = mb_strpos($contentLower, $keyword);
+            if ($pos !== false) {
+                // Ambil konteks 300 karakter sebelum dan sesudah
+                $start = max(0, $pos - 300);
+                $end = min(mb_strlen($content), $pos + 300);
+                
+                // Cek overlap dengan range yang sudah ada
+                $overlap = false;
+                foreach ($usedRanges as $range) {
+                    if ($start <= $range[1] && $end >= $range[0]) {
+                        $overlap = true;
+                        break;
+                    }
+                }
+                
+                if (!$overlap) {
+                    // Potong di batas baris untuk konteks lebih baik
+                    $excerpt = mb_substr($content, $start, $end - $start);
+                    
+                    // Trim ke batas baris
+                    if ($start > 0) {
+                        $nlPos = mb_strpos($excerpt, "\n");
+                        if ($nlPos !== false && $nlPos < 50) {
+                            $excerpt = mb_substr($excerpt, $nlPos + 1);
+                        }
+                    }
+                    
+                    $parts[] = "..." . trim($excerpt) . "...";
+                    $usedRanges[] = [$start, $end];
+                }
+            }
+        }
+        
+        if (empty($parts)) {
+            return null;
+        }
+        
+        $result = implode("\n\n", $parts);
+        
+        // Batasi total panjang
+        if (mb_strlen($result) > $maxLength) {
+            $result = mb_substr($result, 0, $maxLength) . '...';
+        }
+        
+        return $result;
     }
 
     protected function callPerplexity(string $question, string $context): ?array
@@ -104,16 +192,29 @@ class AiAnswerService
         $apiKey = config('services.perplexity.key');
         $baseUrl = rtrim((string) config('services.perplexity.url', 'https://api.perplexity.ai'), '/');
         $model = (string) config('services.perplexity.model', 'sonar-pro');
-        $timeout = (int) config('services.perplexity.timeout', 45);
+        $timeout = (int) config('services.perplexity.timeout', 60);
 
         $now = now()->format('l, d F Y H:i');
+        $tomorrow = now()->addDay()->format('l');
 
         $system = <<<SYS
-Kamu adalah asisten customer service rumah sakit.
-Jawab HANYA berdasarkan KONTEKS yang diberikan.
-Jika jawaban tidak ada di konteks, jawab: "Tidak ditemukan di data resmi."
-Jawab singkat, jelas, ramah, bahasa Indonesia.
+Kamu adalah asisten customer service rumah sakit yang ramah & membantu.
+Jawab berdasarkan KONTEKS KB yang diberikan.
+STYLE JAWABAN:
+- Gunakan emoji yang relevan (misal: 👨‍⚕️ untuk dokter, 🕒 untuk jam).
+- Gunakan *bold* untuk poin penting (Nama dokter, Harga, Jam).
+- Gunakan list/bullet points supaya mudah dibaca.
+- Hindari paragraf panjang.
+- Jika jadwal: tampilkan dalam list yang rapi.
+- Tone: Ramah, Profesional, Membantu.
+
+Format jadwal: 👨‍⚕️ *Nama Dokter* \n   🕒 Hari: Jam
+
+Jika user tanya "besok", besok = {$tomorrow}.
 Hari ini: {$now}
+Jawab singkat, jelas, bahasa Indonesia.
+Jika jawaban tidak ditemukan, berikan confidence rendah (0.1-0.3).
+JANGAN sertakan sitasi seperti [1][2] dalam jawaban.
 Output HARUS JSON valid saja:
 
 {
@@ -173,6 +274,10 @@ SYS;
                 $confidence = (float)($json['confidence'] ?? 0);
 
                 if ($answer === '') return null;
+
+                // 🧹 Bersihkan citation markers seperti [1], [2], [10]
+                $answer = preg_replace('/\[\d+\]/', '', $answer);
+                $answer = trim($answer);
 
                 return [
                     'answer' => $answer,

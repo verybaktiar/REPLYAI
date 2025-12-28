@@ -17,13 +17,16 @@ class Conversation extends Model
         'source',                 // BARU - 'chatwoot' atau 'meta_direct'
         'last_activity_at',       // BARU
         'status',                 // BARU
-        'last_activity_at',
         'waiting_for',
         'greeted_at',
+        'has_sent_welcome',       // FIX - agar flag tersimpan
+        'last_menu_sent_at',      // FIX - agar timestamp tersimpan
+        'tags',                   // BARU - JSON
     ];
 
     protected $casts = [
         'last_activity_at' => 'integer', // unix timestamp dari chatwoot
+        'tags' => 'array',
     ];
 
     public function messages(): HasMany

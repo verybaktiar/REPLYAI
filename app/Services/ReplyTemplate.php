@@ -8,7 +8,7 @@ class ReplyTemplate
 {
     public function footer(): string
     {
-        return "—\nKetik *bantuan* untuk melihat menu.";
+        return "\n───────────────\n💡 Ketik *menu* atau *bantuan* kapan saja.";
     }
 
     public function appendFooter(string $text): string
@@ -16,11 +16,11 @@ class ReplyTemplate
         $text = trim($text);
 
         // hindari dobel footer
-        if (Str::contains(Str::lower($text), 'ketik *bantuan*')) {
+        if (Str::contains(Str::lower($text), 'ketik *menu*')) {
             return $text;
         }
 
-        return $text . "\n\n" . $this->footer();
+        return $text . "\n" . $this->footer();
     }
 
     public function wrap(string $title, string $body, ?string $cta = null): string
@@ -40,25 +40,38 @@ class ReplyTemplate
     public function welcome(): string
     {
         return $this->wrap(
-            "👋 Halo, selamat datang di Layanan Informasi RS.",
-            "Terima kasih sudah menghubungi kami.\nSilakan ketik salah satu kata kunci berikut:\n\n• jadwal\n• pelayanan\n• daftar poli\n• rawat inap\n• biaya\n• alamat"
+            "👋 Halo, Selamat Datang!",
+            "Saya asisten virtual RS PKU Muhammadiyah Surakarta siap membantu kakak.",
+            "Berikut hal yang bisa saya bantu:\n\n" .
+            "🗓️ *Jadwal* — Cek jadwal dokter/poli\n" .
+            "🏥 *Pelayanan* — Info layanan & fasilitas\n" .
+            "👨‍⚕️ *Daftar Poli* — List poliklinik tersedia\n" .
+            "🛏️ *Rawat Inap* — Ketersediaan kamar\n" .
+            "💳 *Biaya* — Estimasi biaya layanan\n" .
+            "📍 *Lokasi* — Alamat & Google Maps"
         );
     }
 
     public function menu(): string
     {
         return $this->wrap(
-            "📌 MENU BANTUAN",
-            "Silakan pilih dengan mengetik salah satu kata kunci:\n1) jadwal — jadwal dokter/poli\n2) pelayanan — layanan RS\n3) daftar poli — daftar poliklinik\n4) rawat inap — info kamar & fasilitas\n5) biaya — estimasi biaya layanan\n6) alamat — lokasi & Google Maps"
+            "📱 MENU UTAMA",
+            "Silakan ketik salah satu kata kunci di bawah ini:",
+            "🗓️ *Jadwal* \n   ↳ Cek praktek dokter & jam buka\n\n" .
+            "🏥 *Pelayanan* \n   ↳ Info layanan medis & penunjang\n\n" .
+            "👨‍⚕️ *Daftar Poli* \n   ↳ Lihat semua spesialis kami\n\n" .
+            "🛏️ *Rawat Inap* \n   ↳ Info kamar & fasilitas\n\n" .
+            "💳 *Biaya* \n   ↳ Info administrasi & tarif\n\n" .
+            "📍 *Lokasi* \n   ↳ Peta lokasi rumah sakit"
         );
     }
 
     public function cooldown(): string
     {
         return $this->wrap(
-            "⏳ Sebentar ya, kak…",
-            "Kami sedang memproses pesan sebelumnya agar jawabannya akurat.",
-            "Boleh ulangi pertanyaan setelah beberapa detik, atau ketik *bantuan* untuk lihat menu."
+            "⏳ Mohon Tunggu Sebentar",
+            "Saya sedang mengetik jawaban untuk kakak...",
+            "Jika belum muncul, silakan ketik ulang pertanyaan kakak dalam beberapa detik ya."
         );
     }
 

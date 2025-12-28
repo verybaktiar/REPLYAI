@@ -43,10 +43,17 @@ class AutoReplyLogController extends Controller
             });
         }
 
-        // limit hasil (default 200 biar sama kayak kamu)
-        $limit = (int) ($request->input('limit', 200));
-        $limit = max(10, min(1000, $limit));
-        $logs = $q->limit($limit)->get();
+        // pagination (default 20, user request limit as per_page)
+        $limitInput = $request->input('limit', 20);
+        
+        if ($limitInput === 'all') {
+             $perPage = 5000; // Safe max for "all"
+        } else {
+             $perPage = (int) $limitInput;
+             $perPage = max(5, min(5000, $perPage)); 
+        }
+        
+        $logs = $q->paginate($perPage);
 
         return view('pages.logs.index', [
             'title' => 'Auto Reply Logs',
@@ -56,7 +63,7 @@ class AutoReplyLogController extends Controller
                 'status' => $request->input('status'),
                 'min_conf' => $request->input('min_conf'),
                 'search' => $request->input('search'),
-                'limit' => $limit,
+                'limit' => $request->input('limit', 20),
             ],
         ]);
     }
