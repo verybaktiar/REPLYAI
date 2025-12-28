@@ -13,7 +13,7 @@ class ContactController extends Controller
         // Assuming Conversation has 'contact_name', 'contact_phone', 'platform', etc.
         // Or we just list conversations as "Contacts" for now
         
-        $query = Conversation::query();
+        $query = Conversation::query()->withCount('messages');
 
         if ($request->has('search')) {
             $search = $request->search;

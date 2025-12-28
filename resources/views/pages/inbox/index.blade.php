@@ -49,85 +49,7 @@
 <!-- Sidebar Navigation -->
 <!-- Sidebar Navigation -->
 <!-- Sidebar Navigation -->
-<aside class="hidden lg:flex flex-col w-72 h-full bg-[#111722] border-r border-[#232f48] shrink-0 z-20">
-    <!-- Brand -->
-    <div class="flex items-center gap-3 px-6 py-6 mb-2">
-        <div class="bg-center bg-no-repeat bg-cover rounded-full size-10 shadow-lg relative" style='background-image: url("https://ui-avatars.com/api/?name=Reply+AI&background=0D8ABC&color=fff");'></div>
-        <div>
-            <h1 class="text-base font-bold leading-none text-white">ReplyAI Admin</h1>
-            <p class="text-xs text-[#92a4c9] mt-1">RS PKU Solo Bot</p>
-        </div>
-    </div>
-    <!-- Navigation Links -->
-    <nav class="flex flex-col gap-1 flex-1 overflow-y-auto px-4">
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('dashboard') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('dashboard') }}">
-            <span class="material-symbols-outlined text-[24px]">grid_view</span>
-            <span class="text-sm font-medium">Dashboard</span>
-        </a>
-        
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('analytics*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('analytics.index') }}">
-            <span class="material-symbols-outlined text-[24px]">pie_chart</span>
-            <span class="text-sm font-medium">Analisis & Laporan</span>
-        </a>
-
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('contacts*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('contacts.index') }}">
-            <span class="material-symbols-outlined text-[24px]">groups</span>
-            <span class="text-sm font-medium">Data Kontak (CRM)</span>
-        </a>
-
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('inbox*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('inbox') }}">
-            <span class="material-symbols-outlined text-[24px]">chat_bubble</span>
-            <span class="text-sm font-medium">Kotak Masuk</span>
-            @if(isset($conversations) && $conversations instanceof \Illuminate\Database\Eloquent\Collection && $conversations->count() > 0)
-                <span class="ml-auto bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md text-center min-w-[20px]">{{ $conversations->count() }}</span>
-            @elseif(isset($stats['pending_inbox']) && $stats['pending_inbox'] > 0)
-                 <span class="ml-auto bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md text-center min-w-[20px]">{{ $stats['pending_inbox'] }}</span>
-            @endif
-        </a>
-        
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('rules*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('rules.index') }}">
-            <span class="material-symbols-outlined text-[24px]">smart_toy</span>
-            <span class="text-sm font-medium">Manajemen Bot</span>
-        </a>
-        
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('kb*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('kb.index') }}">
-            <span class="material-symbols-outlined text-[24px]">menu_book</span>
-            <span class="text-sm font-medium">Knowledge Base</span>
-        </a>
-
-        <!-- New Links -->
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('simulator*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('simulator.index') }}">
-            <span class="material-symbols-outlined text-[24px]">science</span>
-            <span class="text-sm font-medium">Simulator</span>
-        </a>
-        
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('settings*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('settings.index') }}">
-            <span class="material-symbols-outlined text-[24px]">settings</span>
-            <span class="text-sm font-medium">Settings (Hours)</span>
-        </a>
-
-        <div class="mt-4 mb-2 px-3">
-            <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">System</p>
-        </div>
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('logs*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('logs.index') }}">
-            <span class="material-symbols-outlined text-[24px]">history</span>
-            <span class="text-sm font-medium">Log Aktivitas</span>
-        </a>
-    </nav>
-    <!-- User Profile (Bottom) -->
-    <div class="border-t border-[#232f48] p-4">
-            <div class="p-3 rounded-lg bg-[#232f48]/50 flex items-center gap-3">
-            <div class="size-8 rounded-full bg-gradient-to-tr from-purple-500 to-primary flex items-center justify-center text-xs font-bold text-white">DM</div>
-            <div class="flex flex-col overflow-hidden">
-                <p class="text-white text-sm font-medium truncate">Admin</p>
-                <p class="text-[#92a4c9] text-xs truncate">admin@rspkusolo.com</p>
-            </div>
-            <button class="ml-auto text-[#92a4c9] hover:text-white">
-                <span class="material-symbols-outlined text-[20px]">logout</span>
-            </button>
-        </div>
-    </div>
-</aside>
+@include('components.sidebar')
 
 <!-- Main Content Area -->
 <main class="flex flex-1 overflow-hidden h-full relative">
@@ -224,6 +146,41 @@
                 </div>
                 <!-- Actions -->
                 <div class="flex items-center gap-2">
+                    @php
+                        $convStatus = $conversations->firstWhere('id', $selectedId)?->status ?? 'bot_handling';
+                        $agentRepliedAt = $conversations->firstWhere('id', $selectedId)?->agent_replied_at;
+                        $hoursLeft = $agentRepliedAt ? 4 - now()->diffInHours($agentRepliedAt) : 0;
+                    @endphp
+
+                    <!-- Status Badge -->
+                    @if($convStatus === 'agent_handling')
+                        <span class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            <span class="material-symbols-outlined" style="font-size: 14px;">support_agent</span>
+                            Agent
+                        </span>
+                    @elseif($convStatus === 'escalated')
+                        <span class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                            <span class="material-symbols-outlined" style="font-size: 14px;">priority_high</span>
+                            Escalated
+                        </span>
+                    @else
+                        <span class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                            <span class="material-symbols-outlined" style="font-size: 14px;">smart_toy</span>
+                            Bot
+                        </span>
+                    @endif
+
+                    <!-- Handback Button (only if agent_handling) -->
+                    @if($convStatus === 'agent_handling' || $convStatus === 'escalated')
+                        <form action="{{ route('inbox.handback', $selectedId) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors" title="Kembalikan ke Bot">
+                                <span class="material-symbols-outlined" style="font-size: 14px;">replay</span>
+                                Kembalikan ke Bot
+                            </button>
+                        </form>
+                    @endif
+
                      <button onclick="window.location.reload()" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors" title="Refresh Chat">
                         <span class="material-symbols-outlined" style="font-size: 20px;">refresh</span>
                     </button>
@@ -299,6 +256,28 @@
                 <form action="{{ route('inbox.send') }}" method="POST" class="relative flex items-end gap-2 bg-[#1e2634] p-2 rounded-xl border border-white/5 focus-within:ring-1 focus-within:ring-primary/50 transition-all">
                     @csrf
                     <input type="hidden" name="conversation_id" value="{{ $selectedId }}">
+                    
+                    <div class="relative">
+                        <button type="button" onclick="toggleQuickReplies()" class="p-2 text-warning hover:text-yellow-400 rounded-lg hover:bg-white/5 transition-colors shrink-0" title="Quick Reply">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">bolt</span>
+                        </button>
+                        <!-- Dropdown -->
+                        <div id="qr-dropdown" class="hidden absolute bottom-full left-0 mb-2 w-72 bg-[#1e2634] border border-white/10 rounded-xl shadow-xl overflow-hidden z-30 transform origin-bottom-left transition-all">
+                            <div class="px-3 py-2 border-b border-white/5 text-xs font-semibold text-slate-400 bg-[#111722]/50 flex justify-between items-center">
+                                <span>Quick Replies</span>
+                                <span class="text-[10px] bg-slate-700 px-1.5 rounded">Esc to close</span>
+                            </div>
+                            <div id="qr-list" class="max-h-60 overflow-y-auto custom-scrollbar">
+                                <div class="p-4 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
+                                    <span class="material-symbols-outlined animate-spin text-lg">autorenew</span>
+                                    Loading templates...
+                                </div>
+                            </div>
+                            <a href="{{ route('quick-replies.index') }}" class="block p-2 text-center text-[10px] text-primary hover:bg-white/5 border-t border-white/5 bg-[#111722]/30">
+                                + Kelola Template
+                            </a>
+                        </div>
+                    </div>
                     
                     <button type="button" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors shrink-0">
                         <span class="material-symbols-outlined" style="font-size: 20px;">add_circle</span>
@@ -409,7 +388,113 @@
     if(msgArea){
         msgArea.scrollTop = msgArea.scrollHeight;
     }
+
+    // ==========================================
+    // QUICK REPLY LOGIC
+    // ==========================================
+    let quickReplies = [];
+    let isFetchingQR = false;
+    
+    async function fetchQuickReplies() {
+        if(isFetchingQR) return;
+        isFetchingQR = true;
+        
+        try {
+            const res = await fetch('{{ route("api.quick-replies.fetch") }}');
+            quickReplies = await res.json();
+            renderQuickReplies();
+        } catch (e) {
+            console.error('Failed to fetch QR', e);
+            document.getElementById('qr-list').innerHTML = '<div class="p-3 text-center text-xs text-red-400">Gagal memuat template.</div>';
+        } finally {
+            isFetchingQR = false;
+        }
+    }
+
+    function renderQuickReplies() {
+        const list = document.getElementById('qr-list');
+        if(!quickReplies.length) {
+            list.innerHTML = '<div class="p-4 text-center text-xs text-slate-500">Belum ada template.<br>Buat di menu Settings.</div>';
+            return;
+        }
+        
+        list.innerHTML = quickReplies.map(qr => `
+            <button type="button" onclick="insertQuickReply('${qr.message.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n')}')" class="w-full text-left p-3 hover:bg-[#2a3446] text-xs text-slate-300 border-b border-white/5 last:border-0 transition-colors group">
+                <div class="flex items-center gap-2 mb-1">
+                    ${qr.shortcut ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-primary/20 text-primary border border-primary/20">/${qr.shortcut}</span>` : ''}
+                </div>
+                <div class="line-clamp-2 text-slate-400 group-hover:text-white transition-colors">
+                    ${qr.message}
+                </div>
+            </button>
+        `).join('');
+    }
+
+    function toggleQuickReplies() {
+        const dropdown = document.getElementById('qr-dropdown');
+        dropdown.classList.toggle('hidden');
+        if(!dropdown.classList.contains('hidden')) {
+            // Fetch only if empty to save bandwidth, or always to refresh? Let's fetch if empty.
+            if(!quickReplies.length) fetchQuickReplies();
+        }
+    }
+
+    function insertQuickReply(text) {
+        const input = document.querySelector('textarea[name="content"]');
+        
+        // Simple insert at end
+        input.value = text; 
+        
+        // Resize textarea handling (if auto-resize logic exists, otherwise minimal manual trigger)
+        input.style.height = 'auto'; // Reset
+        input.style.height = input.scrollHeight + 'px';
+        
+        input.focus();
+        document.getElementById('qr-dropdown').classList.add('hidden');
+    }
+
+    // Close dropdown on click outside
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('qr-dropdown');
+        const trigger = document.querySelector('button[title="Quick Reply"]'); // Select by title for uniqueness
+        if (dropdown && !dropdown.contains(e.target) && trigger && !trigger.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if(e.key === 'Escape') {
+            document.getElementById('qr-dropdown')?.classList.add('hidden');
+        }
+    });
+
 </script>
+
+<!-- Toast Notification -->
+@if(session('success'))
+<div id="toast-success" class="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg bg-green-500/90 text-white text-sm font-medium shadow-lg animate-pulse">
+    <span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>
+    {{ session('success') }}
+</div>
+<script>
+    setTimeout(() => {
+        document.getElementById('toast-success')?.remove();
+    }, 3000);
+</script>
+@endif
+
+@if(session('error'))
+<div id="toast-error" class="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500/90 text-white text-sm font-medium shadow-lg">
+    <span class="material-symbols-outlined" style="font-size: 18px;">error</span>
+    {{ session('error') }}
+</div>
+<script>
+    setTimeout(() => {
+        document.getElementById('toast-error')?.remove();
+    }, 5000);
+</script>
+@endif
 
 </body>
 </html>

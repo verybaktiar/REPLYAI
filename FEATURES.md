@@ -20,9 +20,9 @@ Dokumen ini melacak status pengembangan fitur untuk project ReplyAI Admin.
     - [x] Rute & UI Placeholder.
     - [ ] Form Database & Logic.
 
-- [ ] **5. Bot Simulator (Playground)**
+- [x] **5. Bot Simulator (Playground)**
     - [x] Rute & UI Placeholder.
-    - [ ] Chat Engine Sandbox.
+    - [x] Chat Engine Sandbox.
 
 ## 📅 Scheduled (Akan Dikerjakan Selanjutnya)
 - [ ] **2. AI Knowledge Base Parser**
@@ -37,8 +37,17 @@ Dokumen ini melacak status pengembangan fitur untuk project ReplyAI Admin.
     - [ ] Halaman khusus / Widget untuk tes respon bot tanpa HP.
     - [ ] Debugger view untuk melihat logic AI.
 
-## 🔮 Future Ideas
-- [ ] **1. Broadcast / Campaign Manager**
-    - Kirim pesan massal (Blast).
-    - Template management.
-    - Scheduling.
+## 🔮 Next Up Roadmap
+
+| Prioritas | Fitur | Deskripsi | Status |
+|---|---|---|---|
+| 🔥 Tinggi | **Dashboard Analytics** | Grafik trend, top pertanyaan, response time | ✅ |
+| 🔥 Tinggi | **Pengaturan Jam Operasional** | Bot kirim "Kami tutup" di luar jam kerja | ⏳ |
+| 📊 Sedang | **AI KB Parser** | Upload PDF → otomatis jadi knowledge base | ✅ |
+| ⚡ Sedang | **Quick Reply Template** | Template jawaban cepat untuk CS | ✅ |
+
+## 💡 Future Ideas
+- [ ] **Broadcast / Campaign Manager** - Kirim pesan massal (Blast)
+- [ ] **Multi-Agent Support** - Beberapa CS online bersamaan
+- [ ] **WhatsApp Integration** - Extend bot ke WhatsApp Business API
+

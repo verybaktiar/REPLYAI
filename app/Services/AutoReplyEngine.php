@@ -17,12 +17,122 @@ class AutoReplyEngine
         protected ReplyTemplate $tpl
     ) {}
 
+    /**
+     * Simulasi respons bot tanpa menyimpan ke database.
+     * Digunakan oleh Bot Simulator.
+     */
+    public function simulateMessage(string $messageText): array
+    {
+        $rawText = trim($messageText);
+        if ($rawText === '') {
+            return ['response' => '', 'source' => 'empty', 'ai_used' => false];
+        }
+
+        // 1) menu/help
+        $lower = Str::lower($rawText);
+        if (in_array($lower, ['bantuan', 'menu', 'help'], true)) {
+            return [
+                'response' => $this->tpl->menu(),
+                'source' => 'menu',
+                'ai_used' => false,
+            ];
+        }
+
+        // 2) Manual Rule
+        $rule = $this->findMatchingRule($rawText);
+        if ($rule) {
+            return [
+                'response' => $this->tpl->appendFooter((string) $rule->response_text),
+                'source' => 'manual',
+                'ai_used' => false,
+                'rule_id' => $rule->id,
+            ];
+        }
+
+        // 3) AI
+        if (!env('AI_REPLY_ENABLED', true)) {
+            return [
+                'response' => '🤷 AI dinonaktifkan. Pesan akan diteruskan ke CS.',
+                'source' => 'fallback',
+                'ai_used' => false,
+            ];
+        }
+
+        try {
+            $aiResult = $this->ai->answerFromKb($rawText);
+
+            if (!$aiResult || empty($aiResult['answer'])) {
+                return [
+                    'response' => env('DEFAULT_FALLBACK_TEXT', 'Mohon maaf, pertanyaan Anda akan kami teruskan ke CS.'),
+                    'source' => 'fallback',
+                    'ai_used' => true,
+                    'ai_confidence' => $aiResult['confidence'] ?? 0,
+                ];
+            }
+
+            $title = $this->tpl->titleFromIntent($rawText);
+            $resp = $this->tpl->wrap($title, $this->limitReply($aiResult['answer']));
+
+            return [
+                'response' => $resp,
+                'source' => 'ai',
+                'ai_used' => true,
+                'ai_confidence' => (float)($aiResult['confidence'] ?? 0),
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'response' => '❌ Error AI: ' . $e->getMessage(),
+                'source' => 'error',
+                'ai_used' => true,
+            ];
+        }
+    }
+
     public function handleIncomingInstagramMessage(Message $message, Conversation $conversation): ?array
     {
         // ✅ jangan respon pesan agent/bot/echo
         $senderType = (string) ($message->sender_type ?? '');
         if (!in_array($senderType, ['user', 'contact'], true)) {
             return null;
+        }
+
+        // ✅ HANDOFF CHECK: Cek apakah bot boleh balas untuk conversation ini
+        $status = $conversation->status ?? 'bot_handling';
+        
+        // Jika agent_handling, cek timeout (4 jam)
+        if ($status === 'agent_handling') {
+            $agentRepliedAt = $conversation->agent_replied_at;
+            $hoursSinceAgent = $agentRepliedAt 
+                ? now()->diffInHours($agentRepliedAt) 
+                : 999; // Anggap sudah lama
+            
+            if ($hoursSinceAgent >= 4) {
+                // Timeout tercapai, kembalikan ke bot
+                $conversation->update(['status' => 'bot_handling']);
+                Log::info('🤖 Handoff timeout: conversation returned to bot', ['conv_id' => $conversation->id]);
+            } else {
+                // Masih dalam masa agent handling, bot diam
+                Log::info('🤫 Bot silent: agent still handling', ['conv_id' => $conversation->id]);
+                return null;
+            }
+        }
+        
+        // Jika escalated, bot tetap diam (menunggu CS respond)
+        if ($status === 'escalated') {
+            // Cek new session (24 jam)
+            $lastActivity = $conversation->last_activity_at;
+            $hoursSinceLast = $lastActivity 
+                ? now()->diffInHours(\Carbon\Carbon::createFromTimestamp($lastActivity)) 
+                : 999;
+            
+            if ($hoursSinceLast >= 24) {
+                // Session baru, reset ke bot_handling
+                $conversation->update(['status' => 'bot_handling']);
+                Log::info('🆕 New session: conversation returned to bot', ['conv_id' => $conversation->id]);
+            } else {
+                Log::info('🤫 Bot silent: waiting for CS', ['conv_id' => $conversation->id]);
+                return null;
+            }
         }
 
         $rawText = trim((string) ($message->content ?? ''));
@@ -128,8 +238,8 @@ class AutoReplyEngine
             return $this->fallbackToCS($conversation, $message, $aiText);
         }
 
-        // 4) AI cooldown (✅ jangan diam)
-        if ($this->isAiCooldownActive($conversation->id)) {
+        // 4) AI cooldown (✅ jangan diam) - skip jika conversation_id null (simulator)
+        if ($conversation->id && $this->isAiCooldownActive($conversation->id)) {
             $resp = $this->tpl->cooldown();
 
             AutoReplyLog::create([

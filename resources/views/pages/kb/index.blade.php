@@ -40,85 +40,7 @@
 <body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen flex">
 
 <!-- Sidebar Navigation -->
-<aside class="hidden lg:flex flex-col w-72 h-full bg-[#111722] border-r border-[#232f48] shrink-0 fixed lg:static top-0 bottom-0 left-0 z-40">
-    <!-- Brand -->
-    <div class="flex items-center gap-3 px-6 py-6 mb-2">
-        <div class="bg-center bg-no-repeat bg-cover rounded-full size-10 shadow-lg relative" style='background-image: url("https://ui-avatars.com/api/?name=Reply+AI&background=0D8ABC&color=fff");'></div>
-        <div>
-            <h1 class="text-base font-bold leading-none text-white">ReplyAI Admin</h1>
-            <p class="text-xs text-[#92a4c9] mt-1">RS PKU Solo Bot</p>
-        </div>
-    </div>
-    <!-- Navigation Links -->
-    <nav class="flex flex-col gap-1 flex-1 overflow-y-auto px-4">
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('dashboard') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('dashboard') }}">
-            <span class="material-symbols-outlined text-[24px]">grid_view</span>
-            <span class="text-sm font-medium">Dashboard</span>
-        </a>
-        
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('analytics*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('analytics.index') }}">
-            <span class="material-symbols-outlined text-[24px]">pie_chart</span>
-            <span class="text-sm font-medium">Analisis & Laporan</span>
-        </a>
-
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('contacts*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('contacts.index') }}">
-            <span class="material-symbols-outlined text-[24px]">groups</span>
-            <span class="text-sm font-medium">Data Kontak (CRM)</span>
-        </a>
-
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('inbox*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('inbox') }}">
-            <span class="material-symbols-outlined text-[24px]">chat_bubble</span>
-            <span class="text-sm font-medium">Kotak Masuk</span>
-            @if(isset($conversations) && $conversations instanceof \Illuminate\Database\Eloquent\Collection && $conversations->count() > 0)
-                <span class="ml-auto bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md text-center min-w-[20px]">{{ $conversations->count() }}</span>
-            @elseif(isset($stats['pending_inbox']) && $stats['pending_inbox'] > 0)
-                 <span class="ml-auto bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md text-center min-w-[20px]">{{ $stats['pending_inbox'] }}</span>
-            @endif
-        </a>
-        
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('rules*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('rules.index') }}">
-            <span class="material-symbols-outlined text-[24px]">smart_toy</span>
-            <span class="text-sm font-medium">Manajemen Bot</span>
-        </a>
-        
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('kb*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('kb.index') }}">
-            <span class="material-symbols-outlined text-[24px]">menu_book</span>
-            <span class="text-sm font-medium">Knowledge Base</span>
-        </a>
-
-        <!-- New Links -->
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('simulator*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('simulator.index') }}">
-            <span class="material-symbols-outlined text-[24px]">science</span>
-            <span class="text-sm font-medium">Simulator</span>
-        </a>
-        
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('settings*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('settings.index') }}">
-            <span class="material-symbols-outlined text-[24px]">settings</span>
-            <span class="text-sm font-medium">Settings (Hours)</span>
-        </a>
-
-        <div class="mt-4 mb-2 px-3">
-            <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">System</p>
-        </div>
-        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('logs*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('logs.index') }}">
-            <span class="material-symbols-outlined text-[24px]">history</span>
-            <span class="text-sm font-medium">Log Aktivitas</span>
-        </a>
-    </nav>
-    <!-- User Profile (Bottom) -->
-    <div class="border-t border-[#232f48] p-4">
-            <div class="p-3 rounded-lg bg-[#232f48]/50 flex items-center gap-3">
-            <div class="size-8 rounded-full bg-gradient-to-tr from-purple-500 to-primary flex items-center justify-center text-xs font-bold text-white">DM</div>
-            <div class="flex flex-col overflow-hidden">
-                <p class="text-white text-sm font-medium truncate">Admin</p>
-                <p class="text-[#92a4c9] text-xs truncate">admin@rspkusolo.com</p>
-            </div>
-            <button class="ml-auto text-[#92a4c9] hover:text-white">
-                <span class="material-symbols-outlined text-[20px]">logout</span>
-            </button>
-        </div>
-    </div>
-</aside>
+@include('components.sidebar')
 
 <main class="flex-1 flex flex-col h-full overflow-hidden relative">
     <div class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10 pb-20">
@@ -140,27 +62,60 @@
               </button>
           </div>
 
-          <!-- Import URL Box -->
-          <div class="rounded-xl border border-border-dark bg-surface-dark p-6 space-y-4">
-            <h3 class="font-bold text-white text-lg">Import dari URL</h3>
+          <!-- Import Section (Tabs) -->
+          <div class="rounded-xl border border-border-dark bg-surface-dark overflow-hidden">
+              <div class="flex border-b border-border-dark">
+                  <button id="tab-url" class="flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors">
+                      <span class="material-symbols-outlined align-middle mr-1 text-[18px]">link</span> Import URL
+                  </button>
+                  <button id="tab-file" class="flex-1 px-4 py-3 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors">
+                      <span class="material-symbols-outlined align-middle mr-1 text-[18px]">upload_file</span> Upload Dokumen
+                  </button>
+              </div>
 
-            <div class="grid grid-cols-12 gap-3">
-              <div class="col-span-12 sm:col-span-7">
-                <input id="kb-url" type="text" placeholder="https://web-resmi.com/jadwal"
-                  class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+              <!-- Content URL -->
+              <div id="panel-url" class="p-6 space-y-4">
+                <div class="grid grid-cols-12 gap-3">
+                  <div class="col-span-12 sm:col-span-7">
+                    <input id="kb-url" type="text" placeholder="https://web-resmi.com/jadwal"
+                      class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+                  </div>
+                  <div class="col-span-12 sm:col-span-3">
+                    <input id="kb-title" type="text" placeholder="Judul (opsional)"
+                      class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+                  </div>
+                  <div class="col-span-12 sm:col-span-2">
+                    <button id="btn-import-url"
+                      class="w-full px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition">
+                      Import
+                    </button>
+                  </div>
+                </div>
+                <p class="text-xs text-text-secondary">Gunakan URL resmi untuk akurasi data AI.</p>
               </div>
-              <div class="col-span-12 sm:col-span-3">
-                <input id="kb-title" type="text" placeholder="Judul (opsional)"
-                  class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+
+              <!-- Content File -->
+              <div id="panel-file" class="hidden p-6 space-y-4">
+                  <div class="border-2 border-dashed border-border-dark rounded-xl p-8 text-center hover:bg-[#111722]/50 transition-colors relative" id="drop-zone">
+                      <input type="file" id="kb-file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".pdf,.txt">
+                      <div class="flex flex-col items-center gap-2 pointer-events-none">
+                          <span class="material-symbols-outlined text-[40px] text-text-secondary">cloud_upload</span>
+                          <p class="text-sm text-gray-300 font-medium">Klik atau drag file PDF / TXT ke sini</p>
+                          <p class="text-xs text-text-secondary">Maksimal 5MB. PDF akan diparsing otomatis.</p>
+                          <p id="file-name" class="text-sm text-primary font-bold mt-2 hidden"></p>
+                      </div>
+                  </div>
+                  
+                  <div class="flex items-center gap-3">
+                      <input id="kb-file-tags" type="text" placeholder="Tags (koma dipisah, misal: ukm, panduan)"
+                        class="flex-1 rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+                      
+                      <button id="btn-import-file" disabled
+                        class="px-6 py-2.5 rounded-lg bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        Upload & Process
+                      </button>
+                  </div>
               </div>
-              <div class="col-span-12 sm:col-span-2">
-                <button id="btn-import-url"
-                  class="w-full px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition">
-                  Import
-                </button>
-              </div>
-            </div>
-            <p class="text-xs text-text-secondary">Gunakan URL resmi untuk akurasi data AI.</p>
           </div>
 
           <!-- List KB -->
@@ -352,6 +307,82 @@
       btnImport.disabled = false;
       btnImport.innerHTML = 'Import';
     }
+  });
+
+  // ===== TAB SWITCHING
+  const tabUrl = document.getElementById('tab-url');
+  const tabFile = document.getElementById('tab-file');
+  const panelUrl = document.getElementById('panel-url');
+  const panelFile = document.getElementById('panel-file');
+
+  function switchTab(mode){
+      if(mode === 'url'){
+          tabUrl.className = "flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors";
+          tabFile.className = "flex-1 px-4 py-3 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors";
+          panelUrl.classList.remove('hidden');
+          panelFile.classList.add('hidden');
+      } else {
+          tabFile.className = "flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors";
+          tabUrl.className = "flex-1 px-4 py-3 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors";
+          panelFile.classList.remove('hidden');
+          panelUrl.classList.add('hidden');
+      }
+  }
+
+  tabUrl?.addEventListener('click', () => switchTab('url'));
+  tabFile?.addEventListener('click', () => switchTab('file'));
+
+  // ===== FILE UPLOAD LOGIC
+  const fileInput = document.getElementById('kb-file');
+  const fileNameDisplay = document.getElementById('file-name');
+  const btnUpload = document.getElementById('btn-import-file');
+  
+  fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if(file){
+          fileNameDisplay.textContent = "Selected: " + file.name + " (" + (file.size/1024).toFixed(1) + " KB)";
+          fileNameDisplay.classList.remove('hidden');
+          btnUpload.disabled = false;
+      } else {
+          fileNameDisplay.classList.add('hidden');
+          btnUpload.disabled = true;
+      }
+  });
+
+  btnUpload?.addEventListener('click', async () => {
+      const file = fileInput.files[0];
+      if(!file) return;
+
+      const tags = document.getElementById('kb-file-tags').value;
+      const formData = new FormData();
+      formData.append('file', file);
+      if(tags) formData.append('tags', tags);
+
+      btnUpload.disabled = true;
+      btnUpload.innerHTML = 'Uploading & Parsing...';
+
+      try {
+          const res = await fetch('/kb/import-file', {
+              method: 'POST',
+              headers: {
+                  'X-CSRF-TOKEN': csrf,
+                  'Accept': 'application/json',
+              },
+              body: formData
+          });
+
+          const data = await res.json();
+          if(!res.ok) throw new Error(data.message || 'Gagal upload file');
+
+          alert('File berhasil diupload dan diparsing!');
+          window.location.reload();
+      } catch (e) {
+          alert('Error: ' + e.message);
+          console.error(e);
+      } finally {
+          btnUpload.disabled = false;
+          btnUpload.innerHTML = 'Upload & Process';
+      }
   });
 
   // ===== Utilities

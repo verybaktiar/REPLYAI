@@ -51,83 +51,7 @@
     <!-- Sidebar Navigation -->
     <!-- Sidebar Navigation -->
     <!-- Sidebar Navigation -->
-    <aside class="hidden lg:flex flex-col w-72 h-full bg-[#111722] border-r border-[#232f48] shrink-0 fixed lg:static top-0 bottom-0 left-0 z-40">
-        <!-- Brand -->
-        <div class="flex items-center gap-3 px-6 py-6 mb-2">
-            <div class="bg-center bg-no-repeat bg-cover rounded-full size-10 shadow-lg relative" style='background-image: url("https://ui-avatars.com/api/?name=Reply+AI&background=0D8ABC&color=fff");'></div>
-            <div>
-                <h1 class="text-base font-bold leading-none text-white">ReplyAI Admin</h1>
-                <p class="text-xs text-[#92a4c9] mt-1">RS PKU Solo Bot</p>
-            </div>
-        </div>
-        <!-- Navigation Links -->
-        <nav class="flex flex-col gap-1 flex-1 overflow-y-auto px-4">
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('dashboard') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('dashboard') }}">
-                <span class="material-symbols-outlined text-[24px]">grid_view</span>
-                <span class="text-sm font-medium">Dashboard</span>
-            </a>
-            
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('analytics*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('analytics.index') }}">
-                <span class="material-symbols-outlined text-[24px]">pie_chart</span>
-                <span class="text-sm font-medium">Analisis & Laporan</span>
-            </a>
-
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('contacts*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('contacts.index') }}">
-                <span class="material-symbols-outlined text-[24px]">groups</span>
-                <span class="text-sm font-medium">Data Kontak (CRM)</span>
-            </a>
-
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('inbox*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('inbox') }}">
-                <span class="material-symbols-outlined text-[24px]">chat_bubble</span>
-                <span class="text-sm font-medium">Kotak Masuk</span>
-                @if(isset($stats['pending_inbox']) && $stats['pending_inbox'] > 0)
-                <span class="ml-auto bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md text-center min-w-[20px]">{{ $stats['pending_inbox'] }}</span>
-                @endif
-            </a>
-            
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('rules*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('rules.index') }}">
-                <span class="material-symbols-outlined text-[24px]">smart_toy</span>
-                <span class="text-sm font-medium">Manajemen Bot</span>
-            </a>
-            
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('kb*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('kb.index') }}">
-                <span class="material-symbols-outlined text-[24px]">menu_book</span>
-                <span class="text-sm font-medium">Knowledge Base</span>
-            </a>
-
-            <!-- New Links -->
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('simulator*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('simulator.index') }}">
-                <span class="material-symbols-outlined text-[24px]">science</span>
-                <span class="text-sm font-medium">Simulator</span>
-            </a>
-            
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('settings*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('settings.index') }}">
-                <span class="material-symbols-outlined text-[24px]">settings</span>
-                <span class="text-sm font-medium">Settings (Hours)</span>
-            </a>
-
-            <div class="mt-4 mb-2 px-3">
-                <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">System</p>
-            </div>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('logs*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('logs.index') }}">
-                <span class="material-symbols-outlined text-[24px]">history</span>
-                <span class="text-sm font-medium">Log Aktivitas</span>
-            </a>
-        </nav>
-        <!-- User Profile (Bottom) -->
-        <div class="border-t border-[#232f48] p-4">
-             <div class="p-3 rounded-lg bg-[#232f48]/50 flex items-center gap-3">
-                <div class="size-8 rounded-full bg-gradient-to-tr from-purple-500 to-primary flex items-center justify-center text-xs font-bold text-white">DM</div>
-                <div class="flex flex-col overflow-hidden">
-                    <p class="text-white text-sm font-medium truncate">Admin</p>
-                    <p class="text-[#92a4c9] text-xs truncate">admin@rspkusolo.com</p>
-                </div>
-                <button class="ml-auto text-[#92a4c9] hover:text-white">
-                    <span class="material-symbols-outlined text-[20px]">logout</span>
-                </button>
-            </div>
-        </div>
-    </aside>
+@include('components.sidebar')
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-full overflow-hidden relative">
         <!-- Top Header -->
@@ -222,29 +146,64 @@
                     </div>
                 </div>
 
-                <!-- Main Chart Section (Simulated for visual appeal as requested) -->
+                <!-- Main Chart Section with Chart.js -->
                 <div class="flex flex-col gap-6 p-6 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm">
                     <div class="flex items-center justify-between flex-wrap gap-4">
                         <div>
-                            <h3 class="text-lg font-bold dark:text-white text-slate-900">Interaction Volume</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">Activity simulated based on bot triggers.</p>
+                            <h3 class="text-lg font-bold dark:text-white text-slate-900">Interaction Volume (7 Hari)</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Data pesan masuk dan balasan bot.</p>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs">
+                            <span class="flex items-center gap-1"><span class="size-3 rounded-full bg-primary"></span> Pesan Masuk</span>
+                            <span class="flex items-center gap-1"><span class="size-3 rounded-full bg-purple-500"></span> Bot Reply</span>
                         </div>
                     </div>
                     <div class="w-full h-[240px] relative">
-                         <!-- Chart SVG (Static from user design) -->
-                        <svg class="w-full h-full" fill="none" preserveaspectratio="none" viewbox="0 0 800 240" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <lineargradient gradientunits="userSpaceOnUse" id="chartGradient" x1="400" x2="400" y1="0" y2="240">
-                                    <stop stop-color="#135bec" stop-opacity="0.2"></stop>
-                                    <stop offset="1" stop-color="#135bec" stop-opacity="0"></stop>
-                                </lineargradient>
-                            </defs>
-                            <line stroke="#334155" stroke-dasharray="4 4" stroke-opacity="0.2" x1="0" x2="800" y1="200" y2="200"></line>
-                            <line stroke="#334155" stroke-dasharray="4 4" stroke-opacity="0.2" x1="0" x2="800" y1="140" y2="140"></line>
-                            <line stroke="#334155" stroke-dasharray="4 4" stroke-opacity="0.2" x1="0" x2="800" y1="80" y2="80"></line>
-                            <path d="M0,180 C50,180 50,120 100,120 C150,120 150,160 200,160 C250,160 250,60 300,60 C350,60 350,100 400,100 C450,100 450,40 500,40 C550,40 550,140 600,140 C650,140 650,80 700,80 C750,80 750,110 800,110" fill="none" stroke="#135bec" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path>
-                            <path d="M0,180 C50,180 50,120 100,120 C150,120 150,160 200,160 C250,160 250,60 300,60 C350,60 350,100 400,100 C450,100 450,40 500,40 C550,40 550,140 600,140 C650,140 650,80 700,80 C750,80 750,110 800,110 V240 H0 Z" fill="url(#chartGradient)"></path>
-                        </svg>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Questions Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="flex flex-col gap-4 p-6 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold dark:text-white text-slate-900">Top Pertanyaan</h3>
+                            <span class="text-xs text-slate-500">5 Terbanyak</span>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            @forelse($topQuestions as $index => $q)
+                            <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                                <div class="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">{{ $index + 1 }}</div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium dark:text-white text-slate-800 truncate">{{ Str::limit($q->trigger_text, 50) }}</p>
+                                </div>
+                                <span class="px-2 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary">{{ $q->count }}x</span>
+                            </div>
+                            @empty
+                            <div class="text-center text-slate-500 py-4">Belum ada data pertanyaan</div>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    <!-- Response Time Card -->
+                    <div class="flex flex-col gap-4 p-6 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 class="text-lg font-bold dark:text-white text-slate-900">Performa Bot</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="flex flex-col gap-2 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/30">
+                                <span class="material-symbols-outlined text-emerald-600 text-3xl">speed</span>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Avg Response Time</p>
+                                <p class="text-2xl font-bold text-emerald-600">{{ $stats['avg_response_time'] }}s</p>
+                            </div>
+                            <div class="flex flex-col gap-2 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
+                                <span class="material-symbols-outlined text-primary text-3xl">psychology</span>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">AI Success Rate</p>
+                                <p class="text-2xl font-bold text-primary">{{ $stats['ai_rate'] }}%</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                            <span class="material-symbols-outlined text-green-500">check_circle</span>
+                            <p class="text-sm text-slate-600 dark:text-slate-400">Bot berjalan dengan baik</p>
+                        </div>
                     </div>
                 </div>
 
@@ -319,4 +278,71 @@
     </main>
 </div>
 </body>
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Trend Chart
+    const trendData = @json($trend7Days);
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: trendData.map(d => d.date),
+            datasets: [
+                {
+                    label: 'Pesan Masuk',
+                    data: trendData.map(d => d.messages),
+                    borderColor: '#135bec',
+                    backgroundColor: 'rgba(19, 91, 236, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#135bec',
+                },
+                {
+                    label: 'Bot Reply',
+                    data: trendData.map(d => d.ai_replies),
+                    borderColor: '#a855f7',
+                    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#a855f7',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(51, 65, 85, 0.1)'
+                    },
+                    ticks: {
+                        color: '#64748b'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(51, 65, 85, 0.1)'
+                    },
+                    ticks: {
+                        color: '#64748b',
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
 </html>

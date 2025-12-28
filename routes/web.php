@@ -14,10 +14,29 @@ use App\Http\Controllers\KbArticleController;
 
 // Dashboard (ReplyAI)
 Route::get('/', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+// ============================
+// SETTINGS
+// ============================
+Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
+Route::resource('settings/quick-replies', App\Http\Controllers\QuickReplyController::class)->names([
+    'index' => 'quick-replies.index',
+    'store' => 'quick-replies.store',
+    'update' => 'quick-replies.update',
+    'destroy' => 'quick-replies.destroy',
+]);
+Route::get('/api/quick-replies', [App\Http\Controllers\QuickReplyController::class, 'fetch'])->name('api.quick-replies.fetch');
+
+// ============================
+// ANALYTICS & CONTACTS
+// ============================
 Route::get('/analytics', [App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics.index');
 Route::get('/contacts', [App\Http\Controllers\ContactController::class, 'index'])->name('contacts.index');
-Route::get('/settings', function() { return view('pages.settings.index'); })->name('settings.index');
-Route::get('/simulator', function() { return view('pages.simulator.index'); })->name('simulator.index');
+
+// ============================
+// SIMULATOR
+// ============================
+Route::get('/simulator', [App\Http\Controllers\SimulatorController::class, 'index'])->name('simulator.index');
+Route::post('/simulator/send', [App\Http\Controllers\SimulatorController::class, 'sendMessage'])->name('simulator.send');
 
 // ============================
 // INBOX INSTAGRAM
@@ -34,12 +53,15 @@ Route::get('/inbox/poll-messages', [InboxController::class, 'pollMessages'])
 // polling conversations (opsional buat sidebar update)
 Route::get('/inbox/poll-conversations', [InboxController::class, 'pollConversations'])
     ->name('inbox.poll.conversations');
+
 // ✅ endpoint check pesan terbaru (AJAX)
 Route::get('/inbox/check-latest', [InboxController::class, 'checkLatest'])
     ->name('inbox.checkLatest');
-    Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
-    Route::post('/inbox/send', [InboxController::class, 'send'])->name('inbox.send');
-    Route::get('/inbox/has-new', [InboxController::class, 'hasNew'])->name('inbox.hasNew');
+
+// Handback
+Route::post('/inbox/{conversation}/handback', [InboxController::class, 'handbackToBot'])->name('inbox.handback');
+
+
 // route lain (tailadmin default) kalau mau tetap ada:
 Route::get('/calendar', fn() => view('pages.calender', ['title' => 'Calendar']))->name('calendar');
 Route::get('/profile', fn() => view('pages.profile', ['title' => 'Profile']))->name('profile');
@@ -104,6 +126,7 @@ Route::delete('/kb/{kb}', [KbArticleController::class, 'destroy'])->name('kb.des
 
 // ✅ NEW: test AI dari KB
 Route::post('/kb/test-ai', [KbArticleController::class, 'testAi'])->name('kb.testAi');
+Route::post('/kb/import-file', [KbArticleController::class, 'importFile'])->name('kb.importFile');
 
 
 

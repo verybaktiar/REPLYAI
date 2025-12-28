@@ -22,11 +22,13 @@ class Conversation extends Model
         'has_sent_welcome',       // FIX - agar flag tersimpan
         'last_menu_sent_at',      // FIX - agar timestamp tersimpan
         'tags',                   // BARU - JSON
+        'agent_replied_at',       // BARU - untuk handoff timeout
     ];
 
     protected $casts = [
         'last_activity_at' => 'integer', // unix timestamp dari chatwoot
         'tags' => 'array',
+        'agent_replied_at' => 'datetime',
     ];
 
     public function messages(): HasMany

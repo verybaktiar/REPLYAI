@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist Pengujian Sistem ReplyAI</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f9f9f9;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #059669;
+            border-bottom: 2px solid #059669;
+            padding-bottom: 0.5rem;
+        }
+
+        h2 {
+            color: #047857;
+            margin-top: 2rem;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            color: #374151;
+            margin-top: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            color: #9ca3af;
+            font-size: 1.2rem;
+            line-height: 1.5rem;
+        }
+
+        .expectation {
+            background: #ecfdf5;
+            padding: 0.5rem 1rem;
+            border-left: 4px solid #10b981;
+            margin-top: 0.5rem;
+            font-size: 0.95em;
+            border-radius: 0 4px 4px 0;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #d97706;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Checklist Pengujian - QA</h1>
+        <p>Gunakan daftar ini untuk memastikan seluruh fitur berjalan dengan normal. Beri tanda centang jika sukses.</p>
+
+        <h2>1. Pengujian Dasar (Smoke Test)</h2>
+        <ul>
+            <li>Login ke Dashboard admin berhasil.</li>
+            <li>Sidebar navigasi tampil sempurna di semua halaman.</li>
+            <li>Berpindah antar menu tidak ada error (404/500).</li>
+        </ul>
+
+        <h2>2. Pengujian Inbox & Handoff</h2>
+        <h3>Skenario A: Bot Menjawab</h3>
+        <ul>
+            <li><strong>Langkah:</strong> Kirim pesan "Halo" dari Simulator/Instagram.</li>
+            <li>
+                <div class="expectation"><strong>Ekspektasi:</strong> Bot membalas. Status Inbox:
+                    <code>Bot Handling</code>.</div>
+            </li>
+        </ul>
+
+        <h3>Skenario B: Takeover oleh CS</h3>
+        <ul>
+            <li><strong>Langkah:</strong> Buka percakapan di Inbox > Balas manual "Halo kak".</li>
+            <li>
+                <div class="expectation"><strong>Ekspektasi:</strong> Pesan terkirim, status
+                    <code>Agent Handling</code>. Chat user lagi -> Bot Silent.</div>
+            </li>
+        </ul>
+
+        <h3>Skenario C: Handback ke Bot</h3>
+        <ul>
+            <li><strong>Langkah:</strong> Klik "Kembalikan ke Bot".</li>
+            <li>
+                <div class="expectation"><strong>Ekspektasi:</strong> Status kembali <code>Bot Handling</code>. Chat
+                    user lagi -> Bot balas.</div>
+            </li>
+        </ul>
+
+        <h2>3. Pengujian Rules (Auto Reply)</h2>
+        <ul>
+            <li><strong>Langkah:</strong> Buat rule baru: Keyword="promo", Response="Ada diskon". Test di Simulator.
+            </li>
+            <li>
+                <div class="expectation"><strong>Ekspektasi:</strong> Bot membalas "Ada diskon".</div>
+            </li>
+        </ul>
+
+        <h2>4. Pengujian Knowledge Base</h2>
+        <ul>
+            <li><strong>Langkah:</strong> Upload PDF info produk. Tunggu proses. Test tanya info dari PDF.</li>
+            <li>
+                <div class="expectation"><strong>Ekspektasi:</strong> Bot menjawab menggunakan konteks PDF.</div>
+            </li>
+        </ul>
+
+        <h2>5. Pengujian Data Kontak (CRM)</h2>
+        <ul>
+            <li><strong>Langkah:</strong> Chat user baru masuk. Cek menu Data Kontak.</li>
+            <li>
+                <div class="expectation"><strong>Ekspektasi:</strong> User muncul, Total Pesan = angka (bukan n/a).
+                </div>
+            </li>
+        </ul>
+
+        <h2>6. Pengujian Quick Replies</h2>
+        <ul>
+            <li><strong>Langkah:</strong> Buat Shortcut <code>/siap</code>. Buka Inbox, ketik <code>/</code>.</li>
+            <li>
+                <div class="expectation"><strong>Ekspektasi:</strong> Muncul sugesti, klik -> teks terisi.</div>
+            </li>
+        </ul>
+
+        <h2>7. Pengujian Jam Operasional</h2>
+        <ul>
+            <li><strong>Langkah:</strong> Set jam tutup sekarang. Test chat dari Simulator.</li>
+            <li>
+                <div class="expectation"><strong>Ekspektasi:</strong> Balasan "Pesan di Luar Jam Kerja".</div>
+            </li>
+        </ul>
+    </div>
+</body>
+
+</html>

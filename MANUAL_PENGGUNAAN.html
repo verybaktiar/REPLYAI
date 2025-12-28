@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Penggunaan Sistem ReplyAI</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f9f9f9;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 0.5rem; }
+        h2 { color: #1e40af; margin-top: 2rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
+        h3 { color: #374151; margin-top: 1.5rem; }
+        ul, ol { padding-left: 1.5rem; }
+        code { background: #f3f4f6; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: #ef4444; }
+        .toc { background: #eff6ff; padding: 1rem; border-radius: 6px; margin-bottom: 2rem; border: 1px solid #bfdbfe; }
+        .toc a { text-decoration: none; color: #1d4ed8; display: block; margin-bottom: 0.25rem; }
+        .toc a:hover { text-decoration: underline; }
+        .badge { display: inline-block; padding: 0.25em 0.4em; font-size: 75%; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.25rem; background-color: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Manual Penggunaan Sistem ReplyAI</h1>
+        <p>Dokumen ini berisi penjelasan lengkap mengenai fitur, fungsi, dan cara penggunaan sistem ReplyAI.</p>
+
+        <div class="toc">
+            <strong>Daftar Isi</strong>
+            <a href="#1-dashboard">1. Dashboard</a>
+            <a href="#2-kotak-masuk-inbox">2. Kotak Masuk (Inbox)</a>
+            <a href="#3-data-kontak-crm">3. Data Kontak (CRM)</a>
+            <a href="#4-analisis--laporan">4. Analisis & Laporan</a>
+            <a href="#5-manajemen-bot-rules">5. Manajemen Bot (Rules)</a>
+            <a href="#6-knowledge-base-kb">6. Knowledge Base (KB)</a>
+            <a href="#7-quick-replies">7. Quick Replies</a>
+            <a href="#8-simulator">8. Simulator</a>
+            <a href="#9-settings-operational-hours">9. Settings (Operational Hours)</a>
+            <a href="#10-log-aktivitas">10. Log Aktivitas</a>
+        </div>
+
+        <h2 id="1-dashboard">1. Dashboard</h2>
+        <p><strong>Fungsi:</strong> Halaman utama yang memberikan gambaran ringkas kinerja sistem.</p>
+        <p><strong>Isi:</strong></p>
+        <ul>
+            <li>Statistik cepat (Total Percakapan, Pesan Masuk, Bot Reply).</li>
+            <li>Grafik aktivitas harian.</li>
+            <li>Status koneksi ke platform (Instagram/WhatsApp).</li>
+        </ul>
+
+        <h2 id="2-kotak-masuk-inbox">2. Kotak Masuk (Inbox)</h2>
+        <p><strong>Fungsi:</strong> Pusat pengelolaan pesan masuk dari pelanggan.</p>
+        <p><strong>Fitur Utama:</strong></p>
+        <ul>
+            <li><strong>Daftar Percakapan:</strong> Melihat semua chat yang masuk.</li>
+            <li><strong>Filter Status:</strong>
+                <ul>
+                    <li><code>All</code>: Semua pesan.</li>
+                    <li><code>Bot Handling</code>: Pesan yang sedang ditangani bot.</li>
+                    <li><code>Needs Attention</code> (Escalated): Pesan yang butuh bantuan manusia.</li>
+                    <li><code>Agent Handling</code>: Pesan yang sedang dihandle oleh CS.</li>
+                </ul>
+            </li>
+            <li><strong>Chat Interface:</strong> Halaman untuk membalas pesan secara manual.</li>
+            <li><strong>Handoff (Ambil Alih):</strong>
+                <ul>
+                    <li>Saat CS membalas pesan, status otomatis berubah jadi <code>Agent Handling</code>.</li>
+                    <li>Bot akan berhenti membalas otomatis di percakapan ini.</li>
+                </ul>
+            </li>
+            <li><strong>Kembalikan ke Bot (Handback):</strong>
+                <ul>
+                    <li>Tombol "Kembalikan ke Bot" untuk mengaktifkan kembali auto-reply.</li>
+                    <li>Otomatis kembali ke bot jika CS tidak membalas selama 4 jam.</li>
+                </ul>
+            </li>
+        </ul>
+        <p><strong>Cara Penggunaan:</strong></p>
+        <ol>
+            <li>Masuk ke menu <strong>Kotak Masuk</strong>.</li>
+            <li>Klik salah satu percakapan.</li>
+            <li>Ketik pesan untuk mengambil alih (Bot otomatis mati).</li>
+            <li>Klik <strong>Kembalikan ke Bot</strong> jika sudah selesai.</li>
+        </ol>
+
+        <h2 id="3-data-kontak-crm">3. Data Kontak (CRM)</h2>
+        <p><strong>Fungsi:</strong> Menyimpan database pelanggan yang berinteraksi.</p>
+        <p><strong>Isi:</strong></p>
+        <ul>
+            <li>Nama Profil, Platform (IG/WA), Total Pesan, Terakhir Aktif.</li>
+            <li>Tagging otomatis (misal: "new_lead", "support").</li>
+            <li>Tombol "Lihat Chat" untuk langsung menuju histori percakapan.</li>
+        </ul>
+
+        <h2 id="4-analisis--laporan">4. Analisis & Laporan</h2>
+        <p><strong>Fungsi:</strong> Melihat metrik performa bot dan agen.</p>
+        <p><strong>Fitur:</strong> Grafik volume pesan, statistik sentimen, waktu respon rata-rata.</p>
+
+        <h2 id="5-manajemen-bot-rules">5. Manajemen Bot (Rules)</h2>
+        <p><strong>Fungsi:</strong> Mengatur aturan balasan otomatis berbasis kata kunci (Rule-based).</p>
+        <p><strong>Cara Penggunaan:</strong></p>
+        <ol>
+            <li>Klik <strong>Tambah Rule Baru</strong>.</li>
+            <li><strong>Keyword:</strong> Masukkan kata kunci.</li>
+            <li><strong>Response:</strong> Masukkan teks balasan bot.</li>
+            <li><strong>Logic:</strong> Pilih <code>Contains</code> atau <code>Exact</code>.</li>
+            <li>Klik <strong>Simpan</strong>.</li>
+        </ol>
+
+        <h2 id="6-knowledge-base-kb">6. Knowledge Base (KB)</h2>
+        <p><strong>Fungsi:</strong> "Otak" AI untuk menjawab pertanyaan kompleks dari dokumen.</p>
+        <p><strong>Fitur:</strong></p>
+        <ul>
+            <li>Upload Dokumen (PDF/Doc).</li>
+            <li>Parser otomatis membaca teks.</li>
+            <li>Bot menjawab berdasarkan isi dokumen jika tidak ada Rule yang cocok.</li>
+        </ul>
+
+        <h2 id="7-quick-replies">7. Quick Replies</h2>
+        <p><strong>Fungsi:</strong> Template pesan cepat untuk CS.</p>
+        <p><strong>Fitur:</strong> Shortcut (misal <code>/salam</code>) untuk memanggil teks panjang di Inbox.</p>
+
+        <h2 id="8-simulator">8. Simulator</h2>
+        <p><strong>Fungsi:</strong> Menguji respon bot tanpa akun asli.</p>
+        <p><strong>Cara Penggunaan:</strong> Ketik pesan di kolom chat, lihat balasan bot dan debug log di panel kanan.</p>
+
+        <h2 id="9-settings-operational-hours">9. Settings (Operational Hours)</h2>
+        <p><strong>Fungsi:</strong> Mengatur jam operasional dan pesan balasan di luar jam kerja.</p>
+
+        <h2 id="10-log-aktivitas">10. Log Aktivitas</h2>
+        <p><strong>Fungsi:</strong> Catatan teknis untuk debugging error atau peringatan sistem.</p>
+    </div>
+</body>
+</html>

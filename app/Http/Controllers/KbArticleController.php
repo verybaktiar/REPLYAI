@@ -109,6 +109,50 @@ class KbArticleController extends Controller
         ]);
     }
 
+    /**
+     * Import File (PDF/TXT)
+     * POST /kb/import-file
+     */
+    public function importFile(Request $request, \App\Services\KbParserService $parser)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf,txt', 'max:5120'], // Max 5MB
+            'tags' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $file = $request->file('file');
+        
+        try {
+            $text = $parser->parseFile($file->getPathname(), $file->getMimeType());
+            
+            if (Str::length($text) < 30) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'Konten file terlalu sedikit atau kosong.',
+                ], 422);
+            }
+
+            $article = KbArticle::create([
+                'title'      => $file->getClientOriginalName(),
+                'content'    => $text,
+                'source_url' => 'File: ' . $file->getClientOriginalName(),
+                'tags'       => $request->tags ?? 'file-upload',
+                'is_active'  => true,
+            ]);
+
+            return response()->json([
+                'ok' => true,
+                'article' => $article,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Gagal memproses file: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function toggle(KbArticle $kb)
     {
         $kb->is_active = !$kb->is_active;
