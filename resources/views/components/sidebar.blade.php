@@ -53,6 +53,31 @@
             <span class="material-symbols-outlined text-[24px]">science</span>
             <span class="text-sm font-medium">Simulator</span>
         </a>
+
+        <div class="mt-4 mb-2 px-3">
+            <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">Integrasi</p>
+        </div>
+
+        <!-- WhatsApp Menu Group -->
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('whatsapp.inbox*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('whatsapp.inbox') }}">
+            <span class="material-symbols-outlined text-[24px]">chat</span>
+            <span class="text-sm font-medium">WhatsApp Inbox</span>
+        </a>
+
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('whatsapp.broadcast*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('whatsapp.broadcast.index') }}">
+            <span class="material-symbols-outlined text-[24px]">campaign</span>
+            <span class="text-sm font-medium">Broadcast</span>
+        </a>
+
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('whatsapp.settings*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('whatsapp.settings') }}">
+            <span class="material-symbols-outlined text-[24px]">perm_data_setting</span>
+            <span class="text-sm font-medium">WA Settings</span>
+        </a>
+
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('whatsapp.analytics*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('whatsapp.analytics') }}">
+            <span class="material-symbols-outlined text-[24px]">analytics</span>
+            <span class="text-sm font-medium">Analytics</span>
+        </a>
         
         <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('settings*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('settings.index') }}">
             <span class="material-symbols-outlined text-[24px]">settings</span>
@@ -66,6 +91,14 @@
             <span class="material-symbols-outlined text-[24px]">history</span>
             <span class="text-sm font-medium">Log Aktivitas</span>
         </a>
+        <div class="mt-4 mb-2 px-3">
+            <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">Help & Guide</p>
+        </div>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('documentation.*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('documentation.index') }}">
+            <span class="material-symbols-outlined text-[24px]">menu_book</span>
+            <span class="text-sm font-medium">Documentation</span>
+        </a>
+
     </nav>
     <!-- User Profile (Bottom) -->
     <div class="border-t border-[#232f48] p-4">

@@ -47,7 +47,29 @@ Dokumen ini melacak status pengembangan fitur untuk project ReplyAI Admin.
 | ⚡ Sedang | **Quick Reply Template** | Template jawaban cepat untuk CS | ✅ |
 
 ## 💡 Future Ideas
+- [x] **WhatsApp Integration** - Bot untuk WhatsApp menggunakan Baileys
 - [ ] **Broadcast / Campaign Manager** - Kirim pesan massal (Blast)
 - [ ] **Multi-Agent Support** - Beberapa CS online bersamaan
-- [ ] **WhatsApp Integration** - Extend bot ke WhatsApp Business API
 
+## ✅ WhatsApp Integration (Core)
+- [x] Node.js Service (Baileys) - `wa-service/`
+- [x] Database Migrations (wa_sessions, wa_messages)
+- [x] Laravel Models (WaSession, WaMessage)
+- [x] WhatsAppService & Controllers
+- [x] API Routes (connect, disconnect, send, webhook)
+- [x] WhatsApp Settings UI Page
+- [x] Sidebar Navigation Update
+- [x] Testing dengan device WhatsApp
+- [x] Group Chat Filtering & Null Message Fix
+
+## 🚀 WhatsApp Expansion (Next Priority)
+- [ ] **WhatsApp Inbox** - UI Chat mirip WA Web (List chat, Bubble chat, media view)
+- [ ] **Media Support** - Kirim/Terima Gambar & Dokumen
+- [x] **Broadcast / Blast Message**
+  - [x] Campaign Management (Database & UI)
+  - [x] Background Queueing (Anti-banned delay)
+  - [x] Target Filtering (Exclude Groups)
+  - [x] Realtime Progress Reportminder** - Otomatis reminder H-1
+- [ ] **Multi-Session** - Support banyak nomor WA
+- [x] **Analytics** - Dashboard statistik pesan
+- [x] **Internal Documentation** - Panduan penggunaan di dalam aplikasi

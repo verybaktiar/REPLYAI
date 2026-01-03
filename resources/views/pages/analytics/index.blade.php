@@ -65,9 +65,9 @@
                     <div class="flex flex-col gap-1.5 w-full sm:w-auto">
                         <label class="text-xs font-semibold text-text-secondary uppercase tracking-wider">Bot</label>
                         <div class="relative">
-                            <select class="appearance-none bg-surface-dark border border-border-dark text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-40 p-2.5 pr-8">
-                                <option>All Bots</option>
-                                <option>Appointment Bot</option>
+                            <select id="botFilter" onchange="applyFilters()" class="appearance-none bg-surface-dark border border-border-dark text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-40 p-2.5 pr-8">
+                                <option value="all" {{ ($currentBot ?? 'all') == 'all' ? 'selected' : '' }}>All Bots</option>
+                                <option value="appointment" {{ ($currentBot ?? '') == 'appointment' ? 'selected' : '' }}>Appointment Bot</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-text-secondary">
                                 <span class="material-symbols-outlined text-sm">expand_more</span>
@@ -78,10 +78,10 @@
                     <div class="flex flex-col gap-1.5 w-full sm:w-auto">
                         <label class="text-xs font-semibold text-text-secondary uppercase tracking-wider">Platform</label>
                         <div class="relative">
-                            <select class="appearance-none bg-surface-dark border border-border-dark text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-32 p-2.5 pr-8">
-                                <option>All Platforms</option>
-                                <option>WhatsApp</option>
-                                <option>Instagram</option>
+                            <select id="platformFilter" onchange="applyFilters()" class="appearance-none bg-surface-dark border border-border-dark text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-32 p-2.5 pr-8">
+                                <option value="all" {{ ($currentPlatform ?? 'all') == 'all' ? 'selected' : '' }}>All Platforms</option>
+                                <option value="whatsapp" {{ ($currentPlatform ?? '') == 'whatsapp' ? 'selected' : '' }}>WhatsApp</option>
+                                <option value="instagram" {{ ($currentPlatform ?? '') == 'instagram' ? 'selected' : '' }}>Instagram</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-text-secondary">
                                 <span class="material-symbols-outlined text-sm">expand_more</span>
@@ -89,7 +89,7 @@
                         </div>
                     </div>
                     <!-- Export Button -->
-                    <button class="bg-primary hover:bg-blue-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 flex items-center gap-2 transition-colors ml-auto sm:ml-0 h-[42px] mt-auto">
+                    <button onclick="exportReport()" class="bg-primary hover:bg-blue-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 flex items-center gap-2 transition-colors ml-auto sm:ml-0 h-[42px] mt-auto">
                         <span class="material-symbols-outlined" style="font-size: 20px;">download</span>
                         Export Report
                     </button>
@@ -331,5 +331,37 @@
         </div>
     </div>
 </main>
+
+<script>
+// Apply filters - redirect with query params
+function applyFilters() {
+    const platform = document.getElementById('platformFilter').value;
+    const bot = document.getElementById('botFilter').value;
+    
+    let url = '{{ route("analytics.index") }}?';
+    const params = new URLSearchParams();
+    
+    if (platform !== 'all') params.append('platform', platform);
+    if (bot !== 'all') params.append('bot', bot);
+    
+    window.location.href = url + params.toString();
+}
+
+// Export report - download CSV
+function exportReport() {
+    const platform = document.getElementById('platformFilter').value;
+    const bot = document.getElementById('botFilter').value;
+    
+    let url = '{{ route("analytics.export") }}?';
+    const params = new URLSearchParams();
+    
+    if (platform !== 'all') params.append('platform', platform);
+    if (bot !== 'all') params.append('bot', bot);
+    
+    // Open download link
+    window.location.href = url + params.toString();
+}
+</script>
+
 </body>
 </html>

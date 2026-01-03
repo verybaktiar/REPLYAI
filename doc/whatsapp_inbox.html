@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dokumentasi WhatsApp Inbox - ReplyAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="max-w-5xl mx-auto p-8 bg-white min-h-screen shadow-sm">
+
+        <!-- Header -->
+        <header class="border-b border-slate-200 pb-8 mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">WhatsApp Inbox Feature</h1>
+            <p class="text-slate-500">Panduan penggunaan dan teknis fitur Inbox WhatsApp pada ReplyAI.</p>
+            <div class="mt-4 flex gap-2">
+                <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Version 1.0</span>
+                <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Live</span>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+
+            <!-- Sidebar Navigation -->
+            <nav class="md:col-span-1 space-y-1">
+                <a href="#overview" class="block px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-medium">Overview</a>
+                <a href="#features" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Fitur Utama</a>
+                <a href="#how-to-use" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Cara
+                    Penggunaan</a>
+                <a href="#technical" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Review
+                    Teknis</a>
+                <a href="#limitations" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Batasan
+                    Sistem</a>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="md:col-span-3 space-y-12">
+
+                <!-- Overview -->
+                <section id="overview">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm">1</span>
+                        Overview
+                    </h2>
+                    <p class="leading-relaxed text-slate-600">
+                        Fitur <strong>WhatsApp Inbox</strong> memungkinkan admin untuk melihat, memantau, dan membalas
+                        pesan WhatsApp langsung dari dashboard ReplyAI. Fitur ini didesain menyerupai tampilan WhatsApp
+                        Web untuk kemudahan penggunaan, namun terintegrasi penuh dengan database sistem.
+                    </p>
+                </section>
+
+                <!-- Features -->
+                <section id="features">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm">2</span>
+                        Fitur Utama
+                    </h2>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 bg-slate-50 p-4 rounded-lg">
+                            <span class="text-2xl">📱</span>
+                            <div>
+                                <h3 class="font-bold text-slate-900">Realtime-ish List Chat</h3>
+                                <p class="text-sm text-slate-600">Daftar percakapan yang otomatis diperbarui (polling
+                                    setiap 5 detik) untuk menampilkan pesan masuk terbaru.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3 bg-slate-50 p-4 rounded-lg">
+                            <span class="text-2xl">🔍</span>
+                            <div>
+                                <h3 class="font-bold text-slate-900">Smart Filtering</h3>
+                                <p class="text-sm text-slate-600">Sistem otomatis memfilter pesan dari Grup, Channel,
+                                    dan Broadcast List, sehingga inbox hanya berisi percakapan personal (1-on-1).</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3 bg-slate-50 p-4 rounded-lg">
+                            <span class="text-2xl">📎</span>
+                            <div>
+                                <h3 class="font-bold text-slate-900">Media Support</h3>
+                                <p class="text-sm text-slate-600">Kemampuan untuk mengirim pesan teks, gambar, dan
+                                    dokumen PDF langsung dari dashboard.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3 bg-slate-50 p-4 rounded-lg">
+                            <span class="text-2xl">🤖</span>
+                            <div>
+                                <h3 class="font-bold text-slate-900">Bot Indication</h3>
+                                <p class="text-sm text-slate-600">Penanda khusus pada bubble chat untuk membedakan mana
+                                    balasan manual admin dan mana balasan otomatis dari AI/Bot.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- How To Use -->
+                <section id="how-to-use">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm">3</span>
+                        Cara Penggunaan
+                    </h2>
+
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">A. Mengakses Inbox</h3>
+                            <p class="text-slate-600">Klik menu <strong>WhatsApp</strong> di sidebar, lalu pilih submenu
+                                <strong>Inbox</strong> (atau akses URL <code>/whatsapp/inbox</code>).</p>
+                        </div>
+
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">B. Mencari Kontak</h3>
+                            <p class="text-slate-600">Gunakan kolom pencarian di bagian atas daftar chat. Anda bisa
+                                mencari berdasarkan Nama Profil atau Nomor Telepon.</p>
+                        </div>
+
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">C. Mengirim Pesan Media</h3>
+                            <ol class="list-decimal list-inside text-slate-600 space-y-2 ml-2">
+                                <li>Buka percakapan yang dituju.</li>
+                                <li>Klik ikon <strong>Attach (📎)</strong> di sebelah kiri kolom ketik.</li>
+                                <li>Pilih file gambar (JPG/PNG) atau dokumen (PDF). Maksimal 10MB.</li>
+                                <li>(Opsional) Tambahkan caption pada kolom teks.</li>
+                                <li>Klik tombol <strong>Kirim (➤)</strong>.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Technical Review -->
+                <section id="technical">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm">4</span>
+                        Teknis & Struktur Kode
+                    </h2>
+
+                    <div class="bg-gray-900 text-gray-100 p-6 rounded-xl overflow-x-auto text-sm">
+                        <h4 class="text-purple-400 font-bold mb-2">Controller: WhatsAppInboxController.php</h4>
+                        <ul class="space-y-2 font-mono">
+                            <li>-> index() : Render halaman</li>
+                            <li>-> getConversations() : Return JSON list chat (Filtered: No Groups)</li>
+                            <li>-> getMessages($phone) : Return JSON riwayat chat</li>
+                            <li>-> send() : Handle text & file upload via FormData</li>
+                        </ul>
+
+                        <h4 class="text-purple-400 font-bold mt-6 mb-2">Frontend: inbox.blade.php</h4>
+                        <ul class="space-y-2 font-mono">
+                            <li>Stack: Alpine.js + Tailwind CSS</li>
+                            <li>State: conversations[], messages[], activeChat</li>
+                            <li>Polling: setInterval 5000ms untuk fetch data baru</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Limitations -->
+                <section id="limitations">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm">5</span>
+                        Batasan Saat Ini
+                    </h2>
+                    <ul class="list-disc list-inside text-slate-600 space-y-2">
+                        <li><strong>Incoming Media:</strong> Pesan gambar yang masuk saat ini hanya ditampilkan sebagai
+                            teks notifikasi (e.g., "[Image] caption"). Fitur download media masuk akan hadir di fase
+                            berikutnya.</li>
+                        <li><strong>Read/Delivery Receipts:</strong> Status centang biru belum realtime sepenuhnya
+                            (tergantung webhook events).</li>
+                        <li><strong>Contact Sync:</strong> Nama kontak diambil dari <code>push_name</code> WhatsApp,
+                            belum sinkron dengan database CRM kontak lokal.</li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+
+        <footer class="mt-16 pt-8 border-t border-slate-200 text-center text-slate-400 text-sm">
+            &copy; 2025 ReplyAI Documentation. Generated by Antigravity.
+        </footer>
+    </div>
+
+</body>
+
+</html>

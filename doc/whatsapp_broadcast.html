@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dokumentasi WhatsApp Broadcast - ReplyAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="max-w-5xl mx-auto p-8 bg-white min-h-screen shadow-sm">
+
+        <!-- Header -->
+        <header class="border-b border-slate-200 pb-8 mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">WhatsApp Broadcast System</h1>
+            <p class="text-slate-500">Panduan penggunaan fitur Broadcast (Blast) pesan WhatsApp massal yang aman.</p>
+            <div class="mt-4 flex gap-2">
+                <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Version 1.0</span>
+                <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Queue System
+                    Enabled</span>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+
+            <!-- Sidebar Navigation -->
+            <nav class="md:col-span-1 space-y-1">
+                <a href="#overview" class="block px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-medium">Overview</a>
+                <a href="#features" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Fitur
+                    Keamanan</a>
+                <a href="#how-to-use" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Cara Kirim
+                    Broadcast</a>
+                <a href="#technical" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Review Teknis
+                    (IT)</a>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="md:col-span-3 space-y-12">
+
+                <!-- Overview -->
+                <section id="overview">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm">1</span>
+                        Overview
+                    </h2>
+                    <p class="leading-relaxed text-slate-600">
+                        Fitur Broadcast memungkinkan Anda mengirim pesan yang sama ke ratusan kontak sekaligus. Sistem
+                        ini dirancang berbeda dengan "Forward" biasa; setiap pesan dikirim secara individual sehingga
+                        penerima tidak tahu bahwa ini adalah pesan broadcast (privasi terjaga).
+                    </p>
+                </section>
+
+                <!-- Safety Features -->
+                <section id="features">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm">2</span>
+                        Fitur Keamanan (Anti-Ban)
+                    </h2>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                        <h3 class="font-bold text-yellow-800 mb-2">Mengapa WhatsApp bisa memblokir nomor?</h3>
+                        <p class="text-sm text-yellow-700 mb-4">Pengiriman pesan massal yang terlalu cepat dan simultan
+                            adalah pemicu utama pemblokiran.</p>
+
+                        <h4 class="font-bold text-slate-900 mb-2">Solusi di ReplyAI:</h4>
+                        <ul class="list-disc list-inside text-slate-700 space-y-2 text-sm">
+                            <li><strong>Queue System:</strong> Pesan tidak dikirim serentak, tapi antri satu per satu.
+                            </li>
+                            <li><strong>Random Delay:</strong> Ada jeda acak (1-5 detik) antar pengiriman pesan untuk
+                                meniru perilaku manusia.</li>
+                            <li><strong>Smart Filtering:</strong> Sistem otomatis membuang nomor tidak valid, Grup ID,
+                                dan Channel ID dari daftar penerima.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- How To Use -->
+                <section id="how-to-use">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm">3</span>
+                        Cara Kirim Broadcast
+                    </h2>
+
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">Langkah 1: Persiapan</h3>
+                            <p class="text-slate-600">Pastikan server queue worker berjalan. Jika di local, jalankan
+                                command:</p>
+                            <code
+                                class="block bg-slate-900 text-green-400 p-3 rounded-lg mt-2 text-sm">php artisan queue:work</code>
+                        </div>
+
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">Langkah 2: Buat Campaign</h3>
+                            <ol class="list-decimal list-inside text-slate-600 space-y-2 ml-2">
+                                <li>Masuk ke menu <strong>WhatsApp > Broadcast</strong>.</li>
+                                <li>Klik tombol <strong>Buat Broadcast Baru</strong>.</li>
+                                <li>Isi <strong>Judul Campaign</strong> (untuk referensi internal).</li>
+                                <li>Tulis <strong>Pesan</strong>. Bisa menggunakan formatting *Bold*, _Italic_, dll.
+                                </li>
+                                <li>(Opsional) Upload gambar atau PDF.</li>
+                            </ol>
+                        </div>
+
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">Langkah 3: Pilih Target</h3>
+                            <ul class="space-y-3 mt-2">
+                                <li class="bg-slate-50 p-3 rounded border border-slate-200">
+                                    <strong>All Contacts:</strong> Otomatis mengambil semua nomor yang pernah chat
+                                    dengan bot (yang tersimpan di database).
+                                </li>
+                                <li class="bg-slate-50 p-3 rounded border border-slate-200">
+                                    <strong>Manual Input:</strong> Copy-paste daftar nomor (pisahkan dengan Enter).
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Technical -->
+                <section id="technical">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm">4</span>
+                        Info Teknis
+                    </h2>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-100 text-slate-600 font-bold">
+                                <tr>
+                                    <th class="p-3">Component</th>
+                                    <th class="p-3">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                <tr>
+                                    <td class="p-3 font-mono">SendBroadcastJob</td>
+                                    <td class="p-3">Background job yang menangani pengiriman actual. Menggunakan
+                                        <code>sleep(rand(1,5))</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-mono">wa_broadcasts</td>
+                                    <td class="p-3">Tabel master campaign.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-mono">wa_broadcast_targets</td>
+                                    <td class="p-3">Tabel detail penerima & status per nomor (pending/sent/failed).</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+
+        <footer class="mt-16 pt-8 border-t border-slate-200 text-center text-slate-400 text-sm">
+            &copy; 2025 ReplyAI Documentation. Generated by Antigravity.
+        </footer>
+    </div>
+
+</body>
+
+</html>

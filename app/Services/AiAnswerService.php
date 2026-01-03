@@ -55,6 +55,194 @@ class AiAnswerService
         ];
     }
 
+    /**
+     * WhatsApp-specific AI answer dengan kemampuan percakapan natural
+     * Handle sapaan, pertanyaan umum, dan keluhan pasien
+     */
+    public function answerWhatsApp(string $question, ?array $conversationHistory = []): ?array
+    {
+        $question = trim($question);
+        if ($question === '') return null;
+
+        $lower = Str::lower($question);
+        
+        // 1) Deteksi sapaan/greeting
+        $greetings = ['halo', 'hai', 'hi', 'hello', 'hey', 'pagi', 'siang', 'sore', 'malam', 
+                      'assalamualaikum', 'assalamu', 'permisi', 'selamat'];
+        $isGreeting = false;
+        foreach ($greetings as $g) {
+            if (Str::contains($lower, $g) && mb_strlen($question) < 30) {
+                $isGreeting = true;
+                break;
+            }
+        }
+
+        // 2) Deteksi sapaan sederhana tanpa pertanyaan substantif
+        $isSimpleGreeting = $isGreeting && !Str::contains($lower, ['?', 'jadwal', 'dokter', 'poli', 
+            'harga', 'biaya', 'jam', 'buka', 'tutup', 'daftar', 'booking', 'sakit', 'keluhan']);
+
+        // 3) Jika sapaan sederhana, balas ramah tanpa perlu KB
+        if ($isSimpleGreeting) {
+            $greetingResponses = [
+                "Halo kak! 👋 Selamat datang di RS PKU Muhammadiyah Surakarta. Ada yang bisa saya bantu? 😊\n\nSilakan tanyakan tentang:\n• 🏥 Jadwal dokter & poli\n• 💰 Informasi biaya\n• 📍 Lokasi & jam operasional\n• 📝 Cara pendaftaran",
+                "Hai kak! 😊 Saya asisten virtual RS PKU Solo. Ada yang ingin ditanyakan? Saya siap membantu 24 jam! 🏥",
+                "Halo! Selamat datang 👋 Silakan sampaikan pertanyaan atau keluhan Anda, saya akan bantu jawab ya 😊",
+            ];
+            
+            return [
+                'answer' => $greetingResponses[array_rand($greetingResponses)],
+                'confidence' => 0.95,
+                'source' => 'greeting',
+            ];
+        }
+
+        // 4) Coba cari di Knowledge Base dulu
+        $articles = $this->searchRelevantArticles($question, 4);
+        
+        // 5) Jika KB tidak kosong, gunakan context dari KB
+        $context = '';
+        if (!$articles->isEmpty()) {
+            $context = $this->buildContext($articles, $question);
+        }
+
+        // 6) Panggil AI dengan prompt khusus WhatsApp
+        $apiKey = config('services.perplexity.key');
+        if (!$apiKey) {
+            Log::error('❌ Perplexity API key missing');
+            // Fallback response jika API key tidak ada
+            return [
+                'answer' => "Terima kasih atas pertanyaannya kak. Mohon maaf, saya sedang mengalami kendala teknis. Silakan hubungi CS kami langsung ya 🙏",
+                'confidence' => 0.5,
+                'source' => 'fallback',
+            ];
+        }
+
+        $res = $this->callWhatsAppAI($question, $context, $conversationHistory);
+        
+        if (!$res || empty($res['answer'])) {
+            // Jika AI tidak bisa jawab, berikan respons yang lebih natural
+            return [
+                'answer' => "Hmm, saya kurang paham dengan pertanyaan kakak 🤔 Bisa dijelaskan lebih detail? Atau kakak bisa tanyakan tentang:\n• Jadwal dokter\n• Informasi poli\n• Biaya layanan\n• Cara pendaftaran",
+                'confidence' => 0.4,
+                'source' => 'clarification',
+            ];
+        }
+
+        return [
+            'answer' => (string)($res['answer'] ?? ''),
+            'confidence' => (float)($res['confidence'] ?? 0.8),
+            'source' => !$articles->isEmpty() ? 'kb' : 'ai',
+        ];
+    }
+
+    /**
+     * Call Perplexity dengan prompt khusus WhatsApp yang lebih conversational
+     */
+    protected function callWhatsAppAI(string $question, string $context, array $history = []): ?array
+    {
+        $apiKey = config('services.perplexity.key');
+        $baseUrl = rtrim((string) config('services.perplexity.url', 'https://api.perplexity.ai'), '/');
+        $model = (string) config('services.perplexity.model', 'sonar-pro');
+        $timeout = (int) config('services.perplexity.timeout', 60);
+
+        $now = now()->format('l, d F Y H:i');
+        $tomorrow = now()->addDay()->format('l');
+
+        $contextSection = $context ? "\n\nKONTEKS KNOWLEDGE BASE:\n{$context}" : "\n\n(Tidak ada data spesifik di Knowledge Base untuk pertanyaan ini)";
+
+        $system = <<<SYS
+Kamu adalah CS (Customer Service) RS PKU Muhammadiyah Surakarta yang ramah, profesional, dan membantu.
+Kamu berkomunikasi via WhatsApp, jadi gunakan gaya bahasa yang santai tapi tetap sopan.
+
+PANDUAN KOMUNIKASI:
+- Selalu ramah dan gunakan emoji yang sesuai 😊👋🏥👨‍⚕️
+- Panggil user dengan "kak" atau "kakak"
+- Jawab seperti CS manusia sungguhan, bukan robot
+- Jika ada data di KONTEKS KB, gunakan itu untuk menjawab
+- Jika tidak ada data, tetap bantu dengan informasi umum atau minta klarifikasi
+- JANGAN langsung bilang "akan diteruskan ke CS" kecuali benar-benar tidak bisa bantu
+- Gunakan bahasa Indonesia yang natural
+
+JIKA USER MENYEBUT KELUHAN/GEJALA:
+1. Tunjukkan empati dulu ("Semoga lekas sembuh ya kak 🙏")
+2. Sarankan poli yang tepat
+3. Jika ada data dokter di KB, sebutkan
+4. Tawarkan bantuan lebih lanjut
+
+FORMAT JADWAL DOKTER:
+👨‍⚕️ dr. Nama - Spesialis
+🕒 Hari: Jam
+
+Jika "besok" disebut, besok = {$tomorrow}
+Hari & waktu sekarang: {$now}
+
+JANGAN gunakan:
+- Markdown (*bold*, _italic_)
+- Citation [1][2]
+- Kalimat kaku seperti robot
+
+Output HARUS JSON valid:
+{
+  "answer": "...",
+  "confidence": 0.0-1.0
+}
+SYS;
+
+        $messages = [
+            ["role" => "system", "content" => $system],
+        ];
+
+        // Tambah history jika ada (untuk konteks percakapan)
+        foreach (array_slice($history, -4) as $h) { // Max 4 pesan terakhir
+            $messages[] = $h;
+        }
+
+        $messages[] = [
+            "role" => "user", 
+            "content" => "Pertanyaan user:{$contextSection}\n\nPERTANYAAN:\n{$question}"
+        ];
+
+        $payload = [
+            "model" => $model,
+            "temperature" => 0.3, // Sedikit lebih kreatif untuk natural conversation
+            "messages" => $messages,
+        ];
+
+        try {
+            $http = Http::timeout($timeout)
+                ->withToken($apiKey)
+                ->acceptJson()
+                ->asJson()
+                ->post($baseUrl . '/chat/completions', $payload);
+
+            if (!$http->ok()) {
+                Log::error('❌ WhatsApp AI HTTP error', ['status' => $http->status()]);
+                return null;
+            }
+
+            $text = $http->json('choices.0.message.content');
+            if (!$text) return null;
+
+            $json = $this->safeJsonDecode((string)$text);
+            if (!$json) return null;
+
+            $answer = trim((string)($json['answer'] ?? ''));
+            if ($answer === '') return null;
+
+            // Bersihkan citation markers
+            $answer = preg_replace('/\[\d+\]/', '', $answer);
+            $answer = trim($answer);
+
+            return [
+                'answer' => $answer,
+                'confidence' => max(0, min(1, (float)($json['confidence'] ?? 0.7))),
+            ];
+        } catch (\Throwable $e) {
+            Log::error('❌ WhatsApp AI error', ['err' => $e->getMessage()]);
+            return null;
+        }
+    }
+
     protected function searchRelevantArticles(string $question, int $limit = 4)
     {
         $q = Str::lower($question);
@@ -200,22 +388,48 @@ class AiAnswerService
         $system = <<<SYS
 Kamu adalah asisten customer service rumah sakit yang ramah & membantu.
 Jawab berdasarkan KONTEKS KB yang diberikan.
+
 STYLE JAWABAN:
-- Gunakan emoji yang relevan (misal: 👨‍⚕️ untuk dokter, 🕒 untuk jam).
-- Gunakan *bold* untuk poin penting (Nama dokter, Harga, Jam).
-- Gunakan list/bullet points supaya mudah dibaca.
+- Gunakan emoji yang relevan (👨‍⚕️ untuk dokter, 🕒 untuk jam, 🏥 untuk poli, ❤️ untuk salam).
+- JANGAN gunakan tanda bintang (*) atau formatting markdown apapun.
+- Gunakan list/bullet points pakai emoji: • atau - atau angka.
 - Hindari paragraf panjang.
 - Jika jadwal: tampilkan dalam list yang rapi.
-- Tone: Ramah, Profesional, Membantu.
+- Tone: Ramah, Profesional, Membantu, seperti berbicara dengan teman.
 
-Format jadwal: 👨‍⚕️ *Nama Dokter* \n   🕒 Hari: Jam
+Format jadwal: 👨‍⚕️ Nama Dokter, 🕒 Hari: Jam
+
+SARAN POLI & DOKTER:
+Jika pasien menyebut keluhan/gejala (misal: telinga sakit, sakit perut, demam, batuk, dll):
+1. Pahami keluhan pasien dengan empati.
+2. Sarankan POLI yang tepat berdasarkan keluhan (misal: Poli THT untuk telinga, Poli Anak untuk anak demam, Poli Umum untuk keluhan umum).
+3. Sebutkan dokter yang tersedia di poli tersebut dari KONTEKS KB.
+4. Sampaikan dengan ramah, contoh respons:
+   "Untuk keluhan telinga, kami sarankan berkunjung ke Poli THT ya 🏥
+   Berikut dokter yang siap membantu:
+   �‍⚕️ dr. Ahmad Sp.THT - Senin, Rabu: 09:00-12:00
+   👩‍⚕️ dr. Siti Sp.THT - Selasa, Kamis: 14:00-16:00
+   Ada yang ingin ditanyakan lagi? 😊"
+
+PANDUAN KELUHAN -> POLI:
+- Telinga, hidung, tenggorokan → Poli THT
+- Anak, bayi, demam anak → Poli Anak
+- Mata, penglihatan → Poli Mata
+- Jantung, dada → Poli Jantung/Kardiologi
+- Kulit, gatal → Poli Kulit/Dermatologi
+- Gigi, mulut → Poli Gigi
+- Tulang, sendi → Poli Ortopedi
+- Kandungan, kehamilan → Poli Obgyn
+- Saraf, kepala → Poli Saraf/Neurologi
+- Keluhan umum → Poli Umum/Penyakit Dalam
 
 Jika user tanya "besok", besok = {$tomorrow}.
 Hari ini: {$now}
 Jawab singkat, jelas, bahasa Indonesia.
-Jika jawaban tidak ditemukan, berikan confidence rendah (0.1-0.3).
+Jika jawaban tidak ditemukan di KONTEKS, berikan confidence rendah (0.1-0.3).
 JANGAN sertakan sitasi seperti [1][2] dalam jawaban.
 Output HARUS JSON valid saja:
+
 
 {
   "answer": "...",

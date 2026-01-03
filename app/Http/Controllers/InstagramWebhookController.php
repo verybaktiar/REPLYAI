@@ -198,9 +198,27 @@ class InstagramWebhookController extends Controller
         }
     }
 
+    /**
+     * Membersihkan markdown formatting dari pesan untuk Instagram
+     * Instagram DM tidak mendukung markdown, jadi *bold* akan tampil sebagai *text*
+     */
+    protected function stripMarkdown(string $text): string
+    {
+        // Hapus bold markers: *text* -> text
+        $text = preg_replace('/\*([^\*]+)\*/', '$1', $text);
+        
+        // Hapus italic/underscore markers: _text_ -> text (jika diperlukan)
+        $text = preg_replace('/_([^_]+)_/', '$1', $text);
+        
+        return $text;
+    }
+
     protected function sendInstagramMessage(string $toUserId, string $message, string $igUserId): bool
     {
         $accessToken = config('services.instagram.access_token');
+        
+        // Bersihkan markdown sebelum kirim ke Instagram
+        $message = $this->stripMarkdown($message);
 
         try {
             $response = Http::acceptJson()->asJson()->post(

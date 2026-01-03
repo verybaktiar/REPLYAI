@@ -32,4 +32,10 @@ app()->booted(function () {
         ->withoutOverlapping()
         ->appendOutputTo(storage_path('logs/autoreply.log'));
 
+    // WhatsApp session timeout check
+    $schedule->command('wa:session-timeout')
+        ->everyMinute()
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/wa-session-timeout.log'));
+
 });

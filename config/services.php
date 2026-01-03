@@ -60,6 +60,11 @@ return [
         'instagram_user_id' => env('INSTAGRAM_USER_ID'),
     ],
 
+    'whatsapp' => [
+        'url' => env('WA_SERVICE_URL', 'http://127.0.0.1:3001'),
+        'webhook_key' => env('WA_SERVICE_KEY', 'replyai-wa-secret'),
+    ],
+
     // 'megallm' => [
     //     'key' => env('MEGALLM_API_KEY'),
     //     'url' => env('MEGALLM_BASE_URL', 'https://ai.megallm.io/v1'),

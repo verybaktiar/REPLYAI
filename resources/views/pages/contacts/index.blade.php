@@ -44,41 +44,60 @@
     <div class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10 pb-20">
         <div class="max-w-[1200px] mx-auto flex flex-col gap-8">
             <!-- Header -->
-            <div class="flex justify-between items-end">
+            <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
                 <div class="flex flex-col gap-2">
                     <h2 class="text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em] text-white">Data Kontak</h2>
-                    <p class="text-text-secondary text-base font-normal">Manajemen profil pasien dan riwayat interaksi.</p>
+                    <p class="text-text-secondary text-base font-normal">Manajemen profil pasien dan riwayat interaksi. Total: <span class="text-white font-medium">{{ $total ?? 0 }}</span> kontak</p>
                 </div>
                 <!-- Controls -->
-                <div class="flex gap-3">
-                     <form action="" method="GET" class="relative flex gap-2">
+                <div class="flex flex-wrap gap-3">
+                    <!-- Platform Filter -->
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-secondary uppercase tracking-wider">Platform</label>
+                        <select id="platformFilter" onchange="applyFilters()" class="bg-surface-dark border border-border-dark text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-36 p-2.5">
+                            <option value="all" {{ ($currentPlatform ?? 'all') == 'all' ? 'selected' : '' }}>Semua</option>
+                            <option value="whatsapp" {{ ($currentPlatform ?? '') == 'whatsapp' ? 'selected' : '' }}>WhatsApp</option>
+                            <option value="instagram" {{ ($currentPlatform ?? '') == 'instagram' ? 'selected' : '' }}>Instagram</option>
+                        </select>
+                    </div>
+                    <!-- Tag Filter -->
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-secondary uppercase tracking-wider">Tag</label>
+                        <select id="tagFilter" onchange="applyFilters()" class="bg-surface-dark border border-border-dark text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-32 p-2.5">
+                            <option value="">Semua Tag</option>
+                            <option value="VIP" {{ ($currentTag ?? '') == 'VIP' ? 'selected' : '' }}>VIP</option>
+                            <option value="BPJS" {{ ($currentTag ?? '') == 'BPJS' ? 'selected' : '' }}>BPJS</option>
+                            <option value="New Lead" {{ ($currentTag ?? '') == 'New Lead' ? 'selected' : '' }}>New Lead</option>
+                        </select>
+                    </div>
+                    <!-- Search -->
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-secondary uppercase tracking-wider">Cari</label>
                         <div class="relative">
-                             <select name="tag" onchange="this.form.submit()" class="bg-surface-dark border border-border-dark text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-40 p-2.5">
-                                <option value="">Semua Tag</option>
-                                <option value="VIP" {{ request('tag') == 'VIP' ? 'selected' : '' }}>VIP</option>
-                                <option value="BPJS" {{ request('tag') == 'BPJS' ? 'selected' : '' }}>BPJS</option>
-                                <option value="New Lead" {{ request('tag') == 'New Lead' ? 'selected' : '' }}>New Lead</option>
-                            </select>
+                            <input type="text" id="searchInput" value="{{ $currentSearch ?? '' }}" placeholder="Nama / No. HP..." 
+                                   onkeydown="if(event.key==='Enter')applyFilters()"
+                                   class="bg-surface-dark border border-border-dark text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-52 p-2.5 pl-10" />
+                            <span class="material-symbols-outlined absolute left-3 top-2.5 text-text-secondary text-[20px]">search</span>
                         </div>
-                        <div class="relative">
-                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari Nama / No. HP..." class="bg-surface-dark border border-border-dark text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-64 p-2.5 pl-10" />
-                             <span class="material-symbols-outlined absolute left-3 top-2.5 text-text-secondary text-[20px]">search</span>
-                        </div>
-                    </form>
-                    <button class="bg-primary hover:bg-blue-600 text-white font-medium rounded-lg text-sm px-4 py-2.5 flex items-center gap-2">
-                        <span class="material-symbols-outlined" style="font-size: 20px;">upload</span> Import
-                    </button>
-                 </div>
+                    </div>
+                    <!-- Export Button -->
+                    <div class="flex flex-col gap-1.5 justify-end">
+                        <button onclick="exportContacts()" class="bg-primary hover:bg-blue-600 text-white font-medium rounded-lg text-sm px-4 py-2.5 flex items-center gap-2 h-[42px]">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">download</span>
+                            Export
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Contacts Table -->
-             <div class="bg-surface-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
+            <div class="bg-surface-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-text-secondary">
                         <thead class="bg-[#111722] text-xs uppercase font-semibold text-text-secondary">
                             <tr>
                                 <th class="px-6 py-4">Nama Profil</th>
-                                <th class="px-6 py-4">Info Kontak</th>
+                                <th class="px-6 py-4">Telepon</th>
                                 <th class="px-6 py-4">Platform</th>
                                 <th class="px-6 py-4">Total Pesan</th>
                                 <th class="px-6 py-4">Terakhir Aktif</th>
@@ -90,37 +109,45 @@
                                 <tr class="hover:bg-[#1f2b40] transition-colors">
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
-                                            <div class="size-8 rounded-full bg-slate-700 bg-cover" style="background-image: url('{{ $c->avatar ?: 'https://ui-avatars.com/api/?name='.urlencode($c->display_name).'&background=374151&color=fff' }}');"></div>
-                                            <span class="text-white font-medium">{{ $c->display_name ?? 'Tanpa Nama' }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col gap-1">
-                                            <span class="text-white">{{ $c->name }}</span> <!-- NIK/Phone usually stored here -->
-                                             <div class="flex gap-1 flex-wrap">
-                                                @if($c->tags && is_array($c->tags))
-                                                    @foreach($c->tags as $tag)
-                                                        <span class="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">{{ $tag }}</span>
-                                                    @endforeach
+                                            <div class="size-8 rounded-full bg-slate-700 bg-cover" style="background-image: url('{{ $c['avatar'] ?: 'https://ui-avatars.com/api/?name='.urlencode($c['name']).'&background=374151&color=fff' }}');"></div>
+                                            <div class="flex flex-col">
+                                                <span class="text-white font-medium">{{ $c['name'] }}</span>
+                                                @if(!empty($c['tags']))
+                                                    <div class="flex gap-1 flex-wrap mt-1">
+                                                        @foreach($c['tags'] as $tag)
+                                                            <span class="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">{{ $tag }}</span>
+                                                        @endforeach
+                                                    </div>
                                                 @endif
                                             </div>
                                         </div>
                                     </td>
+                                    <td class="px-6 py-4 text-white">{{ $c['phone'] }}</td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-2">
-                                             @if(str_contains(strtolower($c->source), 'whatsapp'))
-                                                <span class="text-green-500 material-symbols-outlined" style="font-size: 18px;">chat</span> WhatsApp
-                                             @else
-                                                <span class="text-pink-500 material-symbols-outlined" style="font-size: 18px;">photo_camera</span> Instagram
-                                             @endif
+                                            @if($c['platform'] === 'whatsapp')
+                                                <span class="text-green-500 material-symbols-outlined" style="font-size: 18px;">chat</span> 
+                                                <span class="text-green-400">WhatsApp</span>
+                                            @else
+                                                <span class="text-pink-500 material-symbols-outlined" style="font-size: 18px;">photo_camera</span> 
+                                                <span class="text-pink-400">Instagram</span>
+                                            @endif
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 text-white">{{ $c->messages_count ?? 0 }}</td>
-                                    <td class="px-6 py-4">{{ $c->updated_at->diffForHumans() }}</td>
+                                    <td class="px-6 py-4 text-white">{{ $c['messages_count'] ?? 0 }}</td>
+                                    <td class="px-6 py-4">{{ \Carbon\Carbon::parse($c['last_active'])->diffForHumans() }}</td>
                                     <td class="px-6 py-4">
-                                        <a href="{{ route('inbox', ['conversation_id' => $c->id]) }}" class="text-primary hover:text-white transition-colors flex items-center gap-1">
-                                            <span class="material-symbols-outlined" style="font-size: 18px;">chat</span> Lihat Chat
-                                        </a>
+                                        @if($c['platform'] === 'whatsapp')
+                                            <a href="{{ route('whatsapp.inbox') }}?phone={{ $c['phone'] }}" class="text-primary hover:text-white transition-colors flex items-center gap-1">
+                                                <span class="material-symbols-outlined" style="font-size: 18px;">chat</span> Lihat Chat
+                                            </a>
+                                        @elseif($c['conversation_id'])
+                                            <a href="{{ route('inbox', ['conversation_id' => $c['conversation_id']]) }}" class="text-primary hover:text-white transition-colors flex items-center gap-1">
+                                                <span class="material-symbols-outlined" style="font-size: 18px;">chat</span> Lihat Chat
+                                            </a>
+                                        @else
+                                            <span class="text-text-secondary">-</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
@@ -129,9 +156,15 @@
                         </tbody>
                     </table>
                 </div>
-                 @if($contacts->hasPages())
-                <div class="p-4 border-t border-border-dark">
-                    {{ $contacts->links() }}
+                @if($hasMore ?? false)
+                <div class="p-4 border-t border-border-dark flex justify-center gap-2">
+                    @if(($page ?? 1) > 1)
+                        <a href="?page={{ $page - 1 }}&platform={{ $currentPlatform ?? 'all' }}&search={{ $currentSearch ?? '' }}&tag={{ $currentTag ?? '' }}" 
+                           class="px-4 py-2 bg-surface-dark border border-border-dark rounded-lg text-sm hover:bg-primary/20">← Sebelumnya</a>
+                    @endif
+                    <span class="px-4 py-2 text-text-secondary">Halaman {{ $page ?? 1 }}</span>
+                    <a href="?page={{ ($page ?? 1) + 1 }}&platform={{ $currentPlatform ?? 'all' }}&search={{ $currentSearch ?? '' }}&tag={{ $currentTag ?? '' }}" 
+                       class="px-4 py-2 bg-surface-dark border border-border-dark rounded-lg text-sm hover:bg-primary/20">Selanjutnya →</a>
                 </div>
                 @endif
             </div>
@@ -139,5 +172,31 @@
         </div>
     </div>
 </main>
+
+<script>
+function applyFilters() {
+    const platform = document.getElementById('platformFilter').value;
+    const tag = document.getElementById('tagFilter').value;
+    const search = document.getElementById('searchInput').value;
+    
+    let url = '{{ route("contacts.index") }}?';
+    const params = new URLSearchParams();
+    
+    if (platform !== 'all') params.append('platform', platform);
+    if (tag) params.append('tag', tag);
+    if (search) params.append('search', search);
+    
+    window.location.href = url + params.toString();
+}
+
+function exportContacts() {
+    const platform = document.getElementById('platformFilter').value;
+    let url = '{{ route("contacts.export") }}?';
+    if (platform !== 'all') url += 'platform=' + platform;
+    window.location.href = url;
+}
+</script>
+
 </body>
 </html>
+

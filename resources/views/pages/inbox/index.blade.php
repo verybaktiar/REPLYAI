@@ -96,8 +96,13 @@
                     <div class="relative shrink-0">
                         <div class="size-12 rounded-full bg-slate-700 bg-center bg-cover" 
                              style='background-image: url("{{ $conv->avatar ?: 'https://ui-avatars.com/api/?name='.urlencode($conv->display_name).'&background=374151&color=fff' }}");'></div>
+                        <!-- Status Indicator Dot -->
+                        <span class="absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-[#111722]
+                            @if($conv->status == 'agent_handling') bg-red-500
+                            @elseif($conv->status == 'escalated') bg-orange-500 animate-pulse
+                            @else bg-green-500
+                            @endif"></span>
                         <div class="absolute -bottom-0.5 -right-0.5 bg-pink-500 rounded-full p-0.5 border border-[#111722] flex items-center justify-center size-4">
-                            <!-- TODO: Check source type if available, else default IG -->
                              <span class="material-symbols-outlined text-white text-[10px]">photo_camera</span>
                         </div>
                     </div>
@@ -108,10 +113,16 @@
                             <span class="text-[10px] text-slate-500 whitespace-nowrap">{{ ($conv->last_activity_at && $conv->last_activity_at > 946684800) ? \Carbon\Carbon::createFromTimestamp($conv->last_activity_at)->diffForHumans(null, true, true) : '' }}</span>
                         </div>
                          <div class="flex items-center gap-1.5 mb-1">
-                             @if($conv->status == 'open')
-                                <span class="text-[10px] bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded flex items-center gap-1">Open</span>
+                             @if($conv->status == 'agent_handling')
+                                <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[10px]">headset_mic</span> CS Handling
+                                </span>
+                             @elseif($conv->status == 'escalated')
+                                <span class="text-[10px] bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[10px]">priority_high</span> Escalated
+                                </span>
                              @else
-                                <span class="text-[10px] bg-indigo-500/10 text-slate-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <span class="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded flex items-center gap-1">
                                     <span class="material-symbols-outlined text-[10px]">smart_toy</span> Bot
                                 </span>
                              @endif
@@ -154,29 +165,40 @@
 
                     <!-- Status Badge -->
                     @if($convStatus === 'agent_handling')
-                        <span class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                            <span class="material-symbols-outlined" style="font-size: 14px;">support_agent</span>
-                            Agent
+                        <span class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">
+                            <span class="material-symbols-outlined" style="font-size: 14px;">headset_mic</span>
+                            CS Handling
                         </span>
                     @elseif($convStatus === 'escalated')
-                        <span class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                        <span class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-500/20 text-orange-400 border border-orange-500/30">
                             <span class="material-symbols-outlined" style="font-size: 14px;">priority_high</span>
                             Escalated
                         </span>
                     @else
-                        <span class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                        <span class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
                             <span class="material-symbols-outlined" style="font-size: 14px;">smart_toy</span>
-                            Bot
+                            Bot Active
                         </span>
                     @endif
 
-                    <!-- Handback Button (only if agent_handling) -->
+                    <!-- Takeover Button (when bot is active) -->
+                    @if($convStatus === 'bot_handling' || !$convStatus)
+                        <form action="{{ route('takeover.ig.takeover', $selectedId) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white transition-colors">
+                                <span class="material-symbols-outlined" style="font-size: 14px;">headset_mic</span>
+                                Ambil Alih
+                            </button>
+                        </form>
+                    @endif
+
+                    <!-- Handback Button (more prominent when agent_handling) -->
                     @if($convStatus === 'agent_handling' || $convStatus === 'escalated')
                         <form action="{{ route('inbox.handback', $selectedId) }}" method="POST" class="inline">
                             @csrf
-                            <button type="submit" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors" title="Kembalikan ke Bot">
+                            <button type="submit" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-500 hover:bg-green-600 text-white transition-colors">
                                 <span class="material-symbols-outlined" style="font-size: 14px;">replay</span>
-                                Kembalikan ke Bot
+                                Aktifkan Bot Kembali
                             </button>
                         </form>
                     @endif

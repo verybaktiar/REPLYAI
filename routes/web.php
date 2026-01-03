@@ -30,7 +30,9 @@ Route::get('/api/quick-replies', [App\Http\Controllers\QuickReplyController::cla
 // ANALYTICS & CONTACTS
 // ============================
 Route::get('/analytics', [App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics.index');
+Route::get('/analytics/export', [App\Http\Controllers\AnalyticsController::class, 'export'])->name('analytics.export');
 Route::get('/contacts', [App\Http\Controllers\ContactController::class, 'index'])->name('contacts.index');
+Route::get('/contacts/export', [App\Http\Controllers\ContactController::class, 'export'])->name('contacts.export');
 
 // ============================
 // SIMULATOR
@@ -132,3 +134,63 @@ Route::post('/kb/import-file', [KbArticleController::class, 'importFile'])->name
 
 Route::get('/auto-reply-logs', [AutoReplyLogController::class, 'index'])
     ->name('auto-reply-logs.index');
+
+// ============================
+// WHATSAPP INTEGRATION
+// ============================
+use App\Http\Controllers\WhatsAppController;
+use App\Http\Controllers\WhatsAppInboxController;
+use App\Http\Controllers\WhatsAppAnalyticsController;
+use App\Http\Controllers\WhatsAppBroadcastController;
+
+Route::prefix('whatsapp')->group(function () {
+    // Analytics
+    Route::get('/analytics', [WhatsAppAnalyticsController::class, 'index'])->name('whatsapp.analytics');
+
+    // Broadcast
+    Route::resource('/broadcast', WhatsAppBroadcastController::class, [
+        'as' => 'whatsapp'
+    ])->only(['index', 'create', 'store', 'show']);
+
+    // Inbox
+    Route::get('/inbox', [WhatsAppInboxController::class, 'index'])->name('whatsapp.inbox');
+    Route::get('/api/conversations', [WhatsAppInboxController::class, 'getConversations'])->name('whatsapp.api.conversations');
+    Route::get('/api/messages/{phone}', [WhatsAppInboxController::class, 'getMessages'])->name('whatsapp.api.messages');
+
+    // Settings & Actions
+    Route::get('/settings', [WhatsAppController::class, 'settings'])->name('whatsapp.settings');
+    Route::post('/connect', [WhatsAppController::class, 'connect'])->name('whatsapp.connect');
+    Route::post('/disconnect', [WhatsAppController::class, 'disconnect'])->name('whatsapp.disconnect');
+    Route::get('/status', [WhatsAppController::class, 'status'])->name('whatsapp.status');
+    Route::get('/qr', [WhatsAppController::class, 'qr'])->name('whatsapp.qr');
+    Route::post('/send', [WhatsAppController::class, 'send'])->name('whatsapp.send');
+    Route::post('/toggle-auto-reply', [WhatsAppController::class, 'toggleAutoReply'])->name('whatsapp.toggle-auto-reply');
+    Route::get('/messages', [WhatsAppController::class, 'messages'])->name('whatsapp.messages');
+});
+
+// Documentation
+use App\Http\Controllers\DocumentationController;
+use App\Http\Controllers\TakeoverController;
+
+Route::get('/docs', [DocumentationController::class, 'index'])->name('documentation.index');
+
+// ============================
+// TAKEOVER MANAGEMENT (Unified)
+// ============================
+Route::prefix('takeover')->group(function () {
+    // WhatsApp
+    Route::post('/wa/{phone}/takeover', [TakeoverController::class, 'takeoverWa'])->name('takeover.wa.takeover');
+    Route::post('/wa/{phone}/handback', [TakeoverController::class, 'handbackWa'])->name('takeover.wa.handback');
+    Route::get('/wa/{phone}/status', [TakeoverController::class, 'getWaConversationStatus'])->name('takeover.wa.status');
+    
+    // Instagram
+    Route::post('/ig/{id}/takeover', [TakeoverController::class, 'takeoverIg'])->name('takeover.ig.takeover');
+    Route::post('/ig/{id}/handback', [TakeoverController::class, 'handbackIg'])->name('takeover.ig.handback');
+    
+    // Settings & Logs
+    Route::get('/logs', [TakeoverController::class, 'logsPage'])->name('takeover.logs');
+    Route::get('/logs/data', [TakeoverController::class, 'getLogs'])->name('takeover.logs.data');
+    Route::get('/settings', [TakeoverController::class, 'getSettings'])->name('takeover.settings.get');
+    Route::post('/settings', [TakeoverController::class, 'updateSettings'])->name('takeover.settings.update');
+});
+
