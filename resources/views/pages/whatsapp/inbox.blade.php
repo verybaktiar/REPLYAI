@@ -37,6 +37,64 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #324467; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475a80; }
+        
+        /* Typing Indicator Animation */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-6px); opacity: 1; }
+        }
+        
+        /* Message hover actions */
+        .message-bubble-wrapper:hover .message-actions {
+            opacity: 1;
+        }
+        .message-actions {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        /* Smooth chat item transitions */
+        .chat-item {
+            transition: all 0.2s ease;
+        }
+        .chat-item:hover {
+            transform: translateX(4px);
+        }
+        
+        /* Message animation */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-enter {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        /* Read receipt blue checkmark */
+        .read-check {
+            color: #3b82f6;
+        }
+        
+        /* Pinned chat highlight */
+        .chat-item.pinned {
+            background: linear-gradient(135deg, rgba(37, 211, 102, 0.1) 0%, transparent 100%);
+        }
     </style>
 </head>
 <body class="bg-background-dark font-display text-white overflow-hidden h-screen flex">
@@ -90,7 +148,7 @@
                 <template x-for="chat in filteredConversations" :key="chat.phone_number">
                     <div 
                         @click="selectChat(chat)"
-                        class="p-4 border-b border-border-dark cursor-pointer transition-colors"
+                        class="chat-item p-4 border-b border-border-dark cursor-pointer transition-colors relative"
                         :class="activeChat?.phone_number === chat.phone_number ? 'bg-white/10' : 'hover:bg-white/5'"
                     >
                         <div class="flex justify-between items-start">
@@ -216,35 +274,62 @@
                         id="messages-container"
                     >
                         <template x-for="msg in messages" :key="msg.id">
-                            <div class="flex flex-col space-y-1" :class="msg.direction === 'outgoing' ? 'items-end' : 'items-start'">
-                                <!-- Message Bubble -->
-                                <div 
-                                    class="max-w-[70%] rounded-2xl px-4 py-2 shadow-sm relative text-sm"
-                                    :class="msg.direction === 'outgoing' ? 'bg-whatsapp text-white rounded-tr-sm' : 'bg-surface-dark text-white rounded-tl-sm border border-border-dark'"
-                                >
-                                    <p class="mb-1 leading-relaxed whitespace-pre-wrap" x-text="msg.message"></p>
-                                    
-                                    <!-- Bot Reply Indicator -->
-                                    <template x-if="msg.is_bot_reply">
-                                        <div class="mt-2 pt-2 border-t border-white/20 text-xs italic text-white/80">
-                                            <span class="flex items-center gap-1">
-                                                <span class="material-symbols-outlined text-[14px]">smart_toy</span>
-                                                Bot Reply: <span x-text="msg.bot_reply"></span>
-                                            </span>
-                                        </div>
-                                    </template>
-
-                                    <div class="flex items-center justify-end space-x-1 mt-1">
-                                        <span class="text-[10px] opacity-70" x-text="msg.time"></span>
-                                        <template x-if="msg.direction === 'outgoing'">
-                                            <span class="text-white/90">
-                                                <span class="material-symbols-outlined text-[14px]" x-text="msg.status === 'read' ? 'done_all' : 'check'"></span>
-                                            </span>
+                            <div class="flex flex-col space-y-1 message-enter" :class="msg.direction === 'outgoing' ? 'items-end' : 'items-start'">
+                                <!-- Message Bubble Wrapper -->
+                                <div class="message-bubble-wrapper relative group flex" :class="msg.direction === 'outgoing' ? 'flex-row-reverse' : 'flex-row'">
+                                    <!-- Message Bubble -->
+                                    <div 
+                                        class="max-w-[70%] rounded-2xl px-4 py-2 shadow-sm relative text-sm"
+                                        :class="msg.direction === 'outgoing' ? 'bg-whatsapp text-white rounded-tr-sm' : 'bg-surface-dark text-white rounded-tl-sm border border-border-dark'"
+                                    >
+                                        <p class="mb-1 leading-relaxed whitespace-pre-wrap" x-text="msg.message"></p>
+                                        
+                                        <!-- Bot Reply Indicator -->
+                                        <template x-if="msg.is_bot_reply">
+                                            <div class="mt-2 pt-2 border-t border-white/20 text-xs italic text-white/80">
+                                                <span class="flex items-center gap-1">
+                                                    <span class="material-symbols-outlined text-[14px]">smart_toy</span>
+                                                    Bot Reply: <span x-text="msg.bot_reply"></span>
+                                                </span>
+                                            </div>
                                         </template>
+
+                                        <div class="flex items-center justify-end space-x-1 mt-1">
+                                            <span class="text-[10px] opacity-70" x-text="msg.time"></span>
+                                            <template x-if="msg.direction === 'outgoing'">
+                                                <span :class="msg.status === 'read' ? 'read-check' : 'text-white/70'">
+                                                    <span class="material-symbols-outlined text-[14px]" x-text="msg.status === 'read' ? 'done_all' : 'check'"></span>
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Hover Actions -->
+                                    <div class="message-actions flex items-center gap-0.5 mx-1" :class="msg.direction === 'outgoing' ? 'order-first' : ''">
+                                        <button type="button" class="p-1 rounded-full hover:bg-white/10 text-text-secondary hover:text-white transition-colors" title="React">
+                                            <span class="material-symbols-outlined" style="font-size: 14px;">sentiment_satisfied</span>
+                                        </button>
+                                        <button type="button" class="p-1 rounded-full hover:bg-white/10 text-text-secondary hover:text-white transition-colors" title="Reply">
+                                            <span class="material-symbols-outlined" style="font-size: 14px;">reply</span>
+                                        </button>
+                                        <button type="button" class="p-1 rounded-full hover:bg-white/10 text-text-secondary hover:text-white transition-colors" title="More">
+                                            <span class="material-symbols-outlined" style="font-size: 14px;">more_vert</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </template>
+                        
+                        <!-- Typing Indicator (shown when isTyping is true) -->
+                        <div x-show="isTyping" x-cloak class="flex items-start">
+                            <div class="bg-surface-dark rounded-2xl rounded-tl-sm border border-border-dark">
+                                <div class="typing-indicator">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Input Area -->
@@ -377,6 +462,7 @@
             isLoadingConversations: false,
             isLoadingMessages: false,
             isSending: false,
+            isTyping: false,
             pollInterval: null,
             // Idle notification state
             showIdleWarning: false,
@@ -511,6 +597,16 @@
                         this.clearFile();
                         await this.fetchMessages(phone, false);
                         this.scrollToBottom();
+                        
+                        // Show typing indicator if bot is active (simulating bot response)
+                        if (this.activeChat?.status === 'bot_active') {
+                            this.isTyping = true;
+                            this.scrollToBottom();
+                            // Hide after a few seconds (bot will respond)
+                            setTimeout(() => {
+                                this.isTyping = false;
+                            }, 3000);
+                        }
                     } else {
                         alert('Gagal mengirim pesan: ' + (result.error || 'Unknown error'));
                     }

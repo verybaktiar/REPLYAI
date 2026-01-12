@@ -56,6 +56,21 @@ class AiAnswerService
     }
 
     /**
+     * Jawab pertanyaan dengan konteks (untuk Web Widget)
+     */
+    public function answerWithContext(string $question, array $history = []): string
+    {
+        // Re-use logic from answerWhatsApp but return string directly
+        $result = $this->answerWhatsApp($question, $history);
+        
+        if (!$result || empty($result['answer'])) {
+            return "Maaf, saya tidak mengerti. Bisa diulangi dengan kalimat lain?";
+        }
+
+        return $result['answer'];
+    }
+
+    /**
      * WhatsApp-specific AI answer dengan kemampuan percakapan natural
      * Handle sapaan, pertanyaan umum, dan keluhan pasien
      */
@@ -193,14 +208,67 @@ SYS;
         ];
 
         // Tambah history jika ada (untuk konteks percakapan)
-        foreach (array_slice($history, -4) as $h) { // Max 4 pesan terakhir
+        // Normalisasi history agar strictly alternating User-Assistant-User
+        $cleanHistory = [];
+        $rawHistory = array_slice($history, -4); // Ambil 4 terakhir
+
+        foreach ($rawHistory as $h) {
+            // Validasi dasar
+            if (empty($h['content']) || !is_string($h['content']) || trim($h['content']) === '') {
+                continue;
+            }
+            // Fallback role
+            if (!in_array($h['role'], ['user', 'assistant'])) {
+                $h['role'] = 'user';
+            }
+
+            // Jika kosong, langsung tambah
+            if (empty($cleanHistory)) {
+                $cleanHistory[] = $h;
+                continue;
+            }
+
+            // Cek elemen terakhir
+            $lastIdx = count($cleanHistory) - 1;
+            $lastRole = $cleanHistory[$lastIdx]['role'];
+
+            if ($lastRole === $h['role']) {
+                // MERGE jika role sama (User -> User  =>  User (gabungan))
+                $cleanHistory[$lastIdx]['content'] .= "\n\n" . $h['content'];
+            } else {
+                // Append jika beda
+                $cleanHistory[] = $h;
+            }
+        }
+
+        // Tambahkan ke message list utama
+        foreach ($cleanHistory as $h) {
             $messages[] = $h;
         }
 
-        $messages[] = [
-            "role" => "user", 
-            "content" => "Pertanyaan user:{$contextSection}\n\nPERTANYAAN:\n{$question}"
-        ];
+        // Pastikan pesan terakhir di history BUKAN user (karena kita akan append pesan user baru)
+        // Jika terakhir adalah User, merge dengan pesan baru
+        $finalUserMsg = "Pertanyaan user:{$contextSection}\n\nPERTANYAAN:\n{$question}";
+
+        if (!empty($messages)) {
+            $lastIdx = count($messages) - 1;
+            if ($messages[$lastIdx]['role'] === 'user') {
+                // Merge dengan pesan terakhir history
+                $messages[$lastIdx]['content'] .= "\n\n-----------------\n" . $finalUserMsg;
+            } else {
+                // Append baru (karena terakhir adalah assistant)
+                $messages[] = [
+                    "role" => "user",
+                    "content" => $finalUserMsg
+                ];
+            }
+        } else {
+            // History kosong, langsung tambah
+            $messages[] = [
+                "role" => "user", 
+                "content" => $finalUserMsg
+            ];
+        }
 
         $payload = [
             "model" => $model,
@@ -209,6 +277,8 @@ SYS;
         ];
 
         try {
+            Log::info('🤖 Perplexity Payload:', $payload); // DEBUG PAYLOAD
+
             $http = Http::timeout($timeout)
                 ->withToken($apiKey)
                 ->acceptJson()
@@ -216,7 +286,10 @@ SYS;
                 ->post($baseUrl . '/chat/completions', $payload);
 
             if (!$http->ok()) {
-                Log::error('❌ WhatsApp AI HTTP error', ['status' => $http->status()]);
+                Log::error('❌ WhatsApp AI HTTP error', [
+                    'status' => $http->status(),
+                    'body' => $http->body(), // CAPTURE ERROR BODY
+                ]);
                 return null;
             }
 

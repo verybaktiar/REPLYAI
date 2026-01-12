@@ -60,6 +60,10 @@ Route::get('/inbox/poll-conversations', [InboxController::class, 'pollConversati
 Route::get('/inbox/check-latest', [InboxController::class, 'checkLatest'])
     ->name('inbox.checkLatest');
 
+// ✅ NEW: endpoint untuk polling pesan baru (JSON)
+Route::get('/inbox/check-new', [InboxController::class, 'checkNew'])
+    ->name('inbox.checkNew');
+
 // Handback
 Route::post('/inbox/{conversation}/handback', [InboxController::class, 'handbackToBot'])->name('inbox.handback');
 
@@ -192,5 +196,40 @@ Route::prefix('takeover')->group(function () {
     Route::get('/logs/data', [TakeoverController::class, 'getLogs'])->name('takeover.logs.data');
     Route::get('/settings', [TakeoverController::class, 'getSettings'])->name('takeover.settings.get');
     Route::post('/settings', [TakeoverController::class, 'updateSettings'])->name('takeover.settings.update');
+});
+
+// ============================
+// WEB CHAT WIDGET MANAGEMENT
+// ============================
+use App\Http\Controllers\WebWidgetController;
+
+Route::prefix('web-widgets')->group(function () {
+    Route::get('/', [WebWidgetController::class, 'index'])->name('web-widgets.index');
+    Route::get('/create', [WebWidgetController::class, 'create'])->name('web-widgets.create');
+    Route::post('/', [WebWidgetController::class, 'store'])->name('web-widgets.store');
+    Route::get('/{webWidget}/edit', [WebWidgetController::class, 'edit'])->name('web-widgets.edit');
+    Route::put('/{webWidget}', [WebWidgetController::class, 'update'])->name('web-widgets.update');
+    Route::delete('/{webWidget}', [WebWidgetController::class, 'destroy'])->name('web-widgets.destroy');
+    Route::patch('/{webWidget}/toggle', [WebWidgetController::class, 'toggle'])->name('web-widgets.toggle');
+    Route::post('/{webWidget}/regenerate-key', [WebWidgetController::class, 'regenerateKey'])->name('web-widgets.regenerate-key');
+    Route::get('/{webWidget}/embed-code', [WebWidgetController::class, 'getEmbedCode'])->name('web-widgets.embed-code');
+});
+
+// ============================
+// SEQUENCES / DRIP CAMPAIGN
+// ============================
+use App\Http\Controllers\SequenceController;
+
+Route::prefix('sequences')->group(function () {
+    Route::get('/', [SequenceController::class, 'index'])->name('sequences.index');
+    Route::get('/create', [SequenceController::class, 'create'])->name('sequences.create');
+    Route::post('/', [SequenceController::class, 'store'])->name('sequences.store');
+    Route::get('/{sequence}/edit', [SequenceController::class, 'edit'])->name('sequences.edit');
+    Route::put('/{sequence}', [SequenceController::class, 'update'])->name('sequences.update');
+    Route::delete('/{sequence}', [SequenceController::class, 'destroy'])->name('sequences.destroy');
+    Route::patch('/{sequence}/toggle', [SequenceController::class, 'toggle'])->name('sequences.toggle');
+    Route::get('/{sequence}/enrollments', [SequenceController::class, 'enrollments'])->name('sequences.enrollments');
+    Route::post('/{sequence}/enroll', [SequenceController::class, 'manualEnroll'])->name('sequences.enroll');
+    Route::post('/enrollments/{enrollment}/cancel', [SequenceController::class, 'cancelEnrollment'])->name('sequences.enrollment.cancel');
 });
 

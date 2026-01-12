@@ -79,6 +79,9 @@
                     <button @click="activeSection = 'simulator'" :class="{ 'active': activeSection === 'simulator' }" class="nav-link w-full text-left px-3 py-2 rounded text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">
                         Bot Simulator
                     </button>
+                    <button @click="activeSection = 'sequences'" :class="{ 'active': activeSection === 'sequences' }" class="nav-link w-full text-left px-3 py-2 rounded text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                        Sequences (Drip Campaign)
+                    </button>
                     <div class="pt-2 pb-1 px-2">
                         <span class="text-[10px] font-bold text-text-secondary uppercase">WhatsApp Integration</span>
                     </div>
@@ -297,6 +300,62 @@
                             <li><strong>Message Distribution:</strong> Berapa persen pesan yang dijawab Bot vs Admin?</li>
                             <li><strong>Top Active Users:</strong> 5 orang yang paling sering chat. Bisa untuk identifikasi pelanggan setia atau spammer.</li>
                         </ul>
+                    </div>
+
+                    <!-- Sequences -->
+                    <div x-show="activeSection === 'sequences'" x-transition.opacity style="display: none;">
+                        <h2>Sequences (Drip Campaign)</h2>
+                        <p>Fitur <strong>Sequences</strong> memungkinkan Anda mengirim serangkaian pesan otomatis berdasarkan waktu atau trigger tertentu. Cocok untuk welcome series, follow-up leads, reminder appointment, dan nurturing customer.</p>
+                        
+                        <div class="bg-blue-900/20 border border-blue-500/30 p-4 rounded-lg my-4">
+                            <h3 class="!mt-0 text-blue-400">Contoh Penggunaan:</h3>
+                            <ul class="text-sm text-gray-300">
+                                <li><strong>Welcome Series:</strong> Hari 1: "Selamat datang!", Hari 3: "Info layanan kami", Hari 7: "Promo spesial"</li>
+                                <li><strong>Reminder Appointment:</strong> H-3, H-1, dan H+1 (feedback)</li>
+                                <li><strong>Follow-up Leads:</strong> Setelah inquiry, +2 jam, +1 hari, +3 hari</li>
+                            </ul>
+                        </div>
+
+                        <h3>Cara Membuat Sequence:</h3>
+                        <ol>
+                            <li>Buka menu <strong>Sequences</strong> di sidebar.</li>
+                            <li>Klik <strong>"Buat Sequence Baru"</strong>.</li>
+                            <li>Isi informasi dasar:
+                                <ul class="mt-1 ml-4 text-sm text-gray-400">
+                                    <li><strong>Nama:</strong> Berikan nama yang jelas, misal "Welcome Series".</li>
+                                    <li><strong>Trigger:</strong> Pilih kapan sequence dimulai (Manual, Pesan Pertama, Keyword, atau Tag).</li>
+                                    <li><strong>Platform:</strong> Pilih platform target (WhatsApp, Instagram, Web, atau Semua).</li>
+                                </ul>
+                            </li>
+                            <li>Tambahkan langkah-langkah pesan:
+                                <ul class="mt-1 ml-4 text-sm text-gray-400">
+                                    <li><strong>Delay:</strong> Tentukan kapan pesan dikirim (Langsung, Menit, Jam, atau Hari).</li>
+                                    <li><strong>Isi Pesan:</strong> Tulis pesan yang akan dikirim.</li>
+                                </ul>
+                            </li>
+                            <li>Klik <strong>"Simpan Sequence"</strong>.</li>
+                        </ol>
+
+                        <h3>Tipe Trigger:</h3>
+                        <ul>
+                            <li><strong>Manual:</strong> Anda mendaftarkan kontak secara manual dari dashboard.</li>
+                            <li><strong>Pesan Pertama:</strong> Otomatis enroll saat user pertama kali chat.</li>
+                            <li><strong>Keyword:</strong> Otomatis enroll saat user mengetik keyword tertentu.</li>
+                            <li><strong>Tag Ditambahkan:</strong> Otomatis enroll saat tag tertentu ditambahkan ke kontak.</li>
+                        </ul>
+
+                        <h3>Mengelola Kontak Terdaftar:</h3>
+                        <p>Di halaman detail sequence, Anda bisa:</p>
+                        <ul>
+                            <li>Melihat daftar kontak yang terdaftar beserta progress-nya.</li>
+                            <li>Menambah kontak secara manual dengan tombol "Tambah Kontak Manual".</li>
+                            <li>Membatalkan enrollment untuk kontak tertentu.</li>
+                        </ul>
+
+                        <div class="p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg mt-4">
+                            <strong class="text-yellow-400">Penting:</strong>
+                            <p class="text-sm text-gray-300 mt-1">Pastikan Laravel Scheduler berjalan agar sequence dapat memproses pesan secara otomatis. Jalankan <code>php artisan schedule:run</code> setiap menit via cron job.</p>
+                        </div>
                     </div>
 
                     <!-- CRM -->

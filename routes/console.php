@@ -38,4 +38,10 @@ app()->booted(function () {
         ->withoutOverlapping()
         ->appendOutputTo(storage_path('logs/wa-session-timeout.log'));
 
+    // Sequence/Drip Campaign processor
+    $schedule->command('sequence:process')
+        ->everyMinute()
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/sequence-process.log'));
+
 });

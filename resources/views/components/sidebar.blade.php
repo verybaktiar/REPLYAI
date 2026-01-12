@@ -54,6 +54,11 @@
             <span class="text-sm font-medium">Simulator</span>
         </a>
 
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('sequences*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('sequences.index') }}">
+            <span class="material-symbols-outlined text-[24px]">timeline</span>
+            <span class="text-sm font-medium">Sequences</span>
+        </a>
+
         <div class="mt-4 mb-2 px-3">
             <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">Integrasi</p>
         </div>
@@ -77,6 +82,11 @@
         <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('whatsapp.analytics*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('whatsapp.analytics') }}">
             <span class="material-symbols-outlined text-[24px]">analytics</span>
             <span class="text-sm font-medium">Analytics</span>
+        </a>
+
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('web-widgets*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('web-widgets.index') }}">
+            <span class="material-symbols-outlined text-[24px]">widgets</span>
+            <span class="text-sm font-medium">Web Widget</span>
         </a>
         
         <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('settings*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('settings.index') }}">
