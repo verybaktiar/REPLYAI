@@ -26,6 +26,26 @@ Route::resource('settings/quick-replies', App\Http\Controllers\QuickReplyControl
 ]);
 Route::get('/api/quick-replies', [App\Http\Controllers\QuickReplyController::class, 'fetch'])->name('api.quick-replies.fetch');
 
+// Business Profile Settings (Multi-Profile CRUD)
+Route::get('/settings/business', [App\Http\Controllers\BusinessProfileController::class, 'index'])->name('settings.business');
+Route::post('/settings/business', [App\Http\Controllers\BusinessProfileController::class, 'store'])->name('settings.business.store');
+Route::put('/settings/business/{id?}', [App\Http\Controllers\BusinessProfileController::class, 'update'])->name('settings.business.update');
+Route::delete('/settings/business/{id}', [App\Http\Controllers\BusinessProfileController::class, 'destroy'])->name('settings.business.destroy');
+Route::post('/settings/business/{id}/default', [App\Http\Controllers\BusinessProfileController::class, 'setDefault'])->name('settings.business.setDefault');
+Route::get('/api/business/template', [App\Http\Controllers\BusinessProfileController::class, 'getTemplate'])->name('api.business.template');
+
+// Test route
+Route::get('/settings/business-test', function() {
+    $profile = \App\Models\BusinessProfile::first();
+    if (!$profile) {
+        $profile = new \App\Models\BusinessProfile();
+        $profile->business_type = 'general';
+    }
+    $industries = \App\Models\BusinessProfile::INDUSTRIES;
+    return view('settings.business-test', compact('profile', 'industries'));
+});
+
+
 // ============================
 // ANALYTICS & CONTACTS
 // ============================
@@ -69,22 +89,7 @@ Route::post('/inbox/{conversation}/handback', [InboxController::class, 'handback
 
 
 // route lain (tailadmin default) kalau mau tetap ada:
-Route::get('/calendar', fn() => view('pages.calender', ['title' => 'Calendar']))->name('calendar');
-Route::get('/profile', fn() => view('pages.profile', ['title' => 'Profile']))->name('profile');
-Route::get('/form-elements', fn() => view('pages.form.form-elements', ['title' => 'Form Elements']))->name('form-elements');
-Route::get('/basic-tables', fn() => view('pages.tables.basic-tables', ['title' => 'Basic Tables']))->name('basic-tables');
-Route::get('/blank', fn() => view('pages.blank', ['title' => 'Blank']))->name('blank');
-Route::get('/error-404', fn() => view('pages.errors.error-404', ['title' => 'Error 404']))->name('error-404');
-Route::get('/line-chart', fn() => view('pages.chart.line-chart', ['title' => 'Line Chart']))->name('line-chart');
-Route::get('/bar-chart', fn() => view('pages.chart.bar-chart', ['title' => 'Bar Chart']))->name('bar-chart');
-Route::get('/signin', fn() => view('pages.auth.signin', ['title' => 'Sign In']))->name('signin');
-Route::get('/signup', fn() => view('pages.auth.signup', ['title' => 'Sign Up']))->name('signup');
-Route::get('/alerts', fn() => view('pages.ui-elements.alerts', ['title' => 'Alerts']))->name('alerts');
-Route::get('/avatars', fn() => view('pages.ui-elements.avatars', ['title' => 'Avatars']))->name('avatars');
-Route::get('/badge', fn() => view('pages.ui-elements.badges', ['title' => 'Badges']))->name('badges');
-Route::get('/buttons', fn() => view('pages.ui-elements.buttons', ['title' => 'Buttons']))->name('buttons');
-Route::get('/image', fn() => view('pages.ui-elements.images', ['title' => 'Images']))->name('images');
-Route::get('/videos', fn() => view('pages.ui-elements.videos', ['title' => 'Videos']))->name('videos');
+
 
 
 
@@ -163,10 +168,15 @@ Route::prefix('whatsapp')->group(function () {
 
     // Settings & Actions
     Route::get('/settings', [WhatsAppController::class, 'settings'])->name('whatsapp.settings');
-    Route::post('/connect', [WhatsAppController::class, 'connect'])->name('whatsapp.connect');
-    Route::post('/disconnect', [WhatsAppController::class, 'disconnect'])->name('whatsapp.disconnect');
-    Route::get('/status', [WhatsAppController::class, 'status'])->name('whatsapp.status');
-    Route::get('/qr', [WhatsAppController::class, 'qr'])->name('whatsapp.qr');
+    
+    // Multi-Device Management
+    Route::post('/store', [WhatsAppController::class, 'store'])->name('whatsapp.store');
+    Route::delete('/device/{sessionId}', [WhatsAppController::class, 'destroy'])->name('whatsapp.destroy');
+    Route::get('/status/{sessionId}', [WhatsAppController::class, 'status'])->name('whatsapp.status');
+    Route::get('/qr/{sessionId}', [WhatsAppController::class, 'qr'])->name('whatsapp.qr');
+    Route::put('/device/{sessionId}/profile', [WhatsAppController::class, 'updateProfile'])->name('whatsapp.updateProfile');
+    
+    // Actions
     Route::post('/send', [WhatsAppController::class, 'send'])->name('whatsapp.send');
     Route::post('/toggle-auto-reply', [WhatsAppController::class, 'toggleAutoReply'])->name('whatsapp.toggle-auto-reply');
     Route::get('/messages', [WhatsAppController::class, 'messages'])->name('whatsapp.messages');

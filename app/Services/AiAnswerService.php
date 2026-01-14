@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\KbArticle;
+use App\Models\BusinessProfile;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -73,8 +74,12 @@ class AiAnswerService
     /**
      * WhatsApp-specific AI answer dengan kemampuan percakapan natural
      * Handle sapaan, pertanyaan umum, dan keluhan pasien
+     * 
+     * @param string $question The user's question
+     * @param array|null $conversationHistory Previous messages for context
+     * @param BusinessProfile|null $profile Optional profile to use (overrides default)
      */
-    public function answerWhatsApp(string $question, ?array $conversationHistory = []): ?array
+    public function answerWhatsApp(string $question, ?array $conversationHistory = [], ?BusinessProfile $profile = null): ?array
     {
         $question = trim($question);
         if ($question === '') return null;
@@ -99,9 +104,9 @@ class AiAnswerService
         // 3) Jika sapaan sederhana, balas ramah tanpa perlu KB
         if ($isSimpleGreeting) {
             $greetingResponses = [
-                "Halo kak! 👋 Selamat datang di RS PKU Muhammadiyah Surakarta. Ada yang bisa saya bantu? 😊\n\nSilakan tanyakan tentang:\n• 🏥 Jadwal dokter & poli\n• 💰 Informasi biaya\n• 📍 Lokasi & jam operasional\n• 📝 Cara pendaftaran",
-                "Hai kak! 😊 Saya asisten virtual RS PKU Solo. Ada yang ingin ditanyakan? Saya siap membantu 24 jam! 🏥",
-                "Halo! Selamat datang 👋 Silakan sampaikan pertanyaan atau keluhan Anda, saya akan bantu jawab ya 😊",
+                "Halo kak! 👋 Selamat datang. Ada yang bisa saya bantu? 😊",
+                "Hai kak! 😊 Saya asisten virtual siap membantu 24 jam!",
+                "Halo! Selamat datang 👋 Silakan sampaikan pertanyaan Anda, saya akan bantu jawab ya 😊",
             ];
             
             return [
@@ -124,20 +129,24 @@ class AiAnswerService
         $apiKey = config('services.perplexity.key');
         if (!$apiKey) {
             Log::error('❌ Perplexity API key missing');
+            
             // Fallback response jika API key tidak ada
+            $fallbackProfile = $profile ?? BusinessProfile::getActive();
+            $fallbackMsg = $fallbackProfile ? $fallbackProfile->kb_fallback_message : "Mohon maaf, layanan sedang gangguan.";
+
             return [
-                'answer' => "Terima kasih atas pertanyaannya kak. Mohon maaf, saya sedang mengalami kendala teknis. Silakan hubungi CS kami langsung ya 🙏",
+                'answer' => $fallbackMsg,
                 'confidence' => 0.5,
                 'source' => 'fallback',
             ];
         }
 
-        $res = $this->callWhatsAppAI($question, $context, $conversationHistory);
+        $res = $this->callWhatsAppAI($question, $context, $conversationHistory, $profile);
         
         if (!$res || empty($res['answer'])) {
             // Jika AI tidak bisa jawab, berikan respons yang lebih natural
             return [
-                'answer' => "Hmm, saya kurang paham dengan pertanyaan kakak 🤔 Bisa dijelaskan lebih detail? Atau kakak bisa tanyakan tentang:\n• Jadwal dokter\n• Informasi poli\n• Biaya layanan\n• Cara pendaftaran",
+                'answer' => "Hmm, saya kurang paham dengan pertanyaan kakak 🤔 Bisa dijelaskan lebih detail?",
                 'confidence' => 0.4,
                 'source' => 'clarification',
             ];
@@ -152,8 +161,10 @@ class AiAnswerService
 
     /**
      * Call Perplexity dengan prompt khusus WhatsApp yang lebih conversational
+     * 
+     * @param BusinessProfile|null $profile Optional profile to use (overrides default)
      */
-    protected function callWhatsAppAI(string $question, string $context, array $history = []): ?array
+    protected function callWhatsAppAI(string $question, string $context, array $history = [], ?BusinessProfile $profile = null): ?array
     {
         $apiKey = config('services.perplexity.key');
         $baseUrl = rtrim((string) config('services.perplexity.url', 'https://api.perplexity.ai'), '/');
@@ -165,46 +176,22 @@ class AiAnswerService
 
         $contextSection = $context ? "\n\nKONTEKS KNOWLEDGE BASE:\n{$context}" : "\n\n(Tidak ada data spesifik di Knowledge Base untuk pertanyaan ini)";
 
-        $system = <<<SYS
-Kamu adalah CS (Customer Service) RS PKU Muhammadiyah Surakarta yang ramah, profesional, dan membantu.
-Kamu berkomunikasi via WhatsApp, jadi gunakan gaya bahasa yang santai tapi tetap sopan.
-
-PANDUAN KOMUNIKASI:
-- Selalu ramah dan gunakan emoji yang sesuai 😊👋🏥👨‍⚕️
-- Panggil user dengan "kak" atau "kakak"
-- Jawab seperti CS manusia sungguhan, bukan robot
-- Jika ada data di KONTEKS KB, gunakan itu untuk menjawab
-- Jika tidak ada data, tetap bantu dengan informasi umum atau minta klarifikasi
-- JANGAN langsung bilang "akan diteruskan ke CS" kecuali benar-benar tidak bisa bantu
-- Gunakan bahasa Indonesia yang natural
-
-JIKA USER MENYEBUT KELUHAN/GEJALA:
-1. Tunjukkan empati dulu ("Semoga lekas sembuh ya kak 🙏")
-2. Sarankan poli yang tepat
-3. Jika ada data dokter di KB, sebutkan
-4. Tawarkan bantuan lebih lanjut
-
-FORMAT JADWAL DOKTER:
-👨‍⚕️ dr. Nama - Spesialis
-🕒 Hari: Jam
-
-Jika "besok" disebut, besok = {$tomorrow}
-Hari & waktu sekarang: {$now}
-
-JANGAN gunakan:
-- Markdown (*bold*, _italic_)
-- Citation [1][2]
-- Kalimat kaku seperti robot
-
-Output HARUS JSON valid:
-{
-  "answer": "...",
-  "confidence": 0.0-1.0
-}
-SYS;
+        // USE PROVIDED PROFILE OR FALLBACK TO ACTIVE
+        $profile = $profile ?? BusinessProfile::getActive();
+        if (!$profile) {
+            Log::warning('⚠️ No active BusinessProfile found, using fallback.');
+            $systemPrompt = "Kamu adalah asisten virtual yang membantu. Jawab pertanyaan user dengan sopan.";
+        } else {
+            // Replace placeholders in the stored template
+            $systemPrompt = str_replace(
+                ['{business_name}', '{today}', '{now}', '{tomorrow}'], 
+                [$profile->business_name, $now, $now, $tomorrow], 
+                $profile->system_prompt_template
+            );
+        }
 
         $messages = [
-            ["role" => "system", "content" => $system],
+            ["role" => "system", "content" => $systemPrompt],
         ];
 
         // Tambah history jika ada (untuk konteks percakapan)
@@ -458,57 +445,28 @@ SYS;
         $now = now()->format('l, d F Y H:i');
         $tomorrow = now()->addDay()->format('l');
 
-        $system = <<<SYS
-Kamu adalah asisten customer service rumah sakit yang ramah & membantu.
+        // Note: For answerFromKb (Legacy/Web), we might want to use the profile too, 
+        // but for now let's keep it robust by using a generic or profile-based prompt if needed.
+        // For simplicity in this refactor, we'll keep the existing prompt structure for web widget
+        // but arguably we should unify it.
+        // Let's stick to the existing web-widget prompt to not break that specific flow, 
+        // as the user focused on the business logic which seems more relevant to the conversational bot.
+        // Actually, let's use the profile here too for consistency!
+        
+        $profile = BusinessProfile::getActive();
+        if ($profile) {
+             $system = str_replace(
+                ['{business_name}', '{today}', '{now}', '{tomorrow}'], 
+                [$profile->business_name, $now, $now, $tomorrow], 
+                $profile->system_prompt_template
+            );
+        } else {
+             $system = <<<SYS
+Kamu adalah asisten customer service yang ramah & membantu.
 Jawab berdasarkan KONTEKS KB yang diberikan.
-
-STYLE JAWABAN:
-- Gunakan emoji yang relevan (👨‍⚕️ untuk dokter, 🕒 untuk jam, 🏥 untuk poli, ❤️ untuk salam).
-- JANGAN gunakan tanda bintang (*) atau formatting markdown apapun.
-- Gunakan list/bullet points pakai emoji: • atau - atau angka.
-- Hindari paragraf panjang.
-- Jika jadwal: tampilkan dalam list yang rapi.
-- Tone: Ramah, Profesional, Membantu, seperti berbicara dengan teman.
-
-Format jadwal: 👨‍⚕️ Nama Dokter, 🕒 Hari: Jam
-
-SARAN POLI & DOKTER:
-Jika pasien menyebut keluhan/gejala (misal: telinga sakit, sakit perut, demam, batuk, dll):
-1. Pahami keluhan pasien dengan empati.
-2. Sarankan POLI yang tepat berdasarkan keluhan (misal: Poli THT untuk telinga, Poli Anak untuk anak demam, Poli Umum untuk keluhan umum).
-3. Sebutkan dokter yang tersedia di poli tersebut dari KONTEKS KB.
-4. Sampaikan dengan ramah, contoh respons:
-   "Untuk keluhan telinga, kami sarankan berkunjung ke Poli THT ya 🏥
-   Berikut dokter yang siap membantu:
-   �‍⚕️ dr. Ahmad Sp.THT - Senin, Rabu: 09:00-12:00
-   👩‍⚕️ dr. Siti Sp.THT - Selasa, Kamis: 14:00-16:00
-   Ada yang ingin ditanyakan lagi? 😊"
-
-PANDUAN KELUHAN -> POLI:
-- Telinga, hidung, tenggorokan → Poli THT
-- Anak, bayi, demam anak → Poli Anak
-- Mata, penglihatan → Poli Mata
-- Jantung, dada → Poli Jantung/Kardiologi
-- Kulit, gatal → Poli Kulit/Dermatologi
-- Gigi, mulut → Poli Gigi
-- Tulang, sendi → Poli Ortopedi
-- Kandungan, kehamilan → Poli Obgyn
-- Saraf, kepala → Poli Saraf/Neurologi
-- Keluhan umum → Poli Umum/Penyakit Dalam
-
-Jika user tanya "besok", besok = {$tomorrow}.
-Hari ini: {$now}
-Jawab singkat, jelas, bahasa Indonesia.
-Jika jawaban tidak ditemukan di KONTEKS, berikan confidence rendah (0.1-0.3).
-JANGAN sertakan sitasi seperti [1][2] dalam jawaban.
-Output HARUS JSON valid saja:
-
-
-{
-  "answer": "...",
-  "confidence": 0.0-1.0
-}
+Output HARUS JSON valid: { "answer": "...", "confidence": 0.0-1.0 }
 SYS;
+        }
 
         $payload = [
             "model" => $model,

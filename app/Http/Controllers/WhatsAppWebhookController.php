@@ -6,6 +6,7 @@ use App\Services\WhatsAppService;
 use App\Services\AutoReplyEngine;
 use App\Models\WaMessage;
 use App\Models\WaConversation;
+use App\Models\WhatsAppDevice;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -37,6 +38,15 @@ class WhatsAppWebhookController extends Controller
 
         // Save message to database
         $message = $this->waService->handleIncomingMessage($data);
+        
+        // Get Session ID from webhook data
+        $sessionId = $data['sessionId'] ?? null;
+
+        if (!$sessionId) {
+            // Fallback: Find first connected device if session ID missing
+            $device = WhatsAppDevice::where('status', 'connected')->first();
+            $sessionId = $device->session_id ?? 'default';
+        }
 
         // Get or create conversation and track user reply time
         $waConversation = WaConversation::firstOrCreate(
@@ -54,7 +64,7 @@ class WhatsAppWebhookController extends Controller
                 // User says they're done - close session with nice message
                 $closeMessage = "Baik kak, terima kasih sudah menghubungi RS PKU Muhammadiyah Surakarta 🙏\n\n" .
                                "Semoga informasinya bermanfaat! Jangan ragu untuk chat lagi jika ada pertanyaan 💚";
-                $this->waService->sendMessage($message->remote_jid, $closeMessage);
+                $this->waService->sendMessage($sessionId, $message->remote_jid, $closeMessage);
                 $waConversation->update(['session_status' => WaConversation::SESSION_CLOSED]);
                 Log::info('WA Session Closed by User', ['phone' => $message->phone_number]);
                 return response()->json(['success' => true]);
@@ -74,7 +84,7 @@ class WhatsAppWebhookController extends Controller
 
         // Check if auto-reply is enabled AND not being handled by CS
         if ($this->waService->isAutoReplyEnabled() && !$isAgentHandling) {
-            $this->processAutoReply($message);
+            $this->processAutoReply($message, $sessionId);
         } elseif ($isAgentHandling) {
             Log::info('WhatsApp Auto-Reply Skipped - Agent Handling', [
                 'phone' => $message->phone_number,
@@ -118,9 +128,15 @@ class WhatsAppWebhookController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // QR code is handled client-side via polling
-        // This webhook is just for logging/notification purposes
-        Log::info('WhatsApp QR Generated');
+        $data = $request->input('data');
+        if ($data && isset($data['sessionId'])) {
+            Log::info('WhatsApp QR Generated', ['session' => $data['sessionId']]);
+            
+            // Update device status to scanning
+            WhatsAppDevice::where('session_id', $data['sessionId'])->update([
+                'status' => 'scanning'
+            ]);
+        }
 
         return response()->json(['success' => true]);
     }
@@ -128,20 +144,27 @@ class WhatsAppWebhookController extends Controller
     /**
      * Process auto-reply for incoming message using WhatsApp-specific AI
      */
-    protected function processAutoReply(WaMessage $message): void
+    protected function processAutoReply(WaMessage $message, string $sessionId): void
     {
         try {
+            // Fetch device to get its assigned business profile
+            $device = WhatsAppDevice::with('businessProfile')
+                ->where('session_id', $sessionId)
+                ->first();
+            
+            $businessProfile = $device?->businessProfile;
+            
             // Use WhatsApp-specific AI method for smarter, more conversational responses
             $aiService = app(\App\Services\AiAnswerService::class);
-            $aiResult = $aiService->answerWhatsApp($message->message);
+            $aiResult = $aiService->answerWhatsApp($message->message, [], $businessProfile);
             
             if ($aiResult && !empty($aiResult['answer'])) {
                 $reply = $aiResult['answer'];
                 
-                // Send the reply via WhatsApp using remote_jid 
-                // This properly handles @lid format from linked devices
+                // Send the reply via WhatsApp using correct session ID
                 $sendResult = $this->waService->sendMessage(
-                    $message->remote_jid, // Use JID directly instead of phone_number
+                    $sessionId,
+                    $message->remote_jid,
                     $reply
                 );
 

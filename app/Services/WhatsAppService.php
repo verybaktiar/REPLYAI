@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\WaSession;
 use App\Models\WaMessage;
+use App\Models\WhatsAppDevice;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -17,42 +17,14 @@ class WhatsAppService
     }
 
     /**
-     * Get connection status from Node.js service
+     * Create/Initialize a session
      */
-    public function getStatus(): array
+    public function createSession(string $sessionId): array
     {
         try {
-            $response = Http::timeout(5)->get("{$this->serviceUrl}/status");
-            
-            if ($response->successful()) {
-                $data = $response->json();
-                
-                // Sync status to database
-                $this->syncSessionStatus($data);
-                
-                return $data;
-            }
-            
-            return [
-                'status' => 'error',
-                'error' => 'Failed to get status from WhatsApp service'
-            ];
-        } catch (\Exception $e) {
-            Log::error('WhatsApp Service Error: ' . $e->getMessage());
-            return [
-                'status' => 'offline',
-                'error' => 'WhatsApp service is not running'
-            ];
-        }
-    }
-
-    /**
-     * Initiate connection to WhatsApp
-     */
-    public function connect(): array
-    {
-        try {
-            $response = Http::timeout(10)->post("{$this->serviceUrl}/connect");
+            $response = Http::timeout(10)->post("{$this->serviceUrl}/connect", [
+                'sessionId' => $sessionId
+            ]);
             
             if ($response->successful()) {
                 return $response->json();
@@ -64,52 +36,46 @@ class WhatsAppService
             ];
         } catch (\Exception $e) {
             Log::error('WhatsApp Connect Error: ' . $e->getMessage());
-            return [
-                'success' => false,
-                'error' => $e->getMessage()
-            ];
+            throw $e;
         }
     }
 
     /**
-     * Disconnect from WhatsApp
+     * Get connection status
      */
-    public function disconnect(): array
+    public function getStatus(string $sessionId): array
     {
         try {
-            $response = Http::timeout(10)->post("{$this->serviceUrl}/disconnect");
+            $response = Http::timeout(5)->get("{$this->serviceUrl}/status", [
+                'sessionId' => $sessionId
+            ]);
             
             if ($response->successful()) {
-                // Update session in database
-                WaSession::where('session_id', 'default')->update([
-                    'status' => 'disconnected',
-                    'phone_number' => null,
-                    'name' => null,
-                ]);
-                
                 return $response->json();
             }
             
             return [
-                'success' => false,
-                'error' => 'Failed to disconnect'
+                'status' => 'error',
+                'error' => 'Failed to get status'
             ];
         } catch (\Exception $e) {
-            Log::error('WhatsApp Disconnect Error: ' . $e->getMessage());
+            Log::error('WhatsApp Service Error: ' . $e->getMessage());
             return [
-                'success' => false,
-                'error' => $e->getMessage()
+                'status' => 'offline',
+                'error' => 'WhatsApp service is not running'
             ];
         }
     }
 
     /**
-     * Get QR code for authentication
+     * Get QR code
      */
-    public function getQrCode(): ?string
+    public function getQrCode(string $sessionId): ?string
     {
         try {
-            $response = Http::timeout(5)->get("{$this->serviceUrl}/qr");
+            $response = Http::timeout(5)->get("{$this->serviceUrl}/qr", [
+                'sessionId' => $sessionId
+            ]);
             
             if ($response->successful()) {
                 $data = $response->json();
@@ -124,14 +90,38 @@ class WhatsAppService
     }
 
     /**
-     * Send message via WhatsApp
-     * Supports both phone number and JID format
+     * Disconnect
      */
-    public function sendMessage(string $phoneOrJid, string $message, ?string $mediaUrl = null, ?string $mediaType = null): array
+    public function disconnect(string $sessionId): array
+    {
+        try {
+            $response = Http::timeout(10)->post("{$this->serviceUrl}/disconnect", [
+                'sessionId' => $sessionId
+            ]);
+            
+            if ($response->successful()) {
+                return $response->json();
+            }
+            
+            return [
+                'success' => false,
+                'error' => 'Failed to disconnect'
+            ];
+        } catch (\Exception $e) {
+            Log::error('WhatsApp Disconnect Error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Send message
+     */
+    public function sendMessage(string $sessionId, string $phoneOrJid, string $message, ?string $mediaUrl = null, ?string $mediaType = null): array
     {
         try {
             $payload = [
-                'phone' => $phoneOrJid, // Can be phone number or JID (including @lid format)
+                'sessionId' => $sessionId,
+                'phone' => $phoneOrJid,
                 'message' => $message,
             ];
 
@@ -143,50 +133,37 @@ class WhatsAppService
             $response = Http::timeout(30)->post("{$this->serviceUrl}/send", $payload);
             
             if ($response->successful()) {
-                // Determine remote_jid and phone_number based on input format
-                $isJid = str_contains($phoneOrJid, '@');
-                $remoteJid = $isJid ? $phoneOrJid : $this->formatPhoneToJid($phoneOrJid);
-                $phoneNumber = $isJid ? $this->extractPhoneFromJid($phoneOrJid) : $this->cleanPhoneNumber($phoneOrJid);
-                
-                // Log outgoing message
-                WaMessage::create([
-                    'wa_message_id' => 'out_' . uniqid(),
-                    'remote_jid' => $remoteJid,
-                    'phone_number' => $phoneNumber,
-                    'direction' => 'outgoing',
-                    'message' => $message,
-                    'message_type' => $mediaType ?? 'text',
-                    'status' => 'sent',
-                ]);
-
-                return [
-                    'success' => true,
-                    'message' => 'Message sent successfully'
-                ];
+                $this->logMessage($sessionId, $phoneOrJid, $message, $mediaType, 'sent');
+                return ['success' => true, 'message' => 'Message sent successfully'];
             }
             
-            return [
-                'success' => false,
-                'error' => $response->json()['error'] ?? 'Failed to send message'
-            ];
+            return ['success' => false, 'error' => $response->json()['error'] ?? 'Failed to send message'];
         } catch (\Exception $e) {
             Log::error('WhatsApp Send Error: ' . $e->getMessage());
-            return [
-                'success' => false,
-                'error' => $e->getMessage()
-            ];
+            throw $e;
         }
     }
 
     /**
-     * Extract phone number from JID (handles both @s.whatsapp.net and @lid formats)
+     * Log message to database
      */
-    protected function extractPhoneFromJid(string $jid): string
+    protected function logMessage(string $sessionId, string $phoneOrJid, string $message, ?string $mediaType, string $status)
     {
-        // Remove @lid or @s.whatsapp.net suffix
-        return preg_replace('/@.*$/', '', $jid);
-    }
+        $isJid = str_contains($phoneOrJid, '@');
+        $remoteJid = $isJid ? $phoneOrJid : $this->formatPhoneToJid($phoneOrJid);
+        $phoneNumber = $isJid ? $this->extractPhoneFromJid($phoneOrJid) : $this->cleanPhoneNumber($phoneOrJid);
 
+        WaMessage::create([
+            'wa_message_id' => 'out_' . uniqid(),
+            'remote_jid' => $remoteJid,
+            'phone_number' => $phoneNumber,
+            'direction' => 'outgoing',
+            'message' => $message,
+            'message_type' => $mediaType ?? 'text',
+            'status' => $status,
+            // 'device_id' => ... (Optional: find device by sessionId if needed)
+        ]);
+    }
 
     /**
      * Handle incoming message from webhook
@@ -202,7 +179,7 @@ class WhatsAppService
                 'direction' => 'incoming',
                 'message' => $data['message'],
                 'message_type' => $data['messageType'] ?? 'text',
-                'status' => 'read', // Use 'read' for incoming messages (we've read it)
+                'status' => 'read',
                 'wa_timestamp' => isset($data['timestamp']) 
                     ? \Carbon\Carbon::createFromTimestamp($data['timestamp']) 
                     : now(),
@@ -217,56 +194,60 @@ class WhatsAppService
      */
     public function handleStatusUpdate(array $data): void
     {
-        $this->syncSessionStatus($data);
-    }
-
-    /**
-     * Sync session status to database
-     */
-    protected function syncSessionStatus(array $data): void
-    {
-        $session = WaSession::getDefault();
-        
-        // Validate status against allowed ENUM values
-        $validStatuses = ['disconnected', 'waiting_qr', 'connecting', 'connected'];
-        $status = $data['status'] ?? 'disconnected';
-        
-        if (!in_array($status, $validStatuses)) {
-            Log::warning("Invalid WhatsApp status received: {$status}");
-            $status = 'disconnected'; // Default to disconnected for invalid values
+        if (!isset($data['sessionId'])) {
+            return;
         }
+
+        $device = WhatsAppDevice::where('session_id', $data['sessionId'])->first();
+        if (!$device) {
+            return;
+        }
+
+        $validStatuses = ['disconnected', 'waiting_qr', 'connected']; // 'connecting' not used in DB enum? 
+        // My migration used: ['connected', 'disconnected', 'scanning', 'unknown']
+        // Node.js sends: 'connected', 'waiting_qr', 'disconnected'
         
-        $updateData = ['status' => $status];
+        $status = $data['status'] ?? 'unknown';
         
+        // Map Node status to DB status
+        $dbStatus = match($status) {
+            'waiting_qr' => 'scanning',
+            'connected' => 'connected',
+            'disconnected' => 'disconnected',
+            default => 'unknown'
+        };
+
+        $updateData = ['status' => $dbStatus]; // Use mapped status
+
         if (isset($data['phoneNumber'])) {
             $updateData['phone_number'] = $data['phoneNumber'];
         }
-        
+
         if (isset($data['name'])) {
-            $updateData['name'] = $data['name'];
+            $updateData['profile_name'] = $data['name'];
         }
-        
-        if ($status === 'connected') {
+
+        if ($dbStatus === 'connected') {
             $updateData['last_connected_at'] = now();
         }
         
-        $session->update($updateData);
+        // If disconnected, maybe log reason?
+        if ($dbStatus === 'disconnected' && isset($data['reason'])) {
+            $updateData['last_disconnect_reason'] = $data['reason'];
+        }
+
+        $device->update($updateData);
     }
 
     /**
-     * Get session from database
-     */
-    public function getSession(): WaSession
-    {
-        return WaSession::getDefault();
-    }
-
-    /**
-     * Toggle auto-reply setting
+     * Toggle auto-reply setting (Legacy/Global default)
      */
     public function toggleAutoReply(bool $enabled): void
     {
-        WaSession::getDefault()->update(['auto_reply_enabled' => $enabled]);
+        // For now, maybe just use the first device or a global setting?
+        // Or keep WaSession as a "default" config holder?
+        // Let's assume we maintain WaSession for global config if needed
+        \App\Models\WaSession::where('session_id', 'default')->update(['auto_reply_enabled' => $enabled]);
     }
 
     /**
@@ -274,29 +255,27 @@ class WhatsAppService
      */
     public function isAutoReplyEnabled(): bool
     {
-        return WaSession::getDefault()->auto_reply_enabled ?? true;
+        $session = \App\Models\WaSession::where('session_id', 'default')->first();
+        return $session->auto_reply_enabled ?? true;
     }
 
     /**
-     * Clean phone number (remove non-numeric characters)
+     * Helpers (Keep existing)
      */
     protected function cleanPhoneNumber(string $phone): string
     {
         $cleaned = preg_replace('/\D/', '', $phone);
-        
-        // Handle Indonesian numbers
-        if (str_starts_with($cleaned, '0')) {
-            $cleaned = '62' . substr($cleaned, 1);
-        }
-        
+        if (str_starts_with($cleaned, '0')) $cleaned = '62' . substr($cleaned, 1);
         return $cleaned;
     }
 
-    /**
-     * Format phone number to WhatsApp JID
-     */
     protected function formatPhoneToJid(string $phone): string
     {
         return $this->cleanPhoneNumber($phone) . '@s.whatsapp.net';
+    }
+
+    protected function extractPhoneFromJid(string $jid): string
+    {
+        return preg_replace('/@.*$/', '', $jid);
     }
 }

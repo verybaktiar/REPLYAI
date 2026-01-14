@@ -5,7 +5,13 @@
 
 import express from 'express';
 import cors from 'cors';
-import { createBaileysConnection, getConnectionStatus, disconnectSession, sendMessage, getCurrentQR } from './src/baileys.js';
+import {
+    createSession,
+    getSession,
+    disconnectSession,
+    sendMessage,
+    getAllSessionsStatus
+} from './src/baileys.js';
 import { config } from './src/config.js';
 
 const app = express();
@@ -16,34 +22,68 @@ app.use(express.json());
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'ok', 
+    res.json({
+        status: 'ok',
         service: 'replyai-wa-service',
         timestamp: new Date().toISOString()
     });
 });
 
-// Get connection status
+// Get all sessions status
+app.get('/sessions', (req, res) => {
+    res.json(getAllSessionsStatus());
+});
+
+// Get specific session status
 app.get('/status', (req, res) => {
-    const status = getConnectionStatus();
-    res.json(status);
+    const sessionId = req.query.sessionId;
+    if (!sessionId) {
+        return res.status(400).json({ success: false, error: 'sessionId required' });
+    }
+
+    const session = getSession(sessionId);
+    if (!session) {
+        return res.json({
+            status: 'disconnected',
+            error: 'Session not found',
+            phoneNumber: null
+        });
+    }
+
+    res.json({
+        status: session.status,
+        phoneNumber: session.phoneNumber,
+        lastConnected: session.lastConnected,
+        profileName: session.profileName,
+        error: session.error
+    });
 });
 
 // Get current QR code
 app.get('/qr', (req, res) => {
-    const qr = getCurrentQR();
-    if (qr) {
-        res.json({ success: true, qr });
+    const sessionId = req.query.sessionId;
+    if (!sessionId) {
+        return res.status(400).json({ success: false, error: 'sessionId required' });
+    }
+
+    const session = getSession(sessionId);
+    if (session && session.qr) {
+        res.json({ success: true, qr: session.qr });
     } else {
-        res.json({ success: false, message: 'No QR code available. Already connected or not initialized.' });
+        res.json({ success: false, message: 'No QR code available' });
     }
 });
 
-// Connect to WhatsApp
+// Connect to WhatsApp (Create Session)
 app.post('/connect', async (req, res) => {
+    const { sessionId } = req.body;
+    if (!sessionId) {
+        return res.status(400).json({ success: false, error: 'sessionId required' });
+    }
+
     try {
-        await createBaileysConnection();
-        res.json({ success: true, message: 'Connection initiated. Check /qr for QR code or /status for connection status.' });
+        const result = await createSession(sessionId);
+        res.json({ success: true, ...result });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -51,8 +91,13 @@ app.post('/connect', async (req, res) => {
 
 // Disconnect from WhatsApp
 app.post('/disconnect', async (req, res) => {
+    const { sessionId } = req.body;
+    if (!sessionId) {
+        return res.status(400).json({ success: false, error: 'sessionId required' });
+    }
+
     try {
-        await disconnectSession();
+        await disconnectSession(sessionId);
         res.json({ success: true, message: 'Disconnected successfully' });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -61,14 +106,14 @@ app.post('/disconnect', async (req, res) => {
 
 // Send message
 app.post('/send', async (req, res) => {
-    const { phone, message, mediaUrl, mediaType } = req.body;
-    
-    if (!phone || !message) {
-        return res.status(400).json({ success: false, error: 'Phone and message are required' });
+    const { sessionId, phone, message, mediaUrl, mediaType } = req.body;
+
+    if (!sessionId || !phone) {
+        return res.status(400).json({ success: false, error: 'sessionId and phone are required' });
     }
 
     try {
-        const result = await sendMessage(phone, message, mediaUrl, mediaType);
+        const result = await sendMessage(sessionId, phone, message, mediaUrl, mediaType);
         res.json({ success: true, result });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -76,12 +121,15 @@ app.post('/send', async (req, res) => {
 });
 
 // Start server
-app.listen(config.port, () => {
+app.listen(config.port, async () => {
     console.log(`🚀 ReplyAI WhatsApp Service running on port ${config.port}`);
     console.log(`📡 Laravel webhook URL: ${config.laravelWebhookUrl}`);
-    
-    // Auto-connect on startup if session exists
-    createBaileysConnection().catch(err => {
-        console.log('⏳ Waiting for connection command...');
-    });
+
+    // Auto-load existing sessions
+    try {
+        const { initAllSessions } = await import('./src/baileys.js');
+        await initAllSessions();
+    } catch (err) {
+        console.error('Failed to auto-load sessions:', err);
+    }
 });

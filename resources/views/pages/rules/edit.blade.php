@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.dark')
 
 @section('content')
 <div class="max-w-2xl space-y-6">

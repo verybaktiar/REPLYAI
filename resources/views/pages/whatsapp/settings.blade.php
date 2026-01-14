@@ -1,652 +1,488 @@
-<!DOCTYPE html>
-<html class="dark" lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>WhatsApp Settings - REPLYAI</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
-    <!-- Material Symbols -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#135bec",
-                        "whatsapp": "#25D366",
-                        "background-light": "#f6f6f8",
-                        "background-dark": "#111722",
-                        "surface-dark": "#192233",
-                        "border-dark": "#324467",
-                        "text-secondary": "#92a4c9",
-                    },
-                    fontFamily: { "display": ["Inter", "sans-serif"] },
-                },
-            },
-        }
-    </script>
-    <style>
-        .pulse-green {
-            animation: pulse-green 2s infinite;
-        }
-        @keyframes pulse-green {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); }
-            50% { box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
-        }
-    </style>
-</head>
-<body class="bg-background-dark font-display text-white overflow-hidden h-screen flex">
+@extends('layouts.dark')
 
-<!-- Sidebar -->
-@include('components.sidebar')
+@section('title', 'Pengaturan WhatsApp')
 
-<main class="flex-1 flex flex-col h-full overflow-hidden relative">
-    <!-- Header -->
-    <header class="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-[#111722] shrink-0">
-        <div class="flex items-center gap-3">
-            <svg class="w-8 h-8 text-whatsapp" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+@section('content')
+<!-- Header -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2">Pengaturan WhatsApp Multi-Channel</h1>
+            <p class="text-text-secondary">Kelola beberapa nomor WhatsApp sekaligus dengan sesi terpisah</p>
+        </div>
+        <button onclick="openAddDeviceModal()" class="inline-flex items-center gap-2 px-6 py-3 bg-whatsapp hover:bg-whatsapp/90 text-white rounded-lg font-medium transition-all shadow-lg shadow-whatsapp/20">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            <div>
-                <h2 class="text-lg font-bold text-white">WhatsApp Integration</h2>
-                <p class="text-xs text-text-secondary">Kelola koneksi dan pengaturan WhatsApp Bot</p>
+            Tambah Device Baru
+        </button>
+    </div>
+</div>
+
+<!-- Info Alert -->
+<div class="mb-8 bg-whatsapp/10 border border-whatsapp/20 rounded-lg p-5">
+    <div class="flex items-start gap-4">
+        <div class="flex-shrink-0 w-10 h-10 bg-whatsapp rounded-lg flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        <div>
+            <h3 class="text-lg font-semibold text-whatsapp mb-1">Multi-Channel WhatsApp</h3>
+            <p class="text-text-secondary text-sm leading-relaxed">
+                Anda dapat menghubungkan beberapa nomor WhatsApp sekaligus. Setiap device akan memiliki sesi terpisah dan dapat dikelola secara independen.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Devices Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    @forelse($devices as $device)
+    <div class="bg-surface-dark border border-border-dark rounded-lg overflow-hidden hover:border-primary/50 transition-all" 
+         data-device-id="{{ $device->id }}" 
+         data-session-id="{{ $device->session_id }}">
+        
+        <!-- Card Header -->
+        <div class="px-6 py-4 border-b border-border-dark bg-surface-dark/50">
+            <div class="flex items-center justify-between">
+                <h3 class="font-semibold text-white truncate">{{ $device->device_name }}</h3>
+                <span class="device-status-badge inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+                    @if($device->status === 'connected') bg-whatsapp/20 text-whatsapp
+                    @elseif($device->status === 'scanning') bg-yellow-500/20 text-yellow-400
+                    @elseif($device->status === 'disconnected') bg-red-500/20 text-red-400
+                    @else bg-gray-500/20 text-gray-400
+                    @endif">
+                    <span class="w-1.5 h-1.5 rounded-full 
+                        @if($device->status === 'connected') bg-whatsapp animate-pulse
+                        @elseif($device->status === 'scanning') bg-yellow-400 animate-pulse
+                        @elseif($device->status === 'disconnected') bg-red-400
+                        @else bg-gray-400
+                        @endif"></span>
+                    <span class="device-status-text">{{ ucfirst($device->status) }}</span>
+                </span>
             </div>
         </div>
-        <div id="status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium">
-            <!-- Status will be injected here -->
-        </div>
-    </header>
 
-    <!-- Content -->
-    <div class="flex-1 overflow-y-auto p-6 bg-background-dark bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1e2634] to-background-dark">
-        <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            <!-- Connection Card -->
-            <div class="bg-surface-dark border border-border-dark rounded-2xl p-6">
-                <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-whatsapp">link</span>
-                    Koneksi WhatsApp
-                </h3>
-                
-                <!-- QR Code Area -->
-                <div id="qr-area" class="mb-6">
-                    <div id="qr-placeholder" class="w-full aspect-square max-w-[280px] mx-auto bg-white/5 rounded-xl border-2 border-dashed border-border-dark flex flex-col items-center justify-center gap-4">
-                        <span class="material-symbols-outlined text-6xl text-text-secondary">qr_code_2</span>
-                        <p class="text-sm text-text-secondary text-center px-4">Klik "Connect" untuk menampilkan QR Code</p>
-                    </div>
-                    <div id="qr-image" class="hidden w-full max-w-[280px] mx-auto">
-                        <img id="qr-img" src="" alt="QR Code" class="w-full rounded-xl bg-white p-2">
-                        <p class="text-sm text-text-secondary text-center mt-2">Scan dengan WhatsApp di HP Anda</p>
-                    </div>
-                    <div id="connected-info" class="hidden text-center">
-                        <div class="w-24 h-24 mx-auto bg-whatsapp/20 rounded-full flex items-center justify-center mb-4 pulse-green">
-                            <span class="material-symbols-outlined text-whatsapp text-5xl">check_circle</span>
-                        </div>
-                        <p class="text-xl font-bold text-white" id="phone-display">-</p>
-                        <p class="text-sm text-text-secondary" id="name-display">-</p>
-                        <p class="text-xs text-whatsapp mt-2">● Terhubung</p>
-                    </div>
+        <!-- Card Body -->
+        <div class="p-6">
+            <!-- Device Info -->
+            <div class="space-y-3 mb-5">
+                @if($device->phone_number)
+                <div class="flex items-center gap-3 text-sm">
+                    <svg class="w-4 h-4 text-whatsapp flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                    </svg>
+                    <span class="text-text-secondary">{{ $device->phone_number }}</span>
                 </div>
-                
-                <!-- Action Buttons -->
-                <div class="flex gap-3">
-                    <button id="connect-btn" onclick="connectWhatsApp()" class="flex-1 bg-whatsapp hover:bg-green-600 text-white font-medium rounded-xl px-4 py-3 flex items-center justify-center gap-2 transition-colors">
-                        <span class="material-symbols-outlined">power</span>
-                        Connect
-                    </button>
-                    <button id="disconnect-btn" onclick="disconnectWhatsApp()" class="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 font-medium rounded-xl px-4 py-3 flex items-center justify-center gap-2 transition-colors hidden">
-                        <span class="material-symbols-outlined">power_off</span>
-                        Disconnect
-                    </button>
-                    <button id="refresh-btn" onclick="refreshStatus()" class="bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white rounded-xl px-4 py-3 transition-colors">
-                        <span class="material-symbols-outlined">refresh</span>
-                    </button>
-                </div>
-            </div>
+                @endif
 
-            <!-- Settings Card -->
-            <div class="bg-surface-dark border border-border-dark rounded-2xl p-6">
-                <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">settings</span>
-                    Pengaturan Bot
-                </h3>
-                
-                <!-- Auto Reply Toggle -->
-                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl mb-4">
-                    <div>
-                        <p class="font-medium text-white">Auto Reply</p>
-                        <p class="text-sm text-text-secondary">Bot akan membalas pesan secara otomatis</p>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="auto-reply-toggle" class="sr-only peer" {{ $session->auto_reply_enabled ? 'checked' : '' }} onchange="toggleAutoReply(this.checked)">
-                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-whatsapp"></div>
-                    </label>
+                @if($device->profile_name)
+                <div class="flex items-center gap-3 text-sm">
+                    <svg class="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    <span class="text-text-secondary">{{ $device->profile_name }}</span>
+                </div>
+                @endif
+
+                <div class="flex items-center gap-3 text-sm">
+                    <svg class="w-4 h-4 text-text-secondary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="text-text-secondary">{{ $device->updated_at->diffForHumans() }}</span>
                 </div>
 
-                <!-- Session Info -->
-                <div class="space-y-3">
-                    <div class="flex justify-between p-3 bg-white/5 rounded-lg">
-                        <span class="text-text-secondary">Status</span>
-                        <span id="session-status" class="font-medium">{{ ucfirst($session->status) }}</span>
-                    </div>
-                    <div class="flex justify-between p-3 bg-white/5 rounded-lg">
-                        <span class="text-text-secondary">Nomor HP</span>
-                        <span id="session-phone" class="font-medium">{{ $session->phone_number ?? '-' }}</span>
-                    </div>
-                    <div class="flex justify-between p-3 bg-white/5 rounded-lg">
-                        <span class="text-text-secondary">Nama WA</span>
-                        <span id="session-name" class="font-medium">{{ $session->name ?? '-' }}</span>
-                    </div>
-                    <div class="flex justify-between p-3 bg-white/5 rounded-lg">
-                        <span class="text-text-secondary">Terakhir Online</span>
-                        <span class="font-medium">{{ $session->last_connected_at ? $session->last_connected_at->diffForHumans() : '-' }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Test Message Card -->
-            <div class="bg-surface-dark border border-border-dark rounded-2xl p-6">
-                <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-blue-400">send</span>
-                    Kirim Pesan Test
-                </h3>
-                
-                <form id="send-form" onsubmit="sendTestMessage(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-text-secondary mb-2">Nomor Tujuan</label>
-                        <input type="text" id="test-phone" placeholder="08123456789 atau 628123456789" 
-                            class="w-full bg-white/5 border border-border-dark text-white text-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-whatsapp focus:border-whatsapp placeholder-text-secondary">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-text-secondary mb-2">Pesan</label>
-                        <textarea id="test-message" rows="3" placeholder="Ketik pesan test..."
-                            class="w-full bg-white/5 border border-border-dark text-white text-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-whatsapp focus:border-whatsapp placeholder-text-secondary resize-none"></textarea>
-                    </div>
-                    <button type="submit" id="send-test-btn" class="w-full bg-primary hover:bg-blue-600 text-white font-medium rounded-xl px-4 py-3 flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span class="material-symbols-outlined">send</span>
-                        Kirim Test Message
-                    </button>
-                </form>
-                <p id="send-result" class="mt-3 text-sm text-center hidden"></p>
-            </div>
-
-            <!-- Recent Messages Card -->
-            <div class="bg-surface-dark border border-border-dark rounded-2xl p-6">
-                <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-purple-400">history</span>
-                    Pesan Terakhir
-                </h3>
-                
-                <div class="space-y-3 max-h-[300px] overflow-y-auto">
-                    @forelse($recentMessages as $msg)
-                    <div class="p-3 bg-white/5 rounded-xl {{ $msg->direction === 'incoming' ? 'border-l-4 border-whatsapp' : 'border-l-4 border-primary' }}">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-sm font-medium {{ $msg->direction === 'incoming' ? 'text-whatsapp' : 'text-primary' }}">
-                                {{ $msg->direction === 'incoming' ? '← Masuk' : '→ Keluar' }}
-                            </span>
-                            <span class="text-xs text-text-secondary">{{ $msg->created_at->diffForHumans() }}</span>
-                        </div>
-                        <p class="text-xs text-text-secondary mb-1">{{ $msg->push_name ?? $msg->phone_number }}</p>
-                        <p class="text-sm text-white truncate">{{ $msg->message }}</p>
-                    </div>
-                    @empty
-                    <div class="text-center py-8">
-                    </div>
-                    @endforelse
-                </div>
-            </div>
-
-            <!-- Takeover Settings Card -->
-            <div class="bg-surface-dark border border-border-dark rounded-2xl p-6">
-                <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-yellow-400">timer</span>
-                    Pengaturan Takeover Otomatis
-                </h3>
-                
-                <p class="text-sm text-text-secondary mb-4">
-                    Bot akan takeover kembali jika CS tidak membalas selama:
-                </p>
-                
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="timeout-options">
-                    <button onclick="setTakeoverTimeout(60)" 
-                            class="timeout-btn p-3 rounded-xl text-sm font-medium border transition-colors {{ ($session->takeover_timeout_minutes ?? 60) == 60 ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400' : 'bg-white/5 border-border-dark text-text-secondary hover:bg-white/10' }}"
-                            data-value="60">
-                        1 jam
-                    </button>
-                    <button onclick="setTakeoverTimeout(120)" 
-                            class="timeout-btn p-3 rounded-xl text-sm font-medium border transition-colors {{ ($session->takeover_timeout_minutes ?? 60) == 120 ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400' : 'bg-white/5 border-border-dark text-text-secondary hover:bg-white/10' }}"
-                            data-value="120">
-                        2 jam
-                    </button>
-                    <button onclick="setTakeoverTimeout(240)" 
-                            class="timeout-btn p-3 rounded-xl text-sm font-medium border transition-colors {{ ($session->takeover_timeout_minutes ?? 60) == 240 ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400' : 'bg-white/5 border-border-dark text-text-secondary hover:bg-white/10' }}"
-                            data-value="240">
-                        4 jam
-                    </button>
-                    <button onclick="toggleCustomTimeout()" 
-                            class="timeout-btn p-3 rounded-xl text-sm font-medium border bg-white/5 border-border-dark text-text-secondary hover:bg-white/10 transition-colors"
-                            data-value="custom">
-                        Custom
-                    </button>
-                </div>
-                
-                <!-- Custom Input -->
-                <div id="custom-timeout-area" class="hidden mt-4 flex gap-3">
-                    <input type="number" id="custom-timeout-value" min="15" max="1440" placeholder="Menit (15-1440)"
-                           class="flex-1 bg-white/5 border border-border-dark text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
-                    <button onclick="saveCustomTimeout()" 
-                            class="bg-yellow-500 hover:bg-yellow-600 text-black font-medium px-6 py-3 rounded-xl transition-colors">
-                        Simpan
-                    </button>
-                </div>
-                
-                <p id="timeout-result" class="text-xs text-green-400 mt-3 hidden"></p>
-                
-                <div class="mt-4 pt-4 border-t border-border-dark">
-                    <a href="{{ route('takeover.logs') }}" class="flex items-center gap-2 text-sm text-primary hover:text-blue-400 transition-colors">
-                        <span class="material-symbols-outlined text-base">history</span>
-                        Lihat Activity Logs
-                    </a>
-                </div>
-            </div>
-
-            <!-- Session Timeout Settings Card -->
-            <div class="bg-surface-dark border border-border-dark rounded-2xl p-6">
-                <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-cyan-400">schedule</span>
-                    Pengaturan Session Timeout
-                </h3>
-                
-                <p class="text-sm text-text-secondary mb-4">
-                    Bot akan kirim follow-up jika user tidak membalas:
-                </p>
-                
-                <!-- Idle Timeout -->
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-text-secondary mb-2">Waktu Idle (menit)</label>
-                    <div class="grid grid-cols-4 gap-2">
-                        <button onclick="setSessionTimeout('idle', 15)" 
-                                class="idle-timeout-btn p-2 rounded-lg text-sm border transition-colors {{ ($session->session_idle_timeout_minutes ?? 30) == 15 ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-border-dark text-text-secondary hover:bg-white/10' }}"
-                                data-value="15">15</button>
-                        <button onclick="setSessionTimeout('idle', 30)" 
-                                class="idle-timeout-btn p-2 rounded-lg text-sm border transition-colors {{ ($session->session_idle_timeout_minutes ?? 30) == 30 ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-border-dark text-text-secondary hover:bg-white/10' }}"
-                                data-value="30">30</button>
-                        <button onclick="setSessionTimeout('idle', 60)" 
-                                class="idle-timeout-btn p-2 rounded-lg text-sm border transition-colors {{ ($session->session_idle_timeout_minutes ?? 30) == 60 ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-border-dark text-text-secondary hover:bg-white/10' }}"
-                                data-value="60">60</button>
-                        <button onclick="setSessionTimeout('idle', 120)" 
-                                class="idle-timeout-btn p-2 rounded-lg text-sm border transition-colors {{ ($session->session_idle_timeout_minutes ?? 30) == 120 ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-border-dark text-text-secondary hover:bg-white/10' }}"
-                                data-value="120">120</button>
-                    </div>
+                <div class="flex items-center gap-3 text-sm">
+                    <svg class="w-4 h-4 text-text-secondary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <span class="text-text-secondary text-xs">{{ $device->session_id }}</span>
                 </div>
 
-                <!-- Follow-up Timeout -->
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-text-secondary mb-2">Tutup Session Setelah Follow-up (menit)</label>
-                    <div class="grid grid-cols-4 gap-2">
-                        <button onclick="setSessionTimeout('followup', 10)" 
-                                class="followup-timeout-btn p-2 rounded-lg text-sm border transition-colors {{ ($session->session_followup_timeout_minutes ?? 15) == 10 ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-border-dark text-text-secondary hover:bg-white/10' }}"
-                                data-value="10">10</button>
-                        <button onclick="setSessionTimeout('followup', 15)" 
-                                class="followup-timeout-btn p-2 rounded-lg text-sm border transition-colors {{ ($session->session_followup_timeout_minutes ?? 15) == 15 ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-border-dark text-text-secondary hover:bg-white/10' }}"
-                                data-value="15">15</button>
-                        <button onclick="setSessionTimeout('followup', 30)" 
-                                class="followup-timeout-btn p-2 rounded-lg text-sm border transition-colors {{ ($session->session_followup_timeout_minutes ?? 15) == 30 ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-border-dark text-text-secondary hover:bg-white/10' }}"
-                                data-value="30">30</button>
-                        <button onclick="setSessionTimeout('followup', 60)" 
-                                class="followup-timeout-btn p-2 rounded-lg text-sm border transition-colors {{ ($session->session_followup_timeout_minutes ?? 15) == 60 ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-border-dark text-text-secondary hover:bg-white/10' }}"
-                                data-value="60">60</button>
+                <!-- Business Profile Selector -->
+                <div class="pt-3 border-t border-border-dark">
+                    <label class="block text-xs font-medium text-text-secondary mb-2">Profil Bisnis AI</label>
+                    <div class="flex gap-2">
+                        <select onchange="updateDeviceProfile('{{ $device->session_id }}', this.value)" 
+                                class="profile-select flex-1 px-3 py-2 bg-background-dark border border-border-dark rounded-lg text-sm text-white focus:outline-none focus:border-primary transition-colors">
+                            <option value="">-- Default Profile --</option>
+                            @foreach($businessProfiles as $profile)
+                                <option value="{{ $profile->id }}" 
+                                    {{ $device->business_profile_id == $profile->id ? 'selected' : '' }}>
+                                    {{ $profile->business_name }} ({{ $profile->getIndustryLabel() }})
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
-                </div>
-                
-                <p id="session-timeout-result" class="text-xs text-green-400 mt-3 hidden"></p>
-                
-                <div class="mt-4 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
-                    <p class="text-xs text-cyan-400">
-                        💡 Jika user idle <strong>{{ $session->session_idle_timeout_minutes ?? 30 }} menit</strong>, 
-                        bot kirim follow-up. Jika tidak dibalas <strong>{{ $session->session_followup_timeout_minutes ?? 15 }} menit</strong>, 
-                        session ditutup otomatis.
+                    @if($device->businessProfile)
+                    <p class="mt-2 text-xs text-primary flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        AI menggunakan: {{ $device->businessProfile->business_name }}
                     </p>
+                    @endif
                 </div>
             </div>
-        </div>
 
-        <!-- Service Info -->
-        <div class="max-w-6xl mx-auto mt-6">
-            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
-                <span class="material-symbols-outlined text-yellow-400 shrink-0">info</span>
-                <div>
-                    <p class="text-sm font-medium text-yellow-400">Perhatian</p>
-                    <p class="text-sm text-yellow-400/80 mt-1">
-                        Pastikan Node.js WhatsApp Service berjalan di port 3001 sebelum mencoba connect.
-                        Jalankan <code class="bg-black/30 px-1 rounded">npm start</code> di folder <code class="bg-black/30 px-1 rounded">wa-service</code>.
-                    </p>
+            <!-- QR Code Container (for scanning status) -->
+            @if($device->status === 'scanning')
+            <div class="qr-code-container mb-5 p-4 bg-background-dark rounded-lg border border-border-dark">
+                <div class="text-center">
+                    <div class="mb-3 flex justify-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent"></div>
+                    </div>
+                    <p class="text-sm text-text-secondary mb-2">Memuat QR Code...</p>
+                    <img class="qr-code-image hidden mx-auto rounded-lg" alt="QR Code" style="max-width: 200px;">
+                    <p class="qr-instructions hidden text-xs text-text-secondary mt-2">Scan dengan WhatsApp Anda</p>
                 </div>
+            </div>
+            @endif
+
+            <!-- Actions -->
+            <div class="flex gap-3">
+                @if($device->status === 'connected')
+                <a href="{{ route('whatsapp.inbox') }}" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    </svg>
+                    Inbox
+                </a>
+                @endif
+
+                <button onclick="disconnectDevice('{{ $device->session_id }}')" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-all border border-red-500/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Hapus
+                </button>
             </div>
         </div>
     </div>
-</main>
+    @empty
+    <!-- Empty State -->
+    <div class="col-span-full">
+        <div class="bg-surface-dark border border-border-dark rounded-lg p-12 text-center">
+            <div class="max-w-md mx-auto">
+                <div class="w-20 h-20 bg-whatsapp/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-10 h-10 text-whatsapp" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-white mb-2">Belum Ada Device</h3>
+                <p class="text-text-secondary mb-6">Mulai dengan menambahkan device WhatsApp pertama Anda untuk menggunakan fitur multi-channel.</p>
+                <button onclick="openAddDeviceModal()" class="inline-flex items-center gap-2 px-6 py-3 bg-whatsapp hover:bg-whatsapp/90 text-white rounded-lg font-medium transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Tambah Device Pertama
+                </button>
+            </div>
+        </div>
+    </div>
+    @endforelse
+</div>
 
+<!-- Add Device Modal -->
+<div id="addDeviceModal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+    <div class="w-full max-w-md bg-surface-dark border border-border-dark rounded-lg shadow-2xl">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-border-dark">
+            <h3 class="text-xl font-bold text-white">Tambah Device WhatsApp Baru</h3>
+            <button onclick="closeAddDeviceModal()" class="text-text-secondary hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <form id="addDeviceForm" onsubmit="addDevice(event)" class="p-6">
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-white mb-2">
+                    Nama Device <span class="text-red-400">*</span>
+                </label>
+                <input type="text" 
+                       name="device_name" 
+                       placeholder="Contoh: HP Admin Utama" 
+                       required
+                       class="w-full px-4 py-3 bg-background-dark border border-border-dark rounded-lg text-white placeholder-text-secondary focus:outline-none focus:border-primary transition-colors">
+                <p class="mt-2 text-xs text-text-secondary">Berikan nama yang mudah dikenali untuk device ini</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button type="button" 
+                        onclick="closeAddDeviceModal()" 
+                        class="flex-1 px-6 py-3 bg-background-dark border border-border-dark text-white rounded-lg font-medium hover:bg-surface-dark transition-colors">
+                    Batal
+                </button>
+                <button type="submit" 
+                        class="flex-1 px-6 py-3 bg-whatsapp hover:bg-whatsapp/90 text-white rounded-lg font-medium transition-colors">
+                    Tambah
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
 <script>
-const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+let statusCheckIntervals = {};
 
-// Update status badge
-function updateStatusBadge(status) {
-    const badge = document.getElementById('status-badge');
-    const statusMap = {
-        'connected': { bg: 'bg-whatsapp/20', text: 'text-whatsapp', icon: 'wifi', label: 'Terhubung' },
-        'waiting_qr': { bg: 'bg-yellow-500/20', text: 'text-yellow-400', icon: 'qr_code_2', label: 'Menunggu Scan' },
-        'connecting': { bg: 'bg-blue-500/20', text: 'text-blue-400', icon: 'sync', label: 'Menghubungkan...' },
-        'disconnected': { bg: 'bg-red-500/20', text: 'text-red-400', icon: 'wifi_off', label: 'Tidak Terhubung' },
-        'offline': { bg: 'bg-gray-500/20', text: 'text-gray-400', icon: 'cloud_off', label: 'Service Offline' },
-    };
-    const s = statusMap[status] || statusMap['disconnected'];
-    badge.className = `flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${s.bg} ${s.text}`;
-    badge.innerHTML = `<span class="material-symbols-outlined" style="font-size:18px">${s.icon}</span>${s.label}`;
+// Modal Functions
+function openAddDeviceModal() {
+    const modal = document.getElementById('addDeviceModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
-// Update UI based on status
-function updateUI(data) {
-    const status = data.status || 'disconnected';
-    updateStatusBadge(status);
+function closeAddDeviceModal() {
+    const modal = document.getElementById('addDeviceModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.getElementById('addDeviceForm').reset();
+}
+
+// Add Device
+async function addDevice(event) {
+    event.preventDefault();
     
-    const qrPlaceholder = document.getElementById('qr-placeholder');
-    const qrImage = document.getElementById('qr-image');
-    const connectedInfo = document.getElementById('connected-info');
-    const connectBtn = document.getElementById('connect-btn');
-    const disconnectBtn = document.getElementById('disconnect-btn');
-    
-    // Hide all first
-    qrPlaceholder.classList.add('hidden');
-    qrImage.classList.add('hidden');
-    connectedInfo.classList.add('hidden');
-    
-    if (status === 'connected') {
-        connectedInfo.classList.remove('hidden');
-        document.getElementById('phone-display').textContent = '+' + (data.phoneNumber || '-');
-        document.getElementById('name-display').textContent = data.name || 'WhatsApp User';
-        document.getElementById('session-status').textContent = 'Connected';
-        document.getElementById('session-phone').textContent = data.phoneNumber || '-';
-        document.getElementById('session-name').textContent = data.name || '-';
-        connectBtn.classList.add('hidden');
-        disconnectBtn.classList.remove('hidden');
-    } else if (status === 'waiting_qr') {
-        // Fetch QR code
-        fetchQR();
-        connectBtn.classList.add('hidden');
-        disconnectBtn.classList.remove('hidden');
-    } else {
-        qrPlaceholder.classList.remove('hidden');
-        document.getElementById('session-status').textContent = status === 'offline' ? 'Service Offline' : 'Disconnected';
-        connectBtn.classList.remove('hidden');
-        disconnectBtn.classList.add('hidden');
-    }
-}
-
-// Fetch QR code
-async function fetchQR() {
-    try {
-        const res = await fetch('{{ route("whatsapp.qr") }}');
-        const data = await res.json();
-        if (data.success && data.qr) {
-            document.getElementById('qr-placeholder').classList.add('hidden');
-            document.getElementById('qr-image').classList.remove('hidden');
-            document.getElementById('qr-img').src = data.qr;
-        }
-    } catch (e) {
-        console.error('Failed to fetch QR:', e);
-    }
-}
-
-// Refresh status
-async function refreshStatus() {
-    try {
-        const res = await fetch('{{ route("whatsapp.status") }}');
-        const data = await res.json();
-        updateUI(data);
-    } catch (e) {
-        updateUI({ status: 'offline' });
-    }
-}
-
-// Connect WhatsApp
-async function connectWhatsApp() {
-    const btn = document.getElementById('connect-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span>Connecting...';
+    const formData = new FormData(event.target);
+    const deviceName = formData.get('device_name');
     
     try {
-        const res = await fetch('{{ route("whatsapp.connect") }}', {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrfToken }
-        });
-        const data = await res.json();
-        
-        // Start polling for QR/status
-        setTimeout(refreshStatus, 1000);
-        setTimeout(refreshStatus, 3000);
-        setTimeout(refreshStatus, 5000);
-    } catch (e) {
-        alert('Failed to connect: ' + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<span class="material-symbols-outlined">power</span>Connect';
-    }
-}
-
-// Disconnect WhatsApp
-async function disconnectWhatsApp() {
-    if (!confirm('Yakin ingin disconnect? Anda perlu scan QR ulang untuk connect lagi.')) return;
-    
-    const btn = document.getElementById('disconnect-btn');
-    btn.disabled = true;
-    
-    try {
-        const res = await fetch('{{ route("whatsapp.disconnect") }}', {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrfToken }
-        });
-        refreshStatus();
-    } catch (e) {
-        alert('Failed to disconnect: ' + e.message);
-    } finally {
-        btn.disabled = false;
-    }
-}
-
-// Toggle auto reply
-async function toggleAutoReply(enabled) {
-    try {
-        await fetch('{{ route("whatsapp.toggle-auto-reply") }}', {
+        const response = await fetch('{{ route('whatsapp.store') }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            body: JSON.stringify({ enabled })
+            body: JSON.stringify({ device_name: deviceName })
         });
-    } catch (e) {
-        alert('Failed to update: ' + e.message);
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            closeAddDeviceModal();
+            showNotification('Device berhasil ditambahkan! Silakan scan QR code.', 'success');
+            
+            // Reload page to show new device
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification(result.error || 'Gagal menambahkan device', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Terjadi kesalahan saat menambahkan device', 'error');
     }
 }
 
-// Send test message
-async function sendTestMessage(e) {
-    e.preventDefault();
-    
-    const phone = document.getElementById('test-phone').value.trim();
-    const message = document.getElementById('test-message').value.trim();
-    const resultEl = document.getElementById('send-result');
-    const btn = document.getElementById('send-test-btn');
-    
-    if (!phone || !message) {
-        resultEl.textContent = '❌ Nomor dan pesan harus diisi';
-        resultEl.className = 'mt-3 text-sm text-center text-red-400';
-        resultEl.classList.remove('hidden');
+// Update Device Profile
+async function updateDeviceProfile(sessionId, profileId) {
+    try {
+        const response = await fetch(`/whatsapp/device/${sessionId}/profile`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ business_profile_id: profileId || null })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Profil bisnis berhasil diperbarui!', 'success');
+        } else {
+            showNotification(result.error || 'Gagal memperbarui profil', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Terjadi kesalahan saat memperbarui profil', 'error');
+    }
+}
+
+// Disconnect Device
+async function disconnectDevice(sessionId) {
+    if (!confirm('Apakah Anda yakin ingin menghapus device ini?')) {
         return;
     }
     
-    btn.disabled = true;
-    btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span>Mengirim...';
-    
     try {
-        const res = await fetch('{{ route("whatsapp.send") }}', {
-            method: 'POST',
+        const response = await fetch(`/whatsapp/device/${sessionId}`, {
+            method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify({ phone, message })
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
         });
-        const data = await res.json();
         
-        if (data.success) {
-            resultEl.textContent = '✅ Pesan berhasil dikirim!';
-            resultEl.className = 'mt-3 text-sm text-center text-whatsapp';
-            document.getElementById('test-message').value = '';
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Device berhasil dihapus', 'success');
+            
+            // Remove from DOM
+            const deviceCard = document.querySelector(`[data-session-id="${sessionId}"]`);
+            if (deviceCard) {
+                deviceCard.style.opacity = '0';
+                deviceCard.style.transform = 'scale(0.95)';
+                deviceCard.style.transition = 'all 0.3s';
+                
+                setTimeout(() => {
+                    deviceCard.remove();
+                    
+                    // Check if no devices left
+                    if (document.querySelectorAll('[data-session-id]').length === 0) {
+                        window.location.reload();
+                    }
+                }, 300);
+            }
+            
+            // Clear status check interval
+            if (statusCheckIntervals[sessionId]) {
+                clearInterval(statusCheckIntervals[sessionId]);
+                delete statusCheckIntervals[sessionId];
+            }
         } else {
-            resultEl.textContent = '❌ ' + (data.error || 'Gagal mengirim');
-            resultEl.className = 'mt-3 text-sm text-center text-red-400';
+            showNotification(result.error || 'Gagal menghapus device', 'error');
         }
-        resultEl.classList.remove('hidden');
-    } catch (e) {
-        resultEl.textContent = '❌ Network error: ' + e.message;
-        resultEl.className = 'mt-3 text-sm text-center text-red-400';
-        resultEl.classList.remove('hidden');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<span class="material-symbols-outlined">send</span>Kirim Test Message';
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Terjadi kesalahan saat menghapus device', 'error');
     }
 }
 
-// Initial load
-refreshStatus();
-
-// Poll status every 5 seconds when waiting for QR
-setInterval(() => {
-    const status = document.getElementById('session-status').textContent.toLowerCase();
-    if (status.includes('waiting') || status.includes('connecting')) {
-        refreshStatus();
-    }
-}, 5000);
-
-// Takeover Timeout Functions
-function setTakeoverTimeout(minutes) {
-    saveTakeoverTimeout(minutes);
-}
-
-function toggleCustomTimeout() {
-    const area = document.getElementById('custom-timeout-area');
-    area.classList.toggle('hidden');
-}
-
-function saveCustomTimeout() {
-    const input = document.getElementById('custom-timeout-value');
-    const minutes = parseInt(input.value);
-    
-    if (isNaN(minutes) || minutes < 15 || minutes > 1440) {
-        alert('Masukkan nilai antara 15-1440 menit');
-        return;
-    }
-    
-    saveTakeoverTimeout(minutes);
-    document.getElementById('custom-timeout-area').classList.add('hidden');
-}
-
-async function saveTakeoverTimeout(minutes) {
-    const resultEl = document.getElementById('timeout-result');
-    
+// Check Device Status
+async function checkDeviceStatus(sessionId) {
     try {
-        const res = await fetch('{{ route("takeover.settings.update") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify({ 
-                takeover_timeout_minutes: minutes,
-                idle_warning_minutes: Math.floor(minutes * 0.5) // 50% of timeout as warning
-            })
-        });
+        const response = await fetch(`/whatsapp/status/${sessionId}`);
+        const result = await response.json();
         
-        const data = await res.json();
+        const deviceCard = document.querySelector(`[data-session-id="${sessionId}"]`);
+        if (!deviceCard) return;
         
-        if (data.success) {
-            // Update button styles
-            document.querySelectorAll('.timeout-btn').forEach(btn => {
-                const val = btn.dataset.value;
-                if (val == minutes) {
-                    btn.className = 'timeout-btn p-3 rounded-xl text-sm font-medium border transition-colors bg-yellow-500/20 border-yellow-500/50 text-yellow-400';
-                } else if (val !== 'custom') {
-                    btn.className = 'timeout-btn p-3 rounded-xl text-sm font-medium border transition-colors bg-white/5 border-border-dark text-text-secondary hover:bg-white/10';
+        const statusBadge = deviceCard.querySelector('.device-status-badge');
+        const statusText = deviceCard.querySelector('.device-status-text');
+        const qrContainer = deviceCard.querySelector('.qr-code-container');
+        
+        // Update status badge
+        if (statusBadge && statusText) {
+            // Remove all status classes
+            statusBadge.className = 'device-status-badge inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium';
+            
+            if (result.status === 'connected') {
+                statusBadge.classList.add('bg-whatsapp/20', 'text-whatsapp');
+                statusText.textContent = 'Connected';
+                
+                // Stop checking if connected
+                if (statusCheckIntervals[sessionId]) {
+                    clearInterval(statusCheckIntervals[sessionId]);
+                    delete statusCheckIntervals[sessionId];
                 }
-            });
-            
-            resultEl.textContent = `✅ Timeout diset ke ${minutes} menit`;
-            resultEl.className = 'text-xs text-green-400 mt-3';
-            resultEl.classList.remove('hidden');
-            
-            setTimeout(() => resultEl.classList.add('hidden'), 3000);
-        } else {
-            resultEl.textContent = '❌ ' + (data.error || 'Gagal menyimpan');
-            resultEl.className = 'text-xs text-red-400 mt-3';
-            resultEl.classList.remove('hidden');
+                
+                // Reload to update UI
+                setTimeout(() => window.location.reload(), 1000);
+            } else if (result.status === 'scanning' || result.status === 'waiting_qr') {
+                statusBadge.classList.add('bg-yellow-500/20', 'text-yellow-400');
+                statusText.textContent = 'Scanning';
+                
+                // Load QR code
+                if (qrContainer) {
+                    loadQrCode(sessionId, qrContainer);
+                }
+            } else if (result.status === 'disconnected') {
+                statusBadge.classList.add('bg-red-500/20', 'text-red-400');
+                statusText.textContent = 'Disconnected';
+            } else {
+                statusBadge.classList.add('bg-gray-500/20', 'text-gray-400');
+                statusText.textContent = 'Unknown';
+            }
         }
-    } catch (e) {
-        resultEl.textContent = '❌ Network error';
-        resultEl.className = 'text-xs text-red-400 mt-3';
-        resultEl.classList.remove('hidden');
+    } catch (error) {
+        console.error('Error checking status:', error);
     }
 }
 
-// Session Timeout Functions
-async function setSessionTimeout(type, minutes) {
-    const resultEl = document.getElementById('session-timeout-result');
-    const field = type === 'idle' ? 'session_idle_timeout_minutes' : 'session_followup_timeout_minutes';
-    const btnClass = type === 'idle' ? 'idle-timeout-btn' : 'followup-timeout-btn';
+// Load QR Code
+async function loadQrCode(sessionId, container) {
+    console.log(`[DEBUG] Loading QR code for session: ${sessionId}`);
     
     try {
-        const res = await fetch('{{ route("takeover.settings.update") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify({ [field]: minutes })
-        });
+        const response = await fetch(`/whatsapp/qr/${sessionId}`);
+        console.log(`[DEBUG] QR response status: ${response.status}`);
         
-        const data = await res.json();
+        const result = await response.json();
+        console.log(`[DEBUG] QR result:`, result);
         
-        if (data.success) {
-            // Update button styles
-            document.querySelectorAll('.' + btnClass).forEach(btn => {
-                const val = btn.dataset.value;
-                if (val == minutes) {
-                    btn.className = btnClass + ' p-2 rounded-lg text-sm border transition-colors bg-cyan-500/20 border-cyan-500/50 text-cyan-400';
-                } else {
-                    btn.className = btnClass + ' p-2 rounded-lg text-sm border transition-colors bg-white/5 border-border-dark text-text-secondary hover:bg-white/10';
-                }
-            });
+        if (result.success && result.qr) {
+            const qrImage = container.querySelector('.qr-code-image');
+            const spinner = container.querySelector('.animate-spin');
+            const loadingText = container.querySelector('p');
+            const instructions = container.querySelector('.qr-instructions');
             
-            resultEl.textContent = `✅ ${type === 'idle' ? 'Idle' : 'Follow-up'} timeout diset ke ${minutes} menit`;
-            resultEl.classList.remove('hidden');
-            setTimeout(() => resultEl.classList.add('hidden'), 3000);
+            if (qrImage) {
+                qrImage.src = result.qr;
+                qrImage.classList.remove('hidden');
+                if (spinner) spinner.remove();
+                if (loadingText) loadingText.remove();
+                if (instructions) instructions.classList.remove('hidden');
+                console.log(`[DEBUG] QR code displayed successfully`);
+            }
         } else {
-            resultEl.textContent = '❌ Gagal menyimpan';
-            resultEl.classList.remove('hidden');
+            console.log(`[DEBUG] No QR code available yet, will retry...`);
         }
-    } catch (e) {
-        resultEl.textContent = '❌ Network error';
-        resultEl.classList.remove('hidden');
+    } catch (error) {
+        console.error('[DEBUG] Error loading QR code:', error);
     }
 }
+
+// Show Notification
+function showNotification(message, type = 'info') {
+    // Simple notification using alert for now
+    // You can replace this with a toast library
+    alert(message);
+}
+
+// Initialize status checking for scanning devices
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('[DEBUG] Page loaded, initializing status checks...');
+    const scanningDevices = document.querySelectorAll('[data-session-id]');
+    console.log(`[DEBUG] Found ${scanningDevices.length} devices`);
+    
+    scanningDevices.forEach(device => {
+        const sessionId = device.dataset.sessionId;
+        const statusText = device.querySelector('.device-status-text');
+        
+        console.log(`[DEBUG] Device ${sessionId} status: ${statusText?.textContent.trim()}`);
+        
+        if (statusText && statusText.textContent.trim().toLowerCase() === 'scanning') {
+            console.log(`[DEBUG] Starting status check for ${sessionId}`);
+            
+            // Initial immediate check
+            checkDeviceStatus(sessionId);
+            
+            // Check status every 2 seconds (faster than before)
+            statusCheckIntervals[sessionId] = setInterval(() => {
+                checkDeviceStatus(sessionId);
+            }, 2000);
+        }
+    });
+});
+
+// Cleanup intervals on page unload
+window.addEventListener('beforeunload', function() {
+    Object.values(statusCheckIntervals).forEach(interval => clearInterval(interval));
+});
+
+// Close modal on ESC key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeAddDeviceModal();
+    }
+});
 </script>
-
-</body>
-</html>
+@endpush
+@endsection
