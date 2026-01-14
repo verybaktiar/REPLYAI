@@ -149,6 +149,17 @@
                         </div>
 
                         <div class="flex items-center gap-2">
+                          <!-- Profile Selector -->
+                          <select onchange="updateKbProfile({{ $a->id }}, this.value)" 
+                                  class="px-2 py-1.5 rounded-lg text-xs bg-[#111722] text-text-secondary border border-border-dark focus:outline-none focus:border-primary cursor-pointer">
+                              <option value="">📋 Semua Profile</option>
+                              @foreach($businessProfiles as $bp)
+                                  <option value="{{ $bp->id }}" {{ $a->business_profile_id == $bp->id ? 'selected' : '' }}>
+                                      {{ $bp->getIndustryIcon() }} {{ $bp->business_name }}
+                                  </option>
+                              @endforeach
+                          </select>
+
                           <button
                             data-action="detail"
                             data-title="{{ e($a->title ?? 'Untitled') }}"
@@ -268,6 +279,30 @@
 </div>
 
 <script>
+// Global function for profile update
+async function updateKbProfile(kbId, profileId) {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    try {
+        const res = await fetch(`/kb/${kbId}/profile`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrf,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ business_profile_id: profileId || null })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            // Show brief success indicator
+            console.log('Profile updated for KB', kbId);
+        }
+    } catch (e) {
+        console.error('Error updating KB profile:', e);
+        alert('Gagal update profil KB');
+    }
+}
+
 (function(){
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 

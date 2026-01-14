@@ -123,6 +123,7 @@ Route::get('/kb', [KbArticleController::class, 'index'])->name('kb.index');
 Route::post('/kb', [KbArticleController::class, 'store'])->name('kb.store');
 Route::post('/kb/import-url', [KbArticleController::class, 'importUrl'])->name('kb.importUrl');
 Route::patch('/kb/{kb}/toggle', [KbArticleController::class, 'toggle'])->name('kb.toggle');
+Route::patch('/kb/{kb}/profile', [KbArticleController::class, 'updateProfile'])->name('kb.updateProfile');
 Route::delete('/kb/{kb}', [KbArticleController::class, 'destroy'])->name('kb.destroy');
 
 // AI preview test rules (punyamu tadi)

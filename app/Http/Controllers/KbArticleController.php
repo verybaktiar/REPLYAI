@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\KbArticle;
+use App\Models\BusinessProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -12,8 +13,9 @@ class KbArticleController extends Controller
 {
     public function index()
     {
-        $articles = KbArticle::orderByDesc('updated_at')->get();
-        return view('pages.kb.index', compact('articles'));
+        $articles = KbArticle::with('businessProfile')->orderByDesc('updated_at')->get();
+        $businessProfiles = BusinessProfile::orderBy('business_name')->get();
+        return view('pages.kb.index', compact('articles', 'businessProfiles'));
     }
 
     public function store(Request $request)
@@ -22,6 +24,7 @@ class KbArticleController extends Controller
             'title'   => ['nullable','string','max:255'],
             'content' => ['required','string'],
             'tags'    => ['nullable','string','max:255'],
+            'business_profile_id' => ['nullable','exists:business_profiles,id'],
         ]);
 
         KbArticle::create([
@@ -29,6 +32,7 @@ class KbArticleController extends Controller
             'content'   => $validated['content'],
             'tags'      => $validated['tags'] ?? null,
             'is_active' => true,
+            'business_profile_id' => $validated['business_profile_id'] ?? null,
         ]);
 
         return back()->with('ok', 'KB article dibuat');
@@ -165,6 +169,25 @@ class KbArticleController extends Controller
     {
         $kb->delete();
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Update KB article's profile assignment (AJAX)
+     */
+    public function updateProfile(Request $request, KbArticle $kb)
+    {
+        $request->validate([
+            'business_profile_id' => ['nullable', 'exists:business_profiles,id'],
+        ]);
+
+        $kb->update([
+            'business_profile_id' => $request->business_profile_id,
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'article' => $kb->fresh()->load('businessProfile'),
+        ]);
     }
 
     // ================= helpers =================

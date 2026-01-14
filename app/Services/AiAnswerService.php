@@ -116,8 +116,9 @@ class AiAnswerService
             ];
         }
 
-        // 4) Coba cari di Knowledge Base dulu
-        $articles = $this->searchRelevantArticles($question, 4);
+        // 4) Coba cari di Knowledge Base dulu (filter by profile if provided)
+        $profileId = $profile?->id;
+        $articles = $this->searchRelevantArticles($question, 4, $profileId);
         
         // 5) Jika KB tidak kosong, gunakan context dari KB
         $context = '';
@@ -303,7 +304,7 @@ class AiAnswerService
         }
     }
 
-    protected function searchRelevantArticles(string $question, int $limit = 4)
+    protected function searchRelevantArticles(string $question, int $limit = 4, ?int $profileId = null)
     {
         $q = Str::lower($question);
 
@@ -323,7 +324,16 @@ class AiAnswerService
             ->unique()
             ->values();
 
-        $articles = KbArticle::where('is_active', 1)->get();
+        // Build query with profile filter
+        // Include articles that: match profile OR have no profile (global)
+        $query = KbArticle::where('is_active', 1);
+        if ($profileId) {
+            $query->where(function ($q) use ($profileId) {
+                $q->whereNull('business_profile_id')
+                  ->orWhere('business_profile_id', $profileId);
+            });
+        }
+        $articles = $query->get();
 
         $scored = $articles->map(function ($a) use ($keywords) {
                 $hay = Str::lower(($a->title ?? '') . " " . ($a->content ?? '') . " " . ($a->tags ?? ''));
