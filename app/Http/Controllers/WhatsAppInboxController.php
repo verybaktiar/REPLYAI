@@ -47,17 +47,16 @@ class WhatsAppInboxController extends Controller
             ->orderBy('id', 'desc')
             ->limit(1);
 
-        // Build base query
+        // Build base query - simplified filters
         $query = WaMessage::select('phone_number', 'push_name', 'remote_jid', 'created_at', 'message', 'status', 'session_id')
             ->addSelect(['display_name' => $latestNameQuery]) // Add dynamic column
             ->where('remote_jid', 'not like', '%@g.us')
             ->where('remote_jid', 'not like', '%@newsletter')
             ->where('remote_jid', 'not like', '%@broadcast')
-            // Valid phone numbers are typically 10-14 digits (Indonesian: 62xxx = 12-14 digits)
+            // Only check that phone_number is numeric and reasonable length
             ->whereRaw('LENGTH(phone_number) >= 10')
-            ->whereRaw('LENGTH(phone_number) <= 14')
-            // Exclude group-like IDs that start with unusual prefixes
-            ->whereRaw("phone_number REGEXP '^(62|1|44|91|60|65|81|82|83|84|85|86|87|88|89)[0-9]+$'");
+            ->whereRaw('LENGTH(phone_number) <= 15')
+            ->whereRaw("phone_number REGEXP '^[0-9]+$'"); // Simple: only digits
         
         // Apply device filter if specified
         if ($deviceFilter) {
@@ -72,8 +71,8 @@ class WhatsAppInboxController extends Controller
                     ->where('remote_jid', 'not like', '%@newsletter')
                     ->where('remote_jid', 'not like', '%@broadcast')
                     ->whereRaw('LENGTH(phone_number) >= 10')
-                    ->whereRaw('LENGTH(phone_number) <= 14')
-                    ->whereRaw("phone_number REGEXP '^(62|1|44|91|60|65|81|82|83|84|85|86|87|88|89)[0-9]+$'");
+                    ->whereRaw('LENGTH(phone_number) <= 15')
+                    ->whereRaw("phone_number REGEXP '^[0-9]+$'");
                 
                 if ($deviceFilter) {
                     $subQuery->where('session_id', $deviceFilter);
