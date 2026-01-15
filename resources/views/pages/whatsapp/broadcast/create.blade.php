@@ -28,13 +28,13 @@
         }
     </script>
 </head>
-<body class="bg-background-dark font-display text-white overflow-hidden h-screen flex">
+<body class="bg-background-dark font-display text-white overflow-hidden h-screen flex flex-col lg:flex-row">
     
     <!-- Sidebar -->
     @include('components.sidebar')
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full overflow-y-auto">
+    <main class="flex-1 flex flex-col h-full overflow-y-auto pt-14 lg:pt-0">
         
         <div class="max-w-3xl mx-auto w-full p-8">
             <div class="flex items-center gap-4 mb-8">

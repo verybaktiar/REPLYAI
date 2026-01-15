@@ -12,6 +12,7 @@
     <!-- Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -42,14 +43,14 @@
         }
     </style>
 </head>
-<body class="bg-background-dark font-display text-white overflow-hidden h-screen flex">
+<body class="bg-background-dark font-display text-white overflow-hidden h-screen flex flex-col lg:flex-row">
 
 <!-- Sidebar (Full) -->
 @include('components.sidebar')
 
-<main class="flex-1 flex flex-col h-full overflow-hidden relative">
+<main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0">
     <!-- Header -->
-    <header class="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-[#111722] shrink-0">
+    <header class="hidden lg:flex h-16 border-b border-white/5 items-center justify-between px-6 bg-[#111722] shrink-0">
         <div class="flex items-center gap-3">
             <span class="material-symbols-outlined text-primary text-3xl">science</span>
             <div>

@@ -6,6 +6,7 @@
     <title>Quick Replies - ReplyAI Settings</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -26,14 +27,14 @@
 </head>
 <body class="bg-[#f6f6f8] dark:bg-background-dark text-slate-900 dark:text-white font-display">
 
-<div class="flex h-screen w-full">
+<div class="flex flex-col lg:flex-row h-screen w-full">
     <!-- Sidebar Placeholder (Same as Dashboard) -->
     <!-- Sidebar (Full) -->
 @include('components.sidebar')
 
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0">
         <!-- Header -->
-        <header class="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-20">
+        <header class="hidden lg:flex h-16 items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-20">
             <div class="flex items-center gap-2">
                 <span class="font-bold text-lg dark:text-white">Quick Replies</span>
             </div>
