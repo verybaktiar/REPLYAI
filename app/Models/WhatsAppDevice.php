@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WhatsAppDevice extends Model
 {
@@ -26,11 +27,25 @@ class WhatsAppDevice extends Model
         'last_connected_at' => 'datetime',
     ];
 
+    protected $appends = ['color'];
+
     // Status constants
     const STATUS_CONNECTED = 'connected';
     const STATUS_DISCONNECTED = 'disconnected';
     const STATUS_SCANNING = 'scanning';
     const STATUS_UNKNOWN = 'unknown';
+
+    // Device colors for inbox display
+    const DEVICE_COLORS = [
+        '#25D366', // WhatsApp Green
+        '#3B82F6', // Blue
+        '#F59E0B', // Amber
+        '#EF4444', // Red
+        '#8B5CF6', // Purple
+        '#EC4899', // Pink
+        '#14B8A6', // Teal
+        '#F97316', // Orange
+    ];
 
     /**
      * Get the business profile assigned to this device.
@@ -39,4 +54,22 @@ class WhatsAppDevice extends Model
     {
         return $this->belongsTo(BusinessProfile::class);
     }
+
+    /**
+     * Get messages for this device.
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(WaMessage::class, 'session_id', 'session_id');
+    }
+
+    /**
+     * Get color for this device based on its ID.
+     */
+    public function getColorAttribute(): string
+    {
+        $index = ($this->id - 1) % count(self::DEVICE_COLORS);
+        return self::DEVICE_COLORS[$index];
+    }
 }
+

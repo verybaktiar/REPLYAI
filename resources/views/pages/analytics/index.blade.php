@@ -42,16 +42,16 @@
         .conic-chart { background: conic-gradient(#135bec 0% {{ $waPercentage }}%, #38bdf8 {{ $waPercentage }}% 100%); }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen flex">
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen flex flex-col lg:flex-row">
 
 <!-- Sidebar Navigation -->
 @include('components.sidebar')
 
 
 <!-- Main Content Area -->
-<main class="flex-1 flex flex-col h-full overflow-hidden relative">
+<main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0">
     <!-- Scrollable content -->
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10 pb-20">
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-10 pb-20">
         <div class="max-w-[1200px] mx-auto flex flex-col gap-8">
             <!-- Header & Controls -->
             <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
@@ -139,7 +139,7 @@
                     </div>
                     <div>
                         <p class="text-text-secondary text-sm font-medium">Avg Response Time</p>
-                        <h3 class="text-white text-3xl font-bold mt-1">0.4s</h3>
+                        <h3 class="text-white text-3xl font-bold mt-1">{{ $avgResponseTime ?? 0 }}s</h3>
                     </div>
                 </div>
                 <!-- Human Handoff -->
@@ -300,11 +300,11 @@
                         <tbody class="divide-y divide-border-dark">
                             @forelse($recentLogs as $log)
                                 <tr class="hover:bg-[#1f2b40] transition-colors">
-                                    <td class="px-6 py-4 font-medium text-white">{{ $log->created_at->format('Y-m-d H:i') }}</td>
-                                    <td class="px-6 py-4 text-white">"{{ \Illuminate\Support\Str::limit($log->trigger_text, 30) }}"</td>
+                                    <td class="px-6 py-4 font-medium text-white">{{ $log['time']->format('Y-m-d H:i') }}</td>
+                                    <td class="px-6 py-4 text-white">"{{ $log['message'] }}"</td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-2">
-                                             @if($log->conversation && str_contains(strtolower($log->conversation->source), 'whatsapp'))
+                                             @if($log['platform'] === 'whatsapp')
                                                 <span class="text-green-500 material-symbols-outlined" style="font-size: 18px;">chat</span> WhatsApp
                                              @else
                                                 <span class="text-pink-500 material-symbols-outlined" style="font-size: 18px;">photo_camera</span> Instagram
@@ -312,12 +312,12 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        @if($log->status == 'success')
+                                        @if($log['status'] === 'resolved' || $log['status'] === 'success' || $log['status'] === 'sent')
                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Resolved</span>
-                                        @elseif($log->status == 'failed')
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20">Failed</span>
+                                        @elseif($log['status'] === 'pending')
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">Pending</span>
                                         @else
-                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-500 border border-orange-500/20">Fallback</span>
+                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-500 border border-orange-500/20">{{ ucfirst($log['status']) }}</span>
                                         @endif
                                     </td>
                                 </tr>

@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WaMessage extends Model
 {
     protected $fillable = [
+        'session_id',
         'wa_message_id',
         'remote_jid',
         'phone_number',
@@ -24,6 +26,14 @@ class WaMessage extends Model
         'metadata' => 'array',
         'wa_timestamp' => 'datetime',
     ];
+
+    /**
+     * Get the device that received/sent this message.
+     */
+    public function device(): BelongsTo
+    {
+        return $this->belongsTo(WhatsAppDevice::class, 'session_id', 'session_id');
+    }
 
     /**
      * Scope for incoming messages

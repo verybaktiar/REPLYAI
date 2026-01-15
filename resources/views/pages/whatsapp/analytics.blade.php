@@ -26,6 +26,13 @@
             },
         }
     </script>
+    <style>
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #111722; }
+        ::-webkit-scrollbar-thumb { background: #324467; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #445577; }
+    </style>
 </head>
 <body class="bg-background-dark font-display text-white overflow-hidden h-screen flex">
     

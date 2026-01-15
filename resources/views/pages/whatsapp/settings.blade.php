@@ -105,22 +105,24 @@
                     <label class="block text-xs font-medium text-text-secondary mb-2">Profil Bisnis AI</label>
                     <div class="flex gap-2">
                         <select onchange="updateDeviceProfile('{{ $device->session_id }}', this.value)" 
-                                class="profile-select flex-1 px-3 py-2 bg-background-dark border border-border-dark rounded-lg text-sm text-white focus:outline-none focus:border-primary transition-colors">
+                                class="profile-select w-full min-w-0 px-3 py-2 bg-background-dark border border-border-dark rounded-lg text-sm text-white focus:outline-none focus:border-primary transition-colors"
+                                title="{{ $device->businessProfile ? $device->businessProfile->business_name . ' (' . $device->businessProfile->getIndustryLabel() . ')' : 'Default Profile' }}">
                             <option value="">-- Default Profile --</option>
                             @foreach($businessProfiles as $profile)
                                 <option value="{{ $profile->id }}" 
-                                    {{ $device->business_profile_id == $profile->id ? 'selected' : '' }}>
+                                    {{ $device->business_profile_id == $profile->id ? 'selected' : '' }}
+                                    title="{{ $profile->business_name }} ({{ $profile->getIndustryLabel() }})">
                                     {{ $profile->business_name }} ({{ $profile->getIndustryLabel() }})
                                 </option>
                             @endforeach
                         </select>
                     </div>
                     @if($device->businessProfile)
-                    <p class="mt-2 text-xs text-primary flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <p class="mt-2 text-xs text-primary flex items-center gap-1" title="AI menggunakan: {{ $device->businessProfile->business_name }}">
+                        <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                         </svg>
-                        AI menggunakan: {{ $device->businessProfile->business_name }}
+                        <span class="truncate">AI menggunakan: {{ $device->businessProfile->business_name }}</span>
                     </p>
                     @endif
                 </div>

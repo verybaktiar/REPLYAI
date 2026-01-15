@@ -38,6 +38,9 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #324467; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475a80; }
         
+        /* Hide Alpine.js elements until initialized */
+        [x-cloak] { display: none !important; }
+        
         /* Typing Indicator Animation */
         .typing-indicator {
             display: flex;
@@ -97,12 +100,12 @@
         }
     </style>
 </head>
-<body class="bg-background-dark font-display text-white overflow-hidden h-screen flex">
+<body class="bg-background-dark font-display text-white overflow-hidden h-screen flex flex-col lg:flex-row">
 
 <!-- Sidebar -->
 @include('components.sidebar')
 
-<main class="flex-1 flex flex-col h-full overflow-hidden relative" x-data="whatsappInbox()" x-init="init()">
+<main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0" x-data="whatsappInbox()" x-init="init()">
     
     <!-- Inbox Layout -->
     <div class="flex h-full">
@@ -118,7 +121,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="relative">
+                <div class="relative mb-3">
                     <input 
                         type="text" 
                         x-model="search"
@@ -126,6 +129,25 @@
                         class="w-full bg-surface-dark border-border-dark text-white rounded-xl pl-10 pr-4 py-2 focus:ring-whatsapp focus:border-whatsapp placeholder-text-secondary"
                     >
                     <span class="material-symbols-outlined absolute left-3 top-2.5 text-text-secondary text-sm">search</span>
+                </div>
+                
+                <!-- Device Filter Tabs -->
+                <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar" x-show="devices.length > 0">
+                    <button @click="filterDevice = null; fetchConversations()" 
+                            class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5"
+                            :class="!filterDevice ? 'bg-whatsapp text-white' : 'bg-surface-dark text-text-secondary hover:bg-white/10'">
+                        <span class="material-symbols-outlined text-sm">devices</span>
+                        Semua
+                    </button>
+                    <template x-for="device in devices" :key="device.session_id">
+                        <button @click="filterDevice = device.session_id; fetchConversations()"
+                                class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5"
+                                :class="filterDevice === device.session_id ? 'text-white' : 'bg-surface-dark text-text-secondary hover:bg-white/10'"
+                                :style="filterDevice === device.session_id ? 'background-color:' + device.color : ''">
+                            <span class="w-2 h-2 rounded-full" :style="'background-color:' + device.color"></span>
+                            <span x-text="device.device_name" class="truncate max-w-[100px]"></span>
+                        </button>
+                    </template>
                 </div>
             </div>
 
@@ -168,12 +190,18 @@
                                         <p class="text-sm font-semibold text-white truncate" x-text="chat.name"></p>
                                         <span class="text-[10px] text-text-secondary ml-2 whitespace-nowrap" x-text="chat.last_message_time"></span>
                                     </div>
-                                    <!-- Status Badge -->
-                                    <div class="flex items-center gap-2 mb-1">
+                                    <!-- Status Badge & Device Badge -->
+                                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                        <!-- Device Badge -->
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1" 
+                                              :style="'background-color:' + (chat.device_color || '#888888') + '20; color:' + (chat.device_color || '#888888')">
+                                            <span class="w-1.5 h-1.5 rounded-full" :style="'background-color:' + (chat.device_color || '#888888')"></span>
+                                            <span x-text="chat.device_name || 'Unknown'" class="truncate max-w-[80px]"></span>
+                                        </span>
                                         <template x-if="chat.status === 'agent_handling'">
                                             <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded flex items-center gap-1">
                                                 <span class="material-symbols-outlined text-[10px]">headset_mic</span>
-                                                CS Handling
+                                                CS
                                             </span>
                                         </template>
                                         <template x-if="chat.status === 'idle' && chat.remaining_minutes">
@@ -464,6 +492,9 @@
             isSending: false,
             isTyping: false,
             pollInterval: null,
+            // Device filter state
+            devices: @json($devices ?? []),
+            filterDevice: null,
             // Idle notification state
             showIdleWarning: false,
             idleChat: null,
@@ -529,7 +560,11 @@
             async fetchConversations(showLoading = true) {
                 if (showLoading) this.isLoadingConversations = true;
                 try {
-                    const response = await fetch('{{ route("whatsapp.api.conversations") }}');
+                    let url = '{{ route("whatsapp.api.conversations") }}';
+                    if (this.filterDevice) {
+                        url += '?device=' + encodeURIComponent(this.filterDevice);
+                    }
+                    const response = await fetch(url);
                     const data = await response.json();
                     if (JSON.stringify(this.conversations) !== JSON.stringify(data)) {
                          this.conversations = data;
