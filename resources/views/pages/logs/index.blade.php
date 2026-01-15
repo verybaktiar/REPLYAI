@@ -49,14 +49,14 @@
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display antialiased overflow-x-hidden">
-<div class="relative flex h-screen w-full bg-background-light dark:bg-background-dark overflow-hidden">
+<div class="relative flex flex-col lg:flex-row h-screen w-full bg-background-light dark:bg-background-dark overflow-hidden">
     
     <!-- Sidebar -->
 <!-- Sidebar Navigation -->
 @include('components.sidebar')
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col h-full overflow-hidden">
+    <div class="flex-1 flex flex-col h-full overflow-hidden pt-14 lg:pt-0">
         <!-- Top Navbar -->
         <header class="flex items-center justify-between border-b border-surface-highlight bg-surface-dark px-6 py-3 shrink-0 z-20">
             <div class="flex items-center gap-4 text-white lg:hidden">

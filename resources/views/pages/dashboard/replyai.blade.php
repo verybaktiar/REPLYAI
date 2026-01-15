@@ -46,16 +46,16 @@
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden antialiased">
-<div class="flex h-screen w-full">
+<div class="flex flex-col lg:flex-row h-screen w-full">
     <!-- Sidebar Navigation -->
     <!-- Sidebar Navigation -->
     <!-- Sidebar Navigation -->
     <!-- Sidebar Navigation -->
 @include('components.sidebar')
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0">
         <!-- Top Header -->
-        <header class="h-16 flex items-center justify-between px-6 lg:px-8 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-20">
+        <header class="hidden lg:flex h-16 items-center justify-between px-6 lg:px-8 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-20">
             <div class="flex items-center gap-2 lg:hidden">
                 <button class="p-2 -ml-2 text-slate-600 dark:text-slate-400">
                     <span class="material-symbols-outlined">menu</span>
@@ -75,7 +75,7 @@
         </header>
 
         <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto p-6 lg:p-8 scroll-smooth">
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scroll-smooth">
             <div class="max-w-7xl mx-auto flex flex-col gap-8">
                 <!-- Page Heading Section -->
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">

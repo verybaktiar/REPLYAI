@@ -37,13 +37,13 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #324467; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen flex">
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen flex flex-col lg:flex-row">
 
 <!-- Sidebar Navigation -->
 @include('components.sidebar')
 
-<main class="flex-1 flex flex-col h-full overflow-hidden relative">
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10 pb-20">
+<main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0">
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-10 pb-20">
         <div class="max-w-[1200px] mx-auto flex flex-col gap-6">
             
             <!-- Header KB -->

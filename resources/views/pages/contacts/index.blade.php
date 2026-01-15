@@ -35,13 +35,13 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #324467; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen flex">
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen flex flex-col lg:flex-row">
 
 <!-- Sidebar Navigation -->
 @include('components.sidebar')
 
-<main class="flex-1 flex flex-col h-full overflow-hidden relative">
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10 pb-20">
+<main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0">
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-10 pb-20">
         <div class="max-w-[1200px] mx-auto flex flex-col gap-8">
             <!-- Header -->
             <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
@@ -92,26 +92,26 @@
 
             <!-- Contacts Table -->
             <div class="bg-surface-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-text-secondary">
-                        <thead class="bg-[#111722] text-xs uppercase font-semibold text-text-secondary">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs md:text-sm text-text-secondary min-w-[600px]">
+                        <thead class="bg-[#111722] text-[10px] md:text-xs uppercase font-semibold text-text-secondary">
                             <tr>
-                                <th class="px-6 py-4">Nama Profil</th>
-                                <th class="px-6 py-4">Telepon</th>
-                                <th class="px-6 py-4">Platform</th>
-                                <th class="px-6 py-4">Total Pesan</th>
-                                <th class="px-6 py-4">Terakhir Aktif</th>
-                                <th class="px-6 py-4">Aksi</th>
+                                <th class="px-3 md:px-6 py-3 md:py-4">Nama Profil</th>
+                                <th class="px-3 md:px-6 py-3 md:py-4">Telepon</th>
+                                <th class="px-3 md:px-6 py-3 md:py-4">Platform</th>
+                                <th class="px-3 md:px-6 py-3 md:py-4">Pesan</th>
+                                <th class="px-3 md:px-6 py-3 md:py-4">Terakhir Aktif</th>
+                                <th class="px-3 md:px-6 py-3 md:py-4">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border-dark">
                             @forelse($contacts as $c)
                                 <tr class="hover:bg-[#1f2b40] transition-colors">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="size-8 rounded-full bg-slate-700 bg-cover" style="background-image: url('{{ $c['avatar'] ?: 'https://ui-avatars.com/api/?name='.urlencode($c['name']).'&background=374151&color=fff' }}');"></div>
-                                            <div class="flex flex-col">
-                                                <span class="text-white font-medium">{{ $c['name'] }}</span>
+                                    <td class="px-3 md:px-6 py-3 md:py-4">
+                                        <div class="flex items-center gap-2 md:gap-3">
+                                            <div class="size-7 md:size-8 rounded-full bg-slate-700 bg-cover shrink-0" style="background-image: url('{{ $c['avatar'] ?: 'https://ui-avatars.com/api/?name='.urlencode($c['name']).'&background=374151&color=fff' }}');"></div>
+                                            <div class="flex flex-col min-w-0">
+                                                <span class="text-white font-medium truncate">{{ $c['name'] }}</span>
                                                 @if(!empty($c['tags']))
                                                     <div class="flex gap-1 flex-wrap mt-1">
                                                         @foreach($c['tags'] as $tag)
@@ -122,21 +122,23 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 text-white">{{ $c['phone'] }}</td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-2">
+                                    <td class="px-3 md:px-6 py-3 md:py-4 text-white whitespace-nowrap">{{ $c['phone'] }}</td>
+                                    <td class="px-3 md:px-6 py-3 md:py-4">
+                                        <div class="flex items-center gap-1.5">
                                             @if($c['platform'] === 'whatsapp')
-                                                <span class="text-green-500 material-symbols-outlined" style="font-size: 18px;">chat</span> 
-                                                <span class="text-green-400">WhatsApp</span>
+                                                <span class="text-green-500 material-symbols-outlined" style="font-size: 16px;">chat</span> 
+                                                <span class="text-green-400 hidden sm:inline">WhatsApp</span>
+                                                <span class="text-green-400 sm:hidden">WA</span>
                                             @else
-                                                <span class="text-pink-500 material-symbols-outlined" style="font-size: 18px;">photo_camera</span> 
-                                                <span class="text-pink-400">Instagram</span>
+                                                <span class="text-pink-500 material-symbols-outlined" style="font-size: 16px;">photo_camera</span> 
+                                                <span class="text-pink-400 hidden sm:inline">Instagram</span>
+                                                <span class="text-pink-400 sm:hidden">IG</span>
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 text-white">{{ $c['messages_count'] ?? 0 }}</td>
-                                    <td class="px-6 py-4">{{ \Carbon\Carbon::parse($c['last_active'])->diffForHumans() }}</td>
-                                    <td class="px-6 py-4">
+                                    <td class="px-3 md:px-6 py-3 md:py-4 text-white">{{ $c['messages_count'] ?? 0 }}</td>
+                                    <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($c['last_active'])->diffForHumans() }}</td>
+                                    <td class="px-3 md:px-6 py-3 md:py-4">
                                         @if($c['platform'] === 'whatsapp')
                                             <a href="{{ route('whatsapp.inbox') }}?phone={{ $c['phone'] }}" class="text-primary hover:text-white transition-colors flex items-center gap-1">
                                                 <span class="material-symbols-outlined" style="font-size: 18px;">chat</span> Lihat Chat

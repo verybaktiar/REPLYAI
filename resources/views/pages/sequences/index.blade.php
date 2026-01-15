@@ -40,14 +40,14 @@
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden antialiased">
-<div class="flex h-screen w-full">
+<div class="flex flex-col lg:flex-row h-screen w-full">
     <!-- Sidebar Navigation -->
     @include('components.sidebar')
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-        <!-- Top Header -->
-        <header class="h-16 flex items-center justify-between px-6 lg:px-8 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-20">
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0">
+        <!-- Top Header - Desktop only -->
+        <header class="hidden lg:flex h-16 items-center justify-between px-6 lg:px-8 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-20">
             <div class="flex items-center gap-3">
                 <div>
                     <h1 class="font-bold text-lg dark:text-white">Sequences</h1>

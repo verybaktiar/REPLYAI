@@ -109,8 +109,9 @@
     
     <!-- Inbox Layout -->
     <div class="flex h-full">
-        <!-- Sidebar Contact List (Left) -->
-        <div class="w-1/3 min-w-[320px] max-w-[400px] border-r border-border-dark flex flex-col bg-[#111722]">
+        <!-- Sidebar Contact List (Left) - Hidden on mobile when chat is active -->
+        <div class="border-r border-border-dark flex flex-col bg-[#111722] transition-all duration-300"
+             :class="activeChat ? 'hidden md:flex w-full md:w-[340px] lg:w-[360px] md:shrink-0' : 'w-full md:w-[340px] lg:w-[360px] md:shrink-0'">
             <!-- Header Search -->
             <div class="p-4 border-b border-border-dark bg-[#111722]">
                 <div class="flex items-center justify-between mb-4">
@@ -232,8 +233,9 @@
             </div>
         </div>
 
-        <!-- Chat Window (Right) -->
-        <div class="flex-1 flex flex-col bg-[#0b1019] relative min-w-0">
+        <!-- Chat Window (Right) - Visible on mobile only when chat is active -->
+        <div class="flex-1 flex flex-col bg-[#0b1019] relative min-w-0 transition-all duration-300"
+             :class="activeChat ? 'flex' : 'hidden md:flex'">
              <!-- Chat Background Pattern -->
              <div class="absolute inset-0 z-0 opacity-[0.03]" style="background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');"></div>
 
@@ -250,8 +252,14 @@
             <template x-if="activeChat">
                 <div class="flex-1 flex flex-col h-full z-10 relative">
                     <!-- Chat Header -->
-                    <div class="h-16 flex items-center justify-between px-6 bg-surface-dark border-b border-border-dark shrink-0 z-20">
-                        <div class="flex items-center space-x-4">
+                    <div class="h-16 flex items-center justify-between px-3 md:px-6 bg-surface-dark border-b border-border-dark shrink-0 z-20">
+                        <div class="flex items-center space-x-3 md:space-x-4">
+                            <!-- Back Button (Mobile Only) -->
+                            <button @click="activeChat = null; messages = []" 
+                                    class="md:hidden p-2 -ml-1 hover:bg-white/5 rounded-full text-text-secondary"
+                                    title="Kembali ke daftar chat">
+                                <span class="material-symbols-outlined">arrow_back</span>
+                            </button>
                             <div class="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold">
                                 <span x-text="getInitials(activeChat.name)"></span>
                             </div>
@@ -260,18 +268,18 @@
                                 <p class="text-xs text-text-secondary" x-text="activeChat.formatted_phone"></p>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-center space-x-1 md:space-x-2">
                             <!-- Takeover Button (when bot is active) -->
                             <button x-show="activeChat?.status === 'bot_active'" @click="takeoverChat()"
-                                    class="flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors">
+                                    class="flex items-center gap-1 px-2 md:px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs md:text-sm font-medium transition-colors">
                                 <span class="material-symbols-outlined text-base">headset_mic</span>
-                                Ambil Alih
+                                <span class="hidden sm:inline">Ambil Alih</span>
                             </button>
                             <!-- Handback Button (when CS is handling) -->
                             <button x-show="activeChat?.status !== 'bot_active'" @click="handbackToBot()"
-                                    class="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors">
+                                    class="flex items-center gap-1 px-2 md:px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs md:text-sm font-medium transition-colors">
                                 <span class="material-symbols-outlined text-base">replay</span>
-                                Aktifkan Bot
+                                <span class="hidden sm:inline">Aktifkan Bot</span>
                             </button>
                             <button class="p-2 hover:bg-white/5 rounded-full text-text-secondary">
                                 <span class="material-symbols-outlined">more_vert</span>
@@ -281,18 +289,20 @@
                     
                     <!-- Agent Handling Banner -->
                     <div x-show="activeChat?.status !== 'bot_active'" 
-                         class="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between shrink-0 z-20">
-                        <span class="text-sm text-amber-400 flex items-center gap-2">
+                         class="bg-amber-500/10 border-b border-amber-500/30 px-3 md:px-4 py-2 flex items-center justify-between shrink-0 z-20 flex-wrap gap-2">
+                        <span class="text-xs md:text-sm text-amber-400 flex items-center gap-2">
                             <span class="material-symbols-outlined text-base">support_agent</span>
-                            Bot saat ini <strong class="ml-1">nonaktif</strong> untuk percakapan ini.
+                            <span class="hidden sm:inline">Bot saat ini <strong class="ml-1">nonaktif</strong> untuk percakapan ini.</span>
+                            <span class="sm:hidden">Bot nonaktif</span>
                             <template x-if="activeChat?.remaining_minutes">
-                                <span class="text-xs opacity-75">(Auto-handback dalam <span x-text="activeChat.remaining_minutes"></span> menit)</span>
+                                <span class="text-[10px] md:text-xs opacity-75">(<span x-text="activeChat.remaining_minutes"></span>m)</span>
                             </template>
                         </span>
                         <button @click="handbackToBot()" 
-                                class="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors font-medium">
+                                class="bg-green-500 hover:bg-green-600 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-lg flex items-center gap-1 transition-colors font-medium">
                             <span class="material-symbols-outlined text-sm">replay</span>
-                            Aktifkan Bot Kembali
+                            <span class="hidden sm:inline">Aktifkan Bot Kembali</span>
+                            <span class="sm:hidden">Bot</span>
                         </button>
                     </div>
 

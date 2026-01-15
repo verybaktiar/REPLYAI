@@ -60,14 +60,14 @@
                     <p class="text-text-secondary text-base font-normal">Overview of chatbot performance across all hospital channels.</p>
                 </div>
                 <!-- Filters Toolbar -->
-                <div class="flex flex-wrap items-end gap-3">
+                <div class="flex flex-wrap items-end gap-2 sm:gap-3 w-full xl:w-auto">
                     <!-- Select Bot -->
-                    <div class="flex flex-col gap-1.5 w-full sm:w-auto">
-                        <label class="text-xs font-semibold text-text-secondary uppercase tracking-wider">Bot</label>
+                    <div class="flex flex-col gap-1.5 flex-1 min-w-[120px] sm:flex-none sm:w-auto">
+                        <label class="text-[10px] sm:text-xs font-semibold text-text-secondary uppercase tracking-wider">Bot</label>
                         <div class="relative">
-                            <select id="botFilter" onchange="applyFilters()" class="appearance-none bg-surface-dark border border-border-dark text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-40 p-2.5 pr-8">
+                            <select id="botFilter" onchange="applyFilters()" class="appearance-none bg-surface-dark border border-border-dark text-white text-xs sm:text-sm rounded-lg focus:ring-primary focus:border-primary block w-full sm:w-36 p-2 sm:p-2.5 pr-7">
                                 <option value="all" {{ ($currentBot ?? 'all') == 'all' ? 'selected' : '' }}>All Bots</option>
-                                <option value="appointment" {{ ($currentBot ?? '') == 'appointment' ? 'selected' : '' }}>Appointment Bot</option>
+                                <option value="appointment" {{ ($currentBot ?? '') == 'appointment' ? 'selected' : '' }}>Appointment</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-text-secondary">
                                 <span class="material-symbols-outlined text-sm">expand_more</span>
@@ -75,11 +75,11 @@
                         </div>
                     </div>
                     <!-- Platform -->
-                    <div class="flex flex-col gap-1.5 w-full sm:w-auto">
-                        <label class="text-xs font-semibold text-text-secondary uppercase tracking-wider">Platform</label>
+                    <div class="flex flex-col gap-1.5 flex-1 min-w-[120px] sm:flex-none sm:w-auto">
+                        <label class="text-[10px] sm:text-xs font-semibold text-text-secondary uppercase tracking-wider">Platform</label>
                         <div class="relative">
-                            <select id="platformFilter" onchange="applyFilters()" class="appearance-none bg-surface-dark border border-border-dark text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-32 p-2.5 pr-8">
-                                <option value="all" {{ ($currentPlatform ?? 'all') == 'all' ? 'selected' : '' }}>All Platforms</option>
+                            <select id="platformFilter" onchange="applyFilters()" class="appearance-none bg-surface-dark border border-border-dark text-white text-xs sm:text-sm rounded-lg focus:ring-primary focus:border-primary block w-full sm:w-32 p-2 sm:p-2.5 pr-7">
+                                <option value="all" {{ ($currentPlatform ?? 'all') == 'all' ? 'selected' : '' }}>All</option>
                                 <option value="whatsapp" {{ ($currentPlatform ?? '') == 'whatsapp' ? 'selected' : '' }}>WhatsApp</option>
                                 <option value="instagram" {{ ($currentPlatform ?? '') == 'instagram' ? 'selected' : '' }}>Instagram</option>
                             </select>
@@ -89,9 +89,10 @@
                         </div>
                     </div>
                     <!-- Export Button -->
-                    <button onclick="exportReport()" class="bg-primary hover:bg-blue-600 text-white font-medium rounded-lg text-sm px-5 py-2.5 flex items-center gap-2 transition-colors ml-auto sm:ml-0 h-[42px] mt-auto">
-                        <span class="material-symbols-outlined" style="font-size: 20px;">download</span>
-                        Export Report
+                    <button onclick="exportReport()" class="bg-primary hover:bg-blue-600 text-white font-medium rounded-lg text-xs sm:text-sm px-3 sm:px-5 py-2 sm:py-2.5 flex items-center gap-1.5 sm:gap-2 transition-colors ml-auto sm:ml-0 h-[36px] sm:h-[42px] mt-auto">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+                        <span class="hidden sm:inline">Export Report</span>
+                        <span class="sm:hidden">Export</span>
                     </button>
                 </div>
             </div>
@@ -281,28 +282,28 @@
 
             <!-- Recent Activity Table -->
             <div class="bg-surface-dark border border-border-dark rounded-xl overflow-hidden flex flex-col">
-                <div class="p-6 border-b border-border-dark flex justify-between items-center">
-                    <h3 class="text-white text-lg font-bold">Recent Sessions</h3>
-                    <div class="flex gap-2">
-                        <input class="bg-[#111722] border border-border-dark rounded-lg text-sm text-white px-3 py-2 w-48 focus:ring-primary focus:border-primary" placeholder="Search ID..." type="text"/>
+                <div class="p-4 md:p-6 border-b border-border-dark flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <h3 class="text-white text-base md:text-lg font-bold">Recent Sessions</h3>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <input class="bg-[#111722] border border-border-dark rounded-lg text-xs md:text-sm text-white px-3 py-2 w-full sm:w-48 focus:ring-primary focus:border-primary" placeholder="Search ID..." type="text"/>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-text-secondary">
-                        <thead class="bg-[#111722] text-xs uppercase font-semibold text-text-secondary">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs md:text-sm text-text-secondary min-w-[500px]">
+                        <thead class="bg-[#111722] text-[10px] md:text-xs uppercase font-semibold text-text-secondary">
                             <tr>
-                                <th class="px-6 py-4">Timestamp</th>
-                                <th class="px-6 py-4">Trigger</th>
-                                <th class="px-6 py-4">Platform</th>
-                                <th class="px-6 py-4">Status</th>
+                                <th class="px-3 md:px-6 py-3 md:py-4">Timestamp</th>
+                                <th class="px-3 md:px-6 py-3 md:py-4">Trigger</th>
+                                <th class="px-3 md:px-6 py-3 md:py-4">Platform</th>
+                                <th class="px-3 md:px-6 py-3 md:py-4">Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border-dark">
                             @forelse($recentLogs as $log)
                                 <tr class="hover:bg-[#1f2b40] transition-colors">
-                                    <td class="px-6 py-4 font-medium text-white">{{ $log['time']->format('Y-m-d H:i') }}</td>
-                                    <td class="px-6 py-4 text-white">"{{ $log['message'] }}"</td>
-                                    <td class="px-6 py-4">
+                                    <td class="px-3 md:px-6 py-3 md:py-4 font-medium text-white whitespace-nowrap">{{ $log['time']->format('m-d H:i') }}</td>
+                                    <td class="px-3 md:px-6 py-3 md:py-4 text-white max-w-[200px] truncate">"{{ $log['message'] }}"</td>
+                                    <td class="px-3 md:px-6 py-3 md:py-4">
                                         <div class="flex items-center gap-2">
                                              @if($log['platform'] === 'whatsapp')
                                                 <span class="text-green-500 material-symbols-outlined" style="font-size: 18px;">chat</span> WhatsApp
@@ -311,7 +312,7 @@
                                              @endif
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="px-3 md:px-6 py-3 md:py-4">
                                         @if($log['status'] === 'resolved' || $log['status'] === 'success' || $log['status'] === 'sent')
                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Resolved</span>
                                         @elseif($log['status'] === 'pending')
@@ -322,7 +323,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="4" class="px-6 py-4 text-center">No recent sessions found.</td></tr>
+                                <tr><td colspan="4" class="px-3 md:px-6 py-4 text-center">No recent sessions found.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

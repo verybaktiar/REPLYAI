@@ -49,21 +49,14 @@
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden">
-<div class="flex h-screen w-full">
+<div class="flex flex-col lg:flex-row h-screen w-full">
     <!-- SIDEBAR -->
 <!-- Sidebar Navigation -->
 @include('components.sidebar')
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-        <!-- Mobile Header -->
-        <div class="md:hidden flex items-center justify-between p-4 bg-[#111722] border-b border-[#232f48]">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-white">menu</span>
-                <span class="text-white font-bold">REPLYAI</span>
-            </div>
-            <div class="size-8 rounded-full bg-primary"></div>
-        </div>
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0">
+        <!-- Remove redundant mobile header - sidebar already provides it -->
 
         <div class="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12">
             <div class="max-w-[1200px] mx-auto flex flex-col gap-6">
