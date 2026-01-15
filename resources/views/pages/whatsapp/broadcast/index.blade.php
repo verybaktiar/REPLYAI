@@ -5,6 +5,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>WhatsApp Broadcast - REPLYAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script>
@@ -26,15 +27,15 @@
         }
     </script>
 </head>
-<body class="bg-background-dark font-display text-white overflow-hidden h-screen flex">
+<body class="bg-background-dark font-display text-white overflow-hidden h-screen flex flex-col lg:flex-row">
     
     <!-- Sidebar -->
     @include('components.sidebar')
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full overflow-y-auto">
+    <main class="flex-1 flex flex-col h-full overflow-y-auto pt-14 lg:pt-0">
         
-        <div class="p-8">
+        <div class="p-4 md:p-8">
             <div class="flex justify-between items-center mb-8">
                 <div>
                     <h1 class="text-2xl font-bold">Broadcast Messages</h1>
