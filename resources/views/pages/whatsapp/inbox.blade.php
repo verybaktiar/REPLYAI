@@ -115,7 +115,20 @@
             <!-- Header Search -->
             <div class="p-4 border-b border-border-dark bg-[#111722]">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold">Inbox</h2>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-xl font-bold">WhatsApp</h2>
+                        @include('components.page-help', [
+                            'title' => 'WhatsApp',
+                            'description' => 'Lihat dan balas pesan pelanggan dari WhatsApp.',
+                            'tips' => [
+                                'Pilih percakapan dari daftar di kiri',
+                                'Hijau = Bot aktif menjawab',
+                                'Merah = CS menangani manual',
+                                'Klik "Ambil Alih" untuk membalas sendiri',
+                                'Klik "Aktifkan Bot" untuk mengembalikan ke bot'
+                            ]
+                        ])
+                    </div>
                     <div class="flex space-x-2">
                          <button @click="fetchConversations()" class="p-2 hover:bg-white/5 rounded-full text-text-secondary" title="Refresh">
                             <span class="material-symbols-outlined">refresh</span>

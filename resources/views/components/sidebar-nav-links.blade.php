@@ -1,116 +1,128 @@
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('dashboard') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('dashboard') }}">
-    <span class="material-symbols-outlined text-[24px]">grid_view</span>
-    <span class="text-sm font-medium">Dashboard</span>
+{{-- ==================== SIDEBAR - USER FRIENDLY VERSION ==================== --}}
+
+{{-- Dashboard --}}
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('dashboard') }}">
+    <span class="text-lg">🏠</span>
+    <span class="text-sm font-medium">Beranda</span>
 </a>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('analytics*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('analytics.index') }}">
-    <span class="material-symbols-outlined text-[24px]">pie_chart</span>
-    <span class="text-sm font-medium">Analisis & Laporan</span>
-</a>
+{{-- Section: PESAN --}}
+<div class="mt-4 mb-1 px-4">
+    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">💬 Pesan</p>
+    <p class="text-[9px] text-gray-600">Lihat percakapan pelanggan</p>
+</div>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('contacts*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('contacts.index') }}">
-    <span class="material-symbols-outlined text-[24px]">groups</span>
-    <span class="text-sm font-medium">Data Kontak (CRM)</span>
-</a>
-
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('inbox*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('inbox') }}">
-    <span class="material-symbols-outlined text-[24px]">chat_bubble</span>
-    <span class="text-sm font-medium">Kotak Masuk</span>
-    @if(isset($conversations) && $conversations instanceof \Illuminate\Database\Eloquent\Collection && $conversations->count() > 0)
-        <span class="ml-auto bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md text-center min-w-[20px]">{{ $conversations->count() }}</span>
-    @elseif(isset($stats['pending_inbox']) && $stats['pending_inbox'] > 0)
-         <span class="ml-auto bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md text-center min-w-[20px]">{{ $stats['pending_inbox'] }}</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('inbox*') && !request()->routeIs('whatsapp.inbox*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('inbox') }}">
+    <span class="text-base">📬</span>
+    <span class="text-sm">Kotak Masuk</span>
+    @if(isset($stats['pending_inbox']) && $stats['pending_inbox'] > 0)
+        <span class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $stats['pending_inbox'] }}</span>
     @endif
 </a>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('rules*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('rules.index') }}">
-    <span class="material-symbols-outlined text-[24px]">smart_toy</span>
-    <span class="text-sm font-medium">Manajemen Bot</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.inbox*') ? 'bg-green-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('whatsapp.inbox') }}">
+    <span class="text-base">💬</span>
+    <span class="text-sm">WhatsApp</span>
 </a>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('kb*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('kb.index') }}">
-    <span class="material-symbols-outlined text-[24px]">menu_book</span>
-    <span class="text-sm font-medium">Knowledge Base</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('contacts*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('contacts.index') }}">
+    <span class="text-base">👥</span>
+    <span class="text-sm">Daftar Pelanggan</span>
 </a>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('quick-replies*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('quick-replies.index') }}">
-    <span class="material-symbols-outlined text-[24px]">bolt</span>
-    <span class="text-sm font-medium">Quick Replies</span>
-</a>
-
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('simulator*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('simulator.index') }}">
-    <span class="material-symbols-outlined text-[24px]">science</span>
-    <span class="text-sm font-medium">Simulator</span>
-</a>
-
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('sequences*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('sequences.index') }}">
-    <span class="material-symbols-outlined text-[24px]">timeline</span>
-    <span class="text-sm font-medium">Sequences</span>
-</a>
-
-<div class="mt-4 mb-2 px-3">
-    <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">Integrasi</p>
+{{-- Section: CHATBOT --}}
+<div class="mt-4 mb-1 px-4">
+    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">🤖 Chatbot</p>
+    <p class="text-[9px] text-gray-600">Atur respon otomatis</p>
 </div>
 
-<!-- WhatsApp Menu Group -->
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('whatsapp.inbox*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('whatsapp.inbox') }}">
-    <span class="material-symbols-outlined text-[24px]">chat</span>
-    <span class="text-sm font-medium">WhatsApp Inbox</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('rules*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('rules.index') }}">
+    <span class="text-base">⚙️</span>
+    <span class="text-sm">Pengaturan Bot</span>
 </a>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('whatsapp.broadcast*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('whatsapp.broadcast.index') }}">
-    <span class="material-symbols-outlined text-[24px]">campaign</span>
-    <span class="text-sm font-medium">Broadcast</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('kb*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('kb.index') }}">
+    <span class="text-base">📚</span>
+    <span class="text-sm">Info Produk</span>
 </a>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('whatsapp.settings*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('whatsapp.settings') }}">
-    <span class="material-symbols-outlined text-[24px]">perm_data_setting</span>
-    <span class="text-sm font-medium">WA Settings</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('quick-replies*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('quick-replies.index') }}">
+    <span class="text-base">⚡</span>
+    <span class="text-sm">Balasan Cepat</span>
 </a>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('whatsapp.analytics*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('whatsapp.analytics') }}">
-    <span class="material-symbols-outlined text-[24px]">analytics</span>
-    <span class="text-sm font-medium">Analytics</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('sequences*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('sequences.index') }}">
+    <span class="text-base">📅</span>
+    <span class="text-sm">Pesan Otomatis</span>
 </a>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('web-widgets*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('web-widgets.index') }}">
-    <span class="material-symbols-outlined text-[24px]">widgets</span>
-    <span class="text-sm font-medium">Web Widget</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('simulator*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('simulator.index') }}">
+    <span class="text-base">🧪</span>
+    <span class="text-sm">Test Bot</span>
 </a>
 
-<div class="mt-4 mb-2 px-3">
-    <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">Settings</p>
+{{-- Section: PROMOSI --}}
+<div class="mt-4 mb-1 px-4">
+    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">📢 Promosi</p>
+    <p class="text-[9px] text-gray-600">Kirim pesan massal</p>
 </div>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('settings.business*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('settings.business') }}">
-    <span class="material-symbols-outlined text-[24px]">business</span>
-    <span class="text-sm font-medium">Business Profile</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.broadcast*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('whatsapp.broadcast.index') }}">
+    <span class="text-base">📣</span>
+    <span class="text-sm">Broadcast</span>
 </a>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('settings.index') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('settings.index') }}">
-    <span class="material-symbols-outlined text-[24px]">schedule</span>
-    <span class="text-sm font-medium">Business Hours</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('web-widgets*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('web-widgets.index') }}">
+    <span class="text-base">🌐</span>
+    <span class="text-sm">Chat di Website</span>
 </a>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('takeover.logs*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('takeover.logs') }}">
-    <span class="material-symbols-outlined text-[24px]">swap_horiz</span>
-    <span class="text-sm font-medium">Takeover Logs</span>
-</a>
-
-<div class="mt-4 mb-2 px-3">
-    <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">System</p>
+{{-- Section: LAPORAN --}}
+<div class="mt-4 mb-1 px-4">
+    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">📊 Laporan</p>
+    <p class="text-[9px] text-gray-600">Lihat statistik</p>
 </div>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('logs*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('logs.index') }}">
-    <span class="material-symbols-outlined text-[24px]">history</span>
-    <span class="text-sm font-medium">Log Aktivitas</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('analytics*') && !request()->routeIs('whatsapp.analytics*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('analytics.index') }}">
+    <span class="text-base">📈</span>
+    <span class="text-sm">Statistik</span>
 </a>
 
-<div class="mt-4 mb-2 px-3">
-    <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wider">Help & Guide</p>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.analytics*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('whatsapp.analytics') }}">
+    <span class="text-base">📱</span>
+    <span class="text-sm">Laporan WhatsApp</span>
+</a>
+
+{{-- Section: PENGATURAN --}}
+<div class="mt-4 mb-1 px-4">
+    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">⚙️ Pengaturan</p>
+    <p class="text-[9px] text-gray-600">Konfigurasi sistem</p>
 </div>
 
-<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {{ request()->routeIs('documentation.*') ? 'bg-[#135bec] text-white shadow-lg shadow-blue-900/20' : 'text-[#92a4c9] hover:text-white hover:bg-[#232f48]' }}" href="{{ route('documentation.index') }}">
-    <span class="material-symbols-outlined text-[24px]">menu_book</span>
-    <span class="text-sm font-medium">Documentation</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.settings*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('whatsapp.settings') }}">
+    <span class="text-base">📲</span>
+    <span class="text-sm">Hubungkan WhatsApp</span>
 </a>
+
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('settings.business*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('settings.business') }}">
+    <span class="text-base">🏢</span>
+    <span class="text-sm">Profil Bisnis</span>
+</a>
+
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('settings.index') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('settings.index') }}">
+    <span class="text-base">🕐</span>
+    <span class="text-sm">Jam Buka</span>
+</a>
+
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('logs*') || request()->routeIs('takeover.logs*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('logs.index') }}">
+    <span class="text-base">📋</span>
+    <span class="text-sm">Riwayat Aktivitas</span>
+</a>
+
+{{-- Bantuan --}}
+<div class="mt-4 pt-3 border-t border-gray-800">
+    <a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('documentation.*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('documentation.index') }}">
+        <span class="text-base">❓</span>
+        <span class="text-sm">Bantuan</span>
+    </a>
+</div>

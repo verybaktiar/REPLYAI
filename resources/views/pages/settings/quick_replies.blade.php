@@ -36,7 +36,17 @@
         <!-- Header -->
         <header class="hidden lg:flex h-16 items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-20">
             <div class="flex items-center gap-2">
-                <span class="font-bold text-lg dark:text-white">Quick Replies</span>
+                <span class="font-bold text-lg dark:text-white">Balasan Cepat</span>
+                @include('components.page-help', [
+                    'title' => 'Balasan Cepat (Quick Replies)',
+                    'description' => 'Template balasan yang bisa dipakai ulang dengan shortcut.',
+                    'tips' => [
+                        'Buat template dengan ketik /shortcut',
+                        'Contoh: /greeting untuk pesan selamat datang',
+                        'Template bisa dipakai di inbox saat balas chat',
+                        'Aktifkan/nonaktifkan template sesuai kebutuhan'
+                    ]
+                ])
             </div>
             <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="bg-primary hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
                 <span class="material-symbols-outlined text-[20px]">add</span> Tambah Template

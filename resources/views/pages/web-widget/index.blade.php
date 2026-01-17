@@ -71,7 +71,19 @@
                 <!-- Page Heading Section -->
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div class="flex flex-col gap-1">
-                        <h2 class="text-2xl md:text-3xl font-black tracking-tight dark:text-white text-slate-900">Widget Aktif</h2>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-2xl md:text-3xl font-black tracking-tight dark:text-white text-slate-900">Chat di Website</h2>
+                            @include('components.page-help', [
+                                'title' => 'Chat di Website',
+                                'description' => 'Widget chat untuk dipasang di website WordPress Anda.',
+                                'tips' => [
+                                    'Klik "Buat Widget Baru" untuk membuat widget',
+                                    'Copy kode embed dan paste ke website',
+                                    'Atur warna dan nama bot sesuai brand',
+                                    'Chat dari website akan masuk ke inbox'
+                                ]
+                            ])
+                        </div>
                         <p class="text-slate-500 dark:text-slate-400">Buat dan kelola chat widget untuk integrasi WordPress Anda.</p>
                     </div>
                     <a href="{{ route('web-widgets.create') }}" 

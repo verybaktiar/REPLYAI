@@ -7,7 +7,19 @@
 <div class="mb-8">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-white mb-2">Pengaturan WhatsApp Multi-Channel</h1>
+            <div class="flex items-center gap-3">
+                <h1 class="text-3xl font-bold text-white mb-2">Koneksi WhatsApp</h1>
+                @include('components.page-help', [
+                    'title' => 'Koneksi WhatsApp',
+                    'description' => 'Hubungkan nomor WhatsApp Anda untuk menerima dan mengirim pesan.',
+                    'tips' => [
+                        'Klik "Tambah Device Baru" untuk menghubungkan HP',
+                        'Scan QR code dengan WhatsApp di HP Anda',
+                        'Anda bisa menghubungkan beberapa nomor sekaligus',
+                        'Pilih profil bisnis untuk setiap device'
+                    ]
+                ])
+            </div>
             <p class="text-text-secondary">Kelola beberapa nomor WhatsApp sekaligus dengan sesi terpisah</p>
         </div>
         <button onclick="openAddDeviceModal()" class="inline-flex items-center gap-2 px-6 py-3 bg-whatsapp hover:bg-whatsapp/90 text-white rounded-lg font-medium transition-all shadow-lg shadow-whatsapp/20">

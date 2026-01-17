@@ -47,8 +47,20 @@
             <!-- Header -->
             <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
                 <div class="flex flex-col gap-2">
-                    <h2 class="text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em] text-white">Data Kontak</h2>
-                    <p class="text-text-secondary text-base font-normal">Manajemen profil pasien dan riwayat interaksi. Total: <span class="text-white font-medium">{{ $total ?? 0 }}</span> kontak</p>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em] text-white">Daftar Pelanggan</h2>
+                        @include('components.page-help', [
+                            'title' => 'Daftar Pelanggan',
+                            'description' => 'Tempat melihat semua data pelanggan yang pernah menghubungi bisnis Anda.',
+                            'tips' => [
+                                'Filter berdasarkan platform (WhatsApp/Instagram)',
+                                'Cari pelanggan berdasarkan nama atau nomor HP',
+                                'Klik "Lihat Chat" untuk melihat riwayat percakapan',
+                                'Export data ke file Excel'
+                            ]
+                        ])
+                    </div>
+                    <p class="text-text-secondary text-base font-normal">Total: <span class="text-white font-medium">{{ $total ?? 0 }}</span> kontak</p>
                 </div>
                 <!-- Controls -->
                 <div class="flex flex-wrap gap-3">

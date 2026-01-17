@@ -64,9 +64,22 @@
                 <!-- Page Heading -->
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div class="flex flex-col gap-2 max-w-2xl">
-                        <h1 class="text-white text-3xl md:text-4xl font-black leading-tight tracking-tight">Manajemen Bot</h1>
+                        <div class="flex items-center gap-3">
+                            <h1 class="text-white text-3xl md:text-4xl font-black leading-tight tracking-tight">Pengaturan Bot</h1>
+                            @include('components.page-help', [
+                                'title' => 'Pengaturan Bot',
+                                'description' => 'Di sini Anda bisa mengatur kata kunci (keyword) yang akan memicu balasan otomatis dari bot.',
+                                'tips' => [
+                                    'Klik "Buat Bot Baru" untuk menambah aturan baru',
+                                    'Masukkan keyword yang sering ditanyakan pelanggan',
+                                    'Tulis balasan yang informatif dan ramah',
+                                    'Gunakan toggle untuk mengaktifkan/menonaktifkan aturan',
+                                    'Pisahkan beberapa keyword dengan tanda | (contoh: harga|biaya|tarif)'
+                                ]
+                            ])
+                        </div>
                         <p class="text-text-secondary text-base font-normal">
-                            Kelola dan pantau otomatisasi chat untuk Instagram dan WhatsApp di RS PKU Solo.
+                            Atur keyword dan balasan otomatis untuk chatbot.
                         </p>
                     </div>
                     <button id="btn-open-create" class="flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-primary hover:bg-blue-600 transition-colors text-white text-sm font-bold shadow-lg shadow-blue-900/20">

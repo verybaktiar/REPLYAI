@@ -57,8 +57,20 @@
             <!-- Header & Controls -->
             <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
                 <div class="flex flex-col gap-2">
-                    <h2 class="text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em] text-white">Analisis &amp; Laporan</h2>
-                    <p class="text-text-secondary text-base font-normal">Overview of chatbot performance across all hospital channels.</p>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em] text-white">Statistik</h2>
+                        @include('components.page-help', [
+                            'title' => 'Statistik',
+                            'description' => 'Lihat laporan performa chatbot dan aktivitas pelanggan.',
+                            'tips' => [
+                                'Total Conversations = jumlah percakapan dengan pelanggan',
+                                'Bot Resolution Rate = persentase pesan yang dijawab bot',
+                                'Human Handoff = persentase yang ditangani CS',
+                                'Export Report untuk download data'
+                            ]
+                        ])
+                    </div>
+                    <p class="text-text-secondary text-base font-normal">Ringkasan performa chatbot Anda.</p>
                 </div>
                 <!-- Filters Toolbar -->
                 <div class="flex flex-wrap items-end gap-2 sm:gap-3 w-full xl:w-auto">

@@ -153,7 +153,20 @@
         <!-- Header -->
         <div class="p-5 pb-2">
             <div class="flex justify-between items-start mb-1">
-                <h2 class="text-2xl font-bold text-white tracking-tight">Kotak Masuk</h2>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-2xl font-bold text-white tracking-tight">Kotak Masuk</h2>
+                    @include('components.page-help', [
+                        'title' => 'Kotak Masuk',
+                        'description' => 'Tempat melihat dan membalas semua pesan dari pelanggan melalui Instagram.',
+                        'tips' => [
+                            'Pilih percakapan dari daftar di kiri',
+                            'Warna hijau = Bot yang menjawab',
+                            'Warna merah = CS yang menangani',
+                            'Klik "Ambil Alih" untuk menjawab manual',
+                            'Klik "Bot Kembali" untuk mengaktifkan bot lagi'
+                        ]
+                    ])
+                </div>
                 <button class="text-slate-400 hover:text-primary transition-colors">
                     <span class="material-symbols-outlined">edit_square</span>
                 </button>

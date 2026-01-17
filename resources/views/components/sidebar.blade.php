@@ -103,31 +103,36 @@
         </div>
     </aside>
 
-    <!-- Desktop Sidebar (Original) -->
-    <aside class="hidden lg:flex flex-col w-72 h-full bg-[#111722] border-r border-[#232f48] shrink-0">
-        <!-- Brand -->
-        <div class="flex items-center gap-3 px-6 py-6 mb-2">
-            <div class="bg-center bg-no-repeat bg-cover rounded-full size-10 shadow-lg relative" style='background-image: url("https://ui-avatars.com/api/?name=Reply+AI&background=0D8ABC&color=fff");'></div>
-            <div>
-                <h1 class="text-base font-bold leading-none text-white">ReplyAI Admin</h1>
-                <p class="text-xs text-[#92a4c9] mt-1">Multi-Channel AI Platform</p>
+    <!-- Desktop Sidebar -->
+    <aside class="hidden lg:flex flex-col w-64 h-full bg-gray-900 border-r border-gray-800 shrink-0">
+        <!-- Brand Header -->
+        <div class="px-4 py-4 border-b border-gray-800">
+            <div class="flex items-center gap-3">
+                <div class="size-10 rounded-lg bg-blue-600 flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">R</span>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-white">ReplyAI</h1>
+                    <p class="text-xs text-gray-500">Chatbot Platform</p>
+                </div>
             </div>
         </div>
+        
         <!-- Navigation Links -->
-        <nav class="flex flex-col gap-1 flex-1 overflow-y-auto px-4">
+        <nav class="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
             @include('components.sidebar-nav-links')
         </nav>
-        <!-- User Profile (Bottom) -->
-        <div class="border-t border-[#232f48] p-4">
-            <div class="p-3 rounded-lg bg-[#232f48]/50 flex items-center gap-3">
-                <div class="size-8 rounded-full bg-gradient-to-tr from-purple-500 to-primary flex items-center justify-center text-xs font-bold text-white">DM</div>
-                <div class="flex flex-col overflow-hidden">
-                    <p class="text-white text-sm font-medium truncate">Admin</p>
-                    <p class="text-[#92a4c9] text-xs truncate">admin@rspkusolo.com</p>
+        
+        <!-- User Profile -->
+        <div class="border-t border-gray-800 p-3">
+            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors">
+                <div class="size-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
+                    {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
                 </div>
-                <button class="ml-auto text-[#92a4c9] hover:text-white">
-                    <span class="material-symbols-outlined text-[20px]">logout</span>
-                </button>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white truncate">{{ Auth::user()->name ?? 'Admin' }}</p>
+                </div>
+                <span class="material-symbols-outlined text-gray-500 text-lg">logout</span>
             </div>
         </div>
     </aside>

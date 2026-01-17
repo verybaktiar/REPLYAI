@@ -51,8 +51,20 @@
         <header class="hidden lg:flex h-16 items-center justify-between px-6 lg:px-8 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-20">
             <div class="flex items-center gap-3">
                 <div>
-                    <h1 class="font-bold text-lg dark:text-white">Sequences</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Otomatisasi pesan berurutan untuk follow-up dan nurturing</p>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-bold text-lg dark:text-white">Follow-up Otomatis</h1>
+                        @include('components.page-help', [
+                            'title' => 'Follow-up Otomatis (Sequence)',
+                            'description' => 'Kirim pesan otomatis secara berurutan untuk follow-up pelanggan.',
+                            'tips' => [
+                                'Buat sequence untuk welcome message baru',
+                                'Atur delay waktu antar pesan (menit/jam/hari)',
+                                'Lihat berapa kontak yang terdaftar di sequence',
+                                'Aktifkan/nonaktifkan sequence sesuai kebutuhan'
+                            ]
+                        ])
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Pesan otomatis berurutan untuk follow-up</p>
                 </div>
             </div>
             <div class="flex items-center gap-4">

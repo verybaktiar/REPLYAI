@@ -50,8 +50,20 @@
             <!-- Header KB -->
            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 class="text-3xl font-black text-white">Knowledge Base</h1>
-              <p class="text-text-secondary mt-1">Sumber jawaban AI fallback. Input manual atau import URL.</p>
+              <div class="flex items-center gap-3">
+                <h1 class="text-3xl font-black text-white">Info Produk</h1>
+                @include('components.page-help', [
+                    'title' => 'Info Produk (Knowledge Base)',
+                    'description' => 'Tempat menyimpan informasi yang akan digunakan bot untuk menjawab pertanyaan pelanggan.',
+                    'tips' => [
+                        'Import dari URL website resmi Anda',
+                        'Upload file PDF atau TXT berisi informasi produk',
+                        'Semakin lengkap info, semakin pintar bot menjawab',
+                        'Gunakan tombol "Test AI" untuk mencoba respons bot'
+                    ]
+                ])
+              </div>
+              <p class="text-text-secondary mt-1">Sumber informasi untuk jawaban AI chatbot.</p>
             </div>
              <!-- Tombol Test AI -->
              <button

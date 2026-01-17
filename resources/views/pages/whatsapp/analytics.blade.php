@@ -43,7 +43,19 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-full overflow-y-auto pt-14 lg:pt-0">
         <div class="p-4 md:p-8">
-            <h1 class="text-2xl font-bold mb-8">WhatsApp Analytics</h1>
+            <div class="flex items-center gap-3 mb-8">
+                <h1 class="text-2xl font-bold">Statistik WhatsApp</h1>
+                @include('components.page-help', [
+                    'title' => 'Statistik WhatsApp',
+                    'description' => 'Lihat performa pesan WhatsApp Anda.',
+                    'tips' => [
+                        'Total Messages = pesan masuk + pesan keluar',
+                        'Lihat aktivitas 7 hari terakhir di grafik',
+                        'Cek kontak paling aktif di tabel bawah',
+                        'Ekspor data untuk analisis lebih lanjut'
+                    ]
+                ])
+            </div>
 
             <!-- Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

@@ -80,8 +80,20 @@
                 <!-- Page Heading -->
                 <div class="flex flex-wrap justify-between items-end gap-4">
                     <div class="flex flex-col gap-2">
-                        <h1 class="text-white text-3xl font-black leading-tight tracking-tight">Log Aktivitas</h1>
-                        <p class="text-text-secondary text-base font-normal max-w-2xl">Rekaman kronologis semua event, interaksi bot, dan error sistem.</p>
+                        <div class="flex items-center gap-3">
+                            <h1 class="text-white text-3xl font-black leading-tight tracking-tight">Riwayat Chat</h1>
+                            @include('components.page-help', [
+                                'title' => 'Riwayat Chat',
+                                'description' => 'Log semua aktivitas chat dan respons bot.',
+                                'tips' => [
+                                    'Lihat trigger/kata kunci yang memicu balasan',
+                                    'Cek apakah respons dari MENU, AI, atau FALLBACK',
+                                    'Filter berdasarkan status (Success/Error)',
+                                    'Monitor error untuk troubleshooting'
+                                ]
+                            ])
+                        </div>
+                        <p class="text-text-secondary text-base font-normal max-w-2xl">Rekaman semua interaksi chat dan respons bot.</p>
                     </div>
                     <div class="flex gap-3">
                         <button onclick="window.location.reload()" class="flex items-center justify-center gap-2 h-10 px-4 rounded-lg border border-surface-highlight bg-surface-dark text-white text-sm font-bold hover:bg-surface-highlight transition-colors">

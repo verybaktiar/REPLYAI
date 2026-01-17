@@ -54,8 +54,20 @@
         <div class="flex items-center gap-3">
             <span class="material-symbols-outlined text-primary text-3xl">science</span>
             <div>
-                <h2 class="text-lg font-bold text-white">Bot Simulator</h2>
-                <p class="text-xs text-text-secondary">Test respons bot tanpa perlu Instagram</p>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-lg font-bold text-white">Test Bot</h2>
+                    @include('components.page-help', [
+                        'title' => 'Test Bot (Simulator)',
+                        'description' => 'Tempat mencoba respons bot sebelum digunakan oleh pelanggan.',
+                        'tips' => [
+                            'Ketik pertanyaan seperti yang biasa ditanyakan pelanggan',
+                            'Lihat dari mana sumber jawaban bot (MENU, AI, atau FALLBACK)',
+                            'Gunakan untuk testing sebelum bot aktif',
+                            'Klik "Clear Chat" untuk reset percakapan'
+                        ]
+                    ])
+                </div>
+                <p class="text-xs text-text-secondary">Test respons bot tanpa perlu WhatsApp/Instagram</p>
             </div>
         </div>
         <button onclick="clearChat()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-white/5 text-text-secondary hover:bg-white/10 hover:text-white transition-colors">

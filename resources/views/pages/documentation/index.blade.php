@@ -47,10 +47,22 @@
         
         <!-- Header -->
         <div class="h-16 border-b border-border-dark flex items-center px-8 bg-surface-dark flex-shrink-0">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">menu_book</span>
-                Documentation & User Guide
-            </h1>
+            <div class="flex items-center gap-2">
+                <h1 class="text-xl font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">menu_book</span>
+                    Panduan Penggunaan
+                </h1>
+                @include('components.page-help', [
+                    'title' => 'Panduan Penggunaan',
+                    'description' => 'Dokumentasi lengkap cara menggunakan ReplyAI.',
+                    'tips' => [
+                        'Klik menu di sebelah kiri untuk navigasi',
+                        'Baca dari Introduction untuk pemula',
+                        'Cari topik spesifik yang Anda butuhkan',
+                        'Dokumentasi selalu di-update'
+                    ]
+                ])
+            </div>
         </div>
 
         <div class="flex flex-1 overflow-hidden">

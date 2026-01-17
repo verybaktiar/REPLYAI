@@ -81,8 +81,20 @@
                 <!-- Page Heading Section -->
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div class="flex flex-col gap-1">
-                        <h2 class="text-2xl md:text-3xl font-black tracking-tight dark:text-white text-slate-900">Overview</h2>
-                        <p class="text-slate-500 dark:text-slate-400">Here's what's happening with your hospital chatbots today.</p>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-2xl md:text-3xl font-black tracking-tight dark:text-white text-slate-900">Beranda</h2>
+                            @include('components.page-help', [
+                                'title' => 'Halaman Beranda',
+                                'description' => 'Ini adalah halaman utama yang menampilkan ringkasan aktivitas chatbot Anda hari ini.',
+                                'tips' => [
+                                    'Lihat Total Messages untuk melihat jumlah pesan masuk',
+                                    'AI Handled Rate menunjukkan persentase pesan yang dijawab bot',
+                                    'Pending Chats adalah pesan yang perlu ditangani manual',
+                                    'Klik Quick Actions untuk akses cepat ke fitur penting'
+                                ]
+                            ])
+                        </div>
+                        <p class="text-slate-500 dark:text-slate-400">Ringkasan aktivitas chatbot Anda hari ini.</p>
                     </div>
                 </div>
 

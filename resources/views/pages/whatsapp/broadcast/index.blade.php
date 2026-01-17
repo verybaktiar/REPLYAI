@@ -38,8 +38,20 @@
         <div class="p-4 md:p-8">
             <div class="flex justify-between items-center mb-8">
                 <div>
-                    <h1 class="text-2xl font-bold">Broadcast Messages</h1>
-                    <p class="text-text-secondary mt-1">Kirim pesan massal ke kontak WhatsApp Anda dengan aman.</p>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-2xl font-bold">Broadcast</h1>
+                        @include('components.page-help', [
+                            'title' => 'Broadcast',
+                            'description' => 'Kirim pesan promosi atau pengumuman ke banyak pelanggan sekaligus.',
+                            'tips' => [
+                                'Klik "Buat Broadcast Baru" untuk memulai',
+                                'Pilih kontak yang ingin menerima pesan',
+                                'Tulis pesan yang ingin dikirim',
+                                'Pastikan queue worker jalan dengan: php artisan queue:work'
+                            ]
+                        ])
+                    </div>
+                    <p class="text-text-secondary mt-1">Kirim pesan massal ke kontak WhatsApp Anda.</p>
                 </div>
                 <a href="{{ route('whatsapp.broadcast.create') }}" class="flex items-center gap-2 bg-primary hover:bg-blue-600 px-4 py-2 rounded-lg font-medium transition-colors">
                     <span class="material-symbols-outlined">add</span>
