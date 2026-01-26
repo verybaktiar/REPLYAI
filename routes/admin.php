@@ -1,27 +1,21 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminAuthController;
-
 /*
 |--------------------------------------------------------------------------
 | Admin Routes
 |--------------------------------------------------------------------------
 | Routes untuk Super Admin Panel
 */
-
 // Auth Routes (tidak perlu middleware)
 Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
 Route::post('/login', [AdminAuthController::class, 'login']);
 Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
 // Protected Admin Routes (perlu login via /admin/login)
-Route::middleware(['admin'])->group(function () {
-    
+Route::middleware(['admin'])->group(function () {   
     // Dashboard
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\Admin\AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
     // Payments Management
     Route::prefix('payments')->name('admin.payments.')->group(function () {
@@ -70,10 +64,27 @@ Route::middleware(['admin'])->group(function () {
         Route::post('/{user}/assign-subscription', [App\Http\Controllers\Admin\AdminUserController::class, 'assignSubscription'])->name('assign-subscription');
         Route::post('/{user}/reset-usage', [App\Http\Controllers\Admin\AdminUserController::class, 'resetUsage'])->name('reset-usage');
         Route::post('/{user}/impersonate', [App\Http\Controllers\Admin\AdminUserController::class, 'impersonate'])->name('impersonate');
+        Route::post('/{user}/suspend', [App\Http\Controllers\Admin\AdminUserController::class, 'suspend'])->name('suspend');
+        Route::post('/{user}/activate', [App\Http\Controllers\Admin\AdminUserController::class, 'activate'])->name('activate');
     });
 
     // Stop impersonate (route khusus di luar prefix)
     Route::get('/stop-impersonate', [App\Http\Controllers\Admin\AdminUserController::class, 'stopImpersonate'])->name('admin.stop-impersonate');
+
+    // Failed Jobs Monitoring
+    Route::prefix('failed-jobs')->name('admin.failed-jobs.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\FailedJobController::class, 'index'])->name('index');
+        Route::post('/{id}/retry', [\App\Http\Controllers\Admin\FailedJobController::class, 'retry'])->name('retry');
+        Route::post('/retry-all', [\App\Http\Controllers\Admin\FailedJobController::class, 'retryAll'])->name('retry-all');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\FailedJobController::class, 'destroy'])->name('destroy');
+        Route::post('/flush', [\App\Http\Controllers\Admin\FailedJobController::class, 'flush'])->name('flush');
+    });
+
+    // Log Viewer
+    Route::prefix('logs')->name('admin.logs.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\LogViewerController::class, 'index'])->name('index');
+        Route::post('/clear', [\App\Http\Controllers\Admin\LogViewerController::class, 'clear'])->name('clear');
+    });
 
     // Activity Logs
     Route::get('/activity-logs', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('admin.activity-logs.index');
@@ -83,62 +94,31 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/settings', [App\Http\Controllers\Admin\SystemSettingController::class, 'update'])->name('admin.settings.update');
 
     // System Health
-    Route::get('/system-health', function () {
-        return view('admin.system-health');
-    })->name('admin.system-health');
+    Route::get('/system-health', [App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('admin.system-health');
+
+    // Backups
+    Route::prefix('backups')->name('admin.backups.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminBackupController::class, 'index'])->name('index');
+        Route::post('/generate', [App\Http\Controllers\Admin\AdminBackupController::class, 'create'])->name('create');
+        Route::get('/download/{filename}', [App\Http\Controllers\Admin\AdminBackupController::class, 'download'])->name('download');
+        Route::delete('/{filename}', [App\Http\Controllers\Admin\AdminBackupController::class, 'destroy'])->name('destroy');
+    });
 
     // Maintenance Actions
     Route::prefix('maintenance')->name('admin.maintenance.')->group(function () {
-        Route::post('/clear-cache', function () {
-            Artisan::call('cache:clear');
-            return back()->with('success', 'Cache cleared successfully!');
-        })->name('clear-cache');
-
-        Route::post('/clear-views', function () {
-            Artisan::call('view:clear');
-            return back()->with('success', 'Compiled views cleared successfully!');
-        })->name('clear-views');
-
-        Route::post('/refresh-tokens', function () {
-            Artisan::call('instagram:refresh-tokens');
-            return back()->with('success', 'Instagram tokens refreshed!');
-        })->name('refresh-tokens');
+        Route::post('/clear-cache', [App\Http\Controllers\Admin\AdminSystemActionController::class, 'clearCache'])->name('clear-cache');
+        Route::post('/clear-views', [App\Http\Controllers\Admin\AdminSystemActionController::class, 'clearViews'])->name('clear-views');
+        Route::post('/refresh-tokens', [App\Http\Controllers\Admin\AdminSystemActionController::class, 'refreshTokens'])->name('refresh-tokens');
     });
 
     // Revenue Dashboard
-    Route::get('/revenue', function () {
-        return view('admin.revenue.index');
-    })->name('admin.revenue.index');
+    Route::get('/revenue', [App\Http\Controllers\Admin\AdminRevenueController::class, 'index'])->name('admin.revenue.index');
 
     // Broadcast & Announcements
-    Route::get('/broadcast', function () {
-        return view('admin.broadcast.index');
-    })->name('admin.broadcast.index');
-    
-    Route::post('/broadcast/send', function (Illuminate\Http\Request $request) {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'message' => 'required|string',
-            'type' => 'required|in:banner,email,both',
-            'audience' => 'required|in:all,active,vip,free,expiring',
-            'style' => 'required|in:info,success,warning,danger',
-            'duration_days' => 'required|integer|min:1|max:30',
-        ]);
-        
-        \App\Models\Announcement::create([
-            'title' => $request->title,
-            'message' => $request->message,
-            'type' => $request->type,
-            'style' => $request->style,
-            'audience' => $request->audience,
-            'is_active' => true,
-            'starts_at' => now(),
-            'expires_at' => now()->addDays($request->duration_days),
-            'created_by' => Auth::guard('admin')->id(),
-        ]);
-        
-        return back()->with('success', 'Broadcast berhasil dikirim!');
-    })->name('admin.broadcast.send');
+    Route::prefix('broadcast')->name('admin.broadcast.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminBroadcastController::class, 'index'])->name('index');
+        Route::post('/send', [App\Http\Controllers\Admin\AdminBroadcastController::class, 'send'])->name('send');
+    });
 
     // Subscription Alerts
     Route::get('/alerts', function () {
@@ -146,95 +126,20 @@ Route::middleware(['admin'])->group(function () {
     })->name('admin.alerts.index');
 
     // Platform Statistics
-    Route::get('/stats', function () {
-        return view('admin.stats.index');
-    })->name('admin.stats.index');
+    Route::get('/stats', [App\Http\Controllers\Admin\AdminPlatformStatsController::class, 'index'])->name('admin.stats.index');
 
     // Export Reports
-    Route::get('/export/users', function () {
-        $users = \App\Models\User::with('subscription.plan')->get();
-        $filename = 'users_export_' . now()->format('Y-m-d_His') . '.csv';
-        
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"$filename\"",
-        ];
-        
-        $callback = function() use ($users) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['ID', 'Name', 'Email', 'Plan', 'Status', 'VIP', 'Verified', 'Created']);
-            
-            foreach ($users as $user) {
-                fputcsv($file, [
-                    $user->id,
-                    $user->name,
-                    $user->email,
-                    $user->subscription?->plan?->name ?? 'Free',
-                    $user->subscription?->status ?? '-',
-                    $user->is_vip ? 'Yes' : 'No',
-                    $user->email_verified_at ? 'Yes' : 'No',
-                    $user->created_at->format('Y-m-d H:i'),
-                ]);
-            }
-            fclose($file);
-        };
-        
-        return response()->stream($callback, 200, $headers);
-    })->name('admin.export.users');
-
-    Route::get('/export/payments', function () {
-        $payments = \App\Models\Payment::with(['user', 'plan'])->orderByDesc('created_at')->get();
-        $filename = 'payments_export_' . now()->format('Y-m-d_His') . '.csv';
-        
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"$filename\"",
-        ];
-        
-        $callback = function() use ($payments) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['Invoice', 'User', 'Email', 'Plan', 'Amount', 'Status', 'Method', 'Date']);
-            
-            foreach ($payments as $payment) {
-                fputcsv($file, [
-                    $payment->invoice_number,
-                    $payment->user?->name ?? 'Unknown',
-                    $payment->user?->email ?? '-',
-                    $payment->plan?->name ?? '-',
-                    $payment->amount,
-                    $payment->status,
-                    $payment->payment_method ?? '-',
-                    $payment->created_at->format('Y-m-d H:i'),
-                ]);
-            }
-            fclose($file);
-        };
-        
-        return response()->stream($callback, 200, $headers);
-    })->name('admin.export.payments');
+    Route::prefix('export')->name('admin.export.')->group(function () {
+        Route::get('/users', [App\Http\Controllers\Admin\AdminExportController::class, 'users'])->name('users');
+        Route::get('/payments', [App\Http\Controllers\Admin\AdminExportController::class, 'payments'])->name('payments');
+    });
 
     // Refund Management
-    Route::get('/refunds', function () {
-        return view('admin.refunds.index');
-    })->name('admin.refunds.index');
-    
-    Route::post('/refunds/{refund}/approve', function (\App\Models\Refund $refund) {
-        $refund->update([
-            'status' => 'approved',
-            'processed_by' => Auth::guard('admin')->id(),
-            'processed_at' => now(),
-        ]);
-        return back()->with('success', 'Refund approved!');
-    })->name('admin.refunds.approve');
-    
-    Route::post('/refunds/{refund}/reject', function (\App\Models\Refund $refund) {
-        $refund->update([
-            'status' => 'rejected',
-            'processed_by' => Auth::guard('admin')->id(),
-            'processed_at' => now(),
-        ]);
-        return back()->with('success', 'Refund rejected');
-    })->name('admin.refunds.reject');
+    Route::prefix('refunds')->name('admin.refunds.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminRefundController::class, 'index'])->name('index');
+        Route::post('/{refund}/approve', [App\Http\Controllers\Admin\AdminRefundController::class, 'approve'])->name('approve');
+        Route::post('/{refund}/reject', [App\Http\Controllers\Admin\AdminRefundController::class, 'reject'])->name('reject');
+    });
 
     // Email Logs
     Route::get('/email-logs', function () {
@@ -247,69 +152,24 @@ Route::middleware(['admin'])->group(function () {
     })->name('admin.api-usage.index');
 
     // Feature Flags
-    Route::get('/feature-flags', function () {
-        return view('admin.feature-flags.index');
-    })->name('admin.feature-flags.index');
-    
-    Route::post('/feature-flags', function (Illuminate\Http\Request $request) {
-        \App\Models\FeatureFlag::create([
-            'key' => $request->key,
-            'name' => $request->name,
-            'scope' => $request->scope ?? 'global',
-            'is_enabled' => false,
-        ]);
-        return back()->with('success', 'Feature flag created!');
-    })->name('admin.feature-flags.store');
-    
-    Route::patch('/feature-flags/{flag}/toggle', function (\App\Models\FeatureFlag $flag) {
-        $flag->update(['is_enabled' => !$flag->is_enabled]);
-        return back();
-    })->name('admin.feature-flags.toggle');
-    
-    Route::delete('/feature-flags/{flag}', function (\App\Models\FeatureFlag $flag) {
-        $flag->delete();
-        return back()->with('success', 'Feature flag deleted');
-    })->name('admin.feature-flags.destroy');
+    Route::prefix('feature-flags')->name('admin.feature-flags.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'index'])->name('index');
+        Route::post('/update', [App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'update'])->name('update');
+        Route::post('/{setting}/toggle', [App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'toggle'])->name('toggle');
+    });
 
     // User Feedback
-    Route::get('/feedback', function () {
-        return view('admin.feedback.index');
-    })->name('admin.feedback.index');
-    
-    Route::patch('/feedback/{feedback}/status', function (\App\Models\UserFeedback $feedback, Illuminate\Http\Request $request) {
-        $feedback->update(['status' => $request->status, 'reviewed_by' => Auth::guard('admin')->id()]);
-        return back();
-    })->name('admin.feedback.update-status');
+    Route::prefix('feedback')->name('admin.feedback.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminUserFeedbackController::class, 'index'])->name('index');
+        Route::patch('/{feedback}/status', [App\Http\Controllers\Admin\AdminUserFeedbackController::class, 'updateStatus'])->name('update-status');
+    });
 
     // Bulk Actions
-    Route::get('/bulk', function () {
-        return view('admin.bulk.index');
-    })->name('admin.bulk.index');
-    
-    Route::post('/bulk/email', function (Illuminate\Http\Request $request) {
-        // In production, queue this job
-        return back()->with('success', 'Bulk email queued for sending!');
-    })->name('admin.bulk.email');
-    
-    Route::post('/bulk/extend', function (Illuminate\Http\Request $request) {
-        $days = (int) $request->days;
-        $query = \App\Models\Subscription::where('status', 'active');
-        
-        if ($request->target === 'expiring') {
-            $query->where('expires_at', '<=', now()->addDays(7));
-        }
-        
-        $query->each(function($sub) use ($days) {
-            $sub->update(['expires_at' => $sub->expires_at->addDays($days)]);
-        });
-        
-        return back()->with('success', 'Subscriptions extended!');
-    })->name('admin.bulk.extend');
-    
-    Route::post('/bulk/reset-usage', function (Illuminate\Http\Request $request) {
-        // Reset feature usage for all users or specific plan
-        return back()->with('success', 'Usage limits reset!');
-    })->name('admin.bulk.reset-usage');
+    Route::prefix('bulk')->name('admin.bulk.')->group(function () {
+        Route::get('/', function () { return view('admin.bulk.index'); })->name('index');
+        Route::post('/extend', [App\Http\Controllers\Admin\AdminSystemActionController::class, 'bulkExtend'])->name('extend');
+        Route::post('/reset-usage', [App\Http\Controllers\Admin\AdminSystemActionController::class, 'bulkResetUsage'])->name('reset-usage');
+    });
 
     // QA Testing Dashboard
     Route::prefix('qa')->name('admin.qa.')->group(function () {

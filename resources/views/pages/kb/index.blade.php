@@ -202,18 +202,12 @@
                   </div>
                 </div>
               @empty
-                <div class="p-12 text-center flex flex-col items-center justify-center">
-                    <div class="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center mb-4">
-                        <span class="material-symbols-outlined text-5xl text-slate-500">menu_book</span>
-                    </div>
-                    <h3 class="text-lg font-bold text-white mb-2">Belum Ada Knowledge Base</h3>
-                    <p class="text-text-secondary text-sm max-w-md mb-4">
-                        Knowledge Base adalah sumber informasi yang akan digunakan AI untuk menjawab pertanyaan pelanggan. 
-                        Tambahkan info produk, jadwal, FAQ, atau informasi lainnya.
-                    </p>
-                    <p class="text-xs text-primary">
-                        👆 Gunakan form di atas untuk import URL atau upload dokumen
-                    </p>
+                <div class="py-12">
+                    <x-empty-state 
+                        icon="menu_book" 
+                        title="Belum Ada Knowledge Base" 
+                        description="AI memerlukan informasi untuk membalas chat. Gunakan form di atas untuk import URL website atau upload dokumen PDF/TXT."
+                    />
                 </div>
               @endforelse
             </div>

@@ -1,240 +1,162 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Revenue Dashboard')
-@section('page_title', 'Revenue Dashboard')
+@section('title', 'SaaS Business Intel')
+@section('page_title', 'SaaS Business Intel')
 
 @section('content')
-@php
-    // MRR Calculation (Monthly Recurring Revenue)
-    $activeSubscriptions = \App\Models\Subscription::where('status', 'active')
-        ->with('plan')
-        ->get();
-    
-    $mrr = $activeSubscriptions->sum(function($sub) {
-        if (!$sub->plan) return 0;
-        $monthlyPrice = $sub->billing_cycle === 'yearly' 
-            ? $sub->plan->price_yearly / 12 
-            : $sub->plan->price_monthly;
-        return $monthlyPrice;
-    });
-    
-    // ARR (Annual Recurring Revenue)
-    $arr = $mrr * 12;
-    
-    // Revenue this month
-    $revenueThisMonth = \App\Models\Payment::where('status', 'paid')
-        ->whereMonth('created_at', now()->month)
-        ->whereYear('created_at', now()->year)
-        ->sum('amount');
-    
-    // Revenue last month
-    $revenueLastMonth = \App\Models\Payment::where('status', 'paid')
-        ->whereMonth('created_at', now()->subMonth()->month)
-        ->whereYear('created_at', now()->subMonth()->year)
-        ->sum('amount');
-    
-    // Growth percentage
-    $revenueGrowth = $revenueLastMonth > 0 
-        ? round((($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100, 1) 
-        : 0;
-    
-    // Revenue by Plan (last 30 days) - simplified query
-    $revenueByPlan = \App\Models\Payment::where('payments.status', 'paid')
-        ->where('payments.created_at', '>=', now()->subDays(30))
-        ->join('plans', 'payments.plan_id', '=', 'plans.id')
-        ->selectRaw('plans.name, plans.slug, SUM(payments.amount) as total')
-        ->groupBy('plans.id', 'plans.name', 'plans.slug')
-        ->orderByDesc('total')
-        ->get();
-    
-    $totalRevenueByPlan = $revenueByPlan->sum('total') ?: 1;
-    
-    // Revenue trend (30 days)
-    $revenueTrend = [];
-    for ($i = 29; $i >= 0; $i--) {
-        $date = now()->subDays($i)->format('Y-m-d');
-        $amount = \App\Models\Payment::where('status', 'paid')
-            ->whereDate('created_at', $date)
-            ->sum('amount');
-        $revenueTrend[$date] = $amount;
-    }
-    $maxTrend = max($revenueTrend) ?: 1;
-    
-    // Top Paying Users
-    $topPayingUsers = \App\Models\Payment::where('status', 'paid')
-        ->selectRaw('user_id, SUM(amount) as total_paid, COUNT(*) as payment_count')
-        ->groupBy('user_id')
-        ->orderByDesc('total_paid')
-        ->limit(5)
-        ->with('user')
-        ->get();
-    
-    // Payment Methods Distribution
-    $paymentMethods = \App\Models\Payment::where('status', 'paid')
-        ->where('created_at', '>=', now()->subDays(30))
-        ->selectRaw('payment_method, COUNT(*) as count, SUM(amount) as total')
-        ->groupBy('payment_method')
-        ->orderByDesc('total')
-        ->get();
-    
-    $totalPaymentMethodAmount = $paymentMethods->sum('total') ?: 1;
-@endphp
+<div class="mb-8 flex items-center justify-between">
+    <div>
+        <h2 class="text-2xl font-black italic tracking-tighter text-white">REVENUE INTELLIGENCE 💎</h2>
+        <p class="text-sm text-slate-400">Analisis mendalam tentang kesehatan finansial dan pertumbuhan platform.</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <div class="px-4 py-2 bg-primary/10 rounded-xl border border-primary/20 flex items-center gap-2">
+            <span class="size-2 rounded-full bg-primary animate-pulse"></span>
+            <span class="text-xs font-bold text-primary uppercase tracking-widest">Live Data</span>
+        </div>
+    </div>
+</div>
 
-<!-- Revenue Stats -->
+<!-- Elite Metric Cards -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <!-- MRR -->
-    <div class="bg-gradient-to-br from-primary to-blue-600 rounded-2xl p-6 text-white">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-medium opacity-80">MRR (Monthly)</span>
-            <span class="material-symbols-outlined text-2xl opacity-60">trending_up</span>
-        </div>
-        <div class="text-3xl font-black">Rp {{ number_format($mrr, 0, ',', '.') }}</div>
-        <div class="mt-2 text-sm opacity-80">{{ $activeSubscriptions->count() }} active subscriptions</div>
-    </div>
-
-    <!-- ARR -->
-    <div class="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl p-6 text-white">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-medium opacity-80">ARR (Annual)</span>
-            <span class="material-symbols-outlined text-2xl opacity-60">calendar_month</span>
-        </div>
-        <div class="text-3xl font-black">Rp {{ number_format($arr, 0, ',', '.') }}</div>
-        <div class="mt-2 text-sm opacity-80">Projected annual revenue</div>
-    </div>
-
-    <!-- Revenue This Month -->
-    <div class="bg-surface-dark rounded-2xl p-6 border border-slate-800">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-medium text-slate-400">Bulan Ini</span>
-            @if($revenueGrowth >= 0)
-            <span class="flex items-center gap-1 text-green-400 text-sm">
-                <span class="material-symbols-outlined text-sm">arrow_upward</span>
-                {{ $revenueGrowth }}%
-            </span>
-            @else
-            <span class="flex items-center gap-1 text-red-400 text-sm">
-                <span class="material-symbols-outlined text-sm">arrow_downward</span>
-                {{ abs($revenueGrowth) }}%
-            </span>
-            @endif
-        </div>
-        <div class="text-3xl font-black text-green-400">Rp {{ number_format($revenueThisMonth, 0, ',', '.') }}</div>
-        <div class="mt-2 text-sm text-slate-500">vs Rp {{ number_format($revenueLastMonth, 0, ',', '.') }} bulan lalu</div>
-    </div>
-
-    <!-- Average Revenue per User (ARPU) -->
-    <div class="bg-surface-dark rounded-2xl p-6 border border-slate-800">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-medium text-slate-400">ARPU</span>
-            <span class="material-symbols-outlined text-2xl text-slate-500">person</span>
-        </div>
-        @php $arpu = $activeSubscriptions->count() > 0 ? $mrr / $activeSubscriptions->count() : 0; @endphp
-        <div class="text-3xl font-black">Rp {{ number_format($arpu, 0, ',', '.') }}</div>
-        <div class="mt-2 text-sm text-slate-500">Per user per month</div>
-    </div>
-</div>
-
-<!-- Revenue Charts -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    <!-- 30-Day Trend -->
-    <div class="lg:col-span-2 bg-surface-dark rounded-2xl p-6 border border-slate-800">
-        <h3 class="font-bold text-lg mb-6">Revenue Trend (30 Hari)</h3>
-        <div class="flex items-end gap-1 h-48">
-            @foreach($revenueTrend as $date => $amount)
-            <div class="flex-1 flex flex-col items-center group relative">
-                <div class="absolute bottom-full mb-2 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-                    {{ \Carbon\Carbon::parse($date)->format('d M') }}: Rp {{ number_format($amount, 0, ',', '.') }}
-                </div>
-                <div class="w-full rounded-t transition-all group-hover:opacity-80" 
-                     style="height: {{ max(($amount / $maxTrend) * 160, 2) }}px; background: linear-gradient(to top, #135bec, #8b5cf6);"></div>
-            </div>
-            @endforeach
-        </div>
-        <div class="flex justify-between mt-2 text-xs text-slate-500">
-            <span>{{ now()->subDays(29)->format('d M') }}</span>
-            <span>{{ now()->format('d M') }}</span>
-        </div>
-    </div>
-
-    <!-- Revenue by Plan -->
-    <div class="bg-surface-dark rounded-2xl p-6 border border-slate-800">
-        <h3 class="font-bold text-lg mb-6">Revenue by Plan</h3>
-        <div class="space-y-4">
-            @forelse($revenueByPlan as $item)
-            @php $percent = ($item->total / $totalRevenueByPlan) * 100; @endphp
-            <div>
-                <div class="flex justify-between text-sm mb-1">
-                    <span class="font-medium">{{ $item->name }}</span>
-                    <span class="text-slate-400">Rp {{ number_format($item->total, 0, ',', '.') }}</span>
-                </div>
-                <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-primary to-purple-500" style="width: {{ $percent }}%"></div>
+    <!-- MRR Card -->
+    <div class="bg-surface-dark rounded-[2.5rem] p-8 border border-slate-800 shadow-2xl relative overflow-hidden group">
+        <div class="absolute -right-4 -top-4 size-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all duration-500"></div>
+        <div class="relative">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Monthly Recurring</span>
+                <div class="size-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined text-xl">payments</span>
                 </div>
             </div>
-            @empty
-            <p class="text-slate-500 text-sm text-center py-4">Belum ada data</p>
-            @endforelse
-        </div>
-    </div>
-</div>
-
-<!-- Top Paying Users & Payment Methods -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Top Paying Users -->
-    <div class="bg-surface-dark rounded-2xl p-6 border border-slate-800">
-        <h3 class="font-bold text-lg mb-4">Top Paying Customers</h3>
-        <div class="space-y-3">
-            @foreach($topPayingUsers as $index => $payment)
-            <div class="flex items-center gap-3 p-3 bg-surface-light rounded-xl">
-                <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold
-                    {{ $index === 0 ? 'bg-yellow-500 text-black' : ($index === 1 ? 'bg-slate-400 text-black' : 'bg-slate-600 text-white') }}">
-                    {{ $index + 1 }}
+            <h3 class="text-3xl font-black text-white mb-2">Rp {{ number_format($metrics['mrr'], 0, ',', '.') }}</h3>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold {{ $metrics['growth']['percentage'] >= 0 ? 'text-green-500' : 'text-red-500' }}">
+                    {{ $metrics['growth']['percentage'] >= 0 ? '+' : '' }}{{ $metrics['growth']['percentage'] }}%
                 </span>
-                <div class="flex-1 min-w-0">
-                    <div class="font-medium text-sm truncate">{{ $payment->user->name ?? 'Unknown' }}</div>
-                    <div class="text-xs text-slate-500">{{ $payment->payment_count }} payments</div>
-                </div>
-                <span class="text-sm font-bold text-green-400">Rp {{ number_format($payment->total_paid, 0, ',', '.') }}</span>
+                <span class="text-[10px] text-slate-600 font-medium uppercase italic">vs Last Month</span>
             </div>
-            @endforeach
         </div>
     </div>
 
-    <!-- Payment Methods -->
-    <div class="bg-surface-dark rounded-2xl p-6 border border-slate-800">
-        <h3 class="font-bold text-lg mb-4">Payment Methods (30 Days)</h3>
-        <div class="space-y-4">
-            @forelse($paymentMethods as $method)
-            @php 
-                $percent = ($method->total / $totalPaymentMethodAmount) * 100;
-                $methodName = match($method->payment_method) {
-                    'bank_transfer' => 'Transfer Bank',
-                    'midtrans' => 'Midtrans (QRIS/VA)',
-                    'manual' => 'Manual',
-                    default => ucfirst($method->payment_method ?? 'Other')
-                };
-            @endphp
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <span class="material-symbols-outlined text-primary">
-                        {{ $method->payment_method === 'midtrans' ? 'qr_code_2' : 'account_balance' }}
-                    </span>
+    <!-- Churn Card -->
+    <div class="bg-surface-dark rounded-[2.5rem] p-8 border border-slate-800 shadow-2xl relative overflow-hidden group">
+        <div class="absolute -right-4 -top-4 size-32 bg-red-500/5 rounded-full blur-3xl group-hover:bg-red-500/10 transition-all duration-500"></div>
+        <div class="relative">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Churn Rate</span>
+                <div class="size-10 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined text-xl">person_remove</span>
                 </div>
-                <div class="flex-1">
-                    <div class="flex justify-between text-sm mb-1">
-                        <span class="font-medium">{{ $methodName }}</span>
-                        <span class="text-slate-400">{{ $method->count }} txn</span>
-                    </div>
-                    <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
-                        <div class="h-full bg-green-500" style="width: {{ $percent }}%"></div>
-                    </div>
-                </div>
-                <span class="text-sm font-medium">{{ round($percent) }}%</span>
             </div>
-            @empty
-            <p class="text-slate-500 text-sm text-center py-4">Belum ada data</p>
-            @endforelse
+            <h3 class="text-3xl font-black text-white mb-2">{{ number_format($metrics['churn'], 1) }}%</h3>
+            <div class="flex items-center gap-2 text-slate-500">
+                <span class="text-[10px] font-bold uppercase tracking-widest italic">Last 30 Days</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- LTV Card -->
+    <div class="bg-surface-dark rounded-[2.5rem] p-8 border border-slate-800 shadow-2xl relative overflow-hidden group">
+        <div class="absolute -right-4 -top-4 size-32 bg-yellow-500/5 rounded-full blur-3xl group-hover:bg-yellow-500/10 transition-all duration-500"></div>
+        <div class="relative">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Customer LTV</span>
+                <div class="size-10 rounded-2xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined text-xl">diamond</span>
+                </div>
+            </div>
+            <h3 class="text-3xl font-black text-white mb-2">Rp {{ number_format($metrics['ltv'], 0, ',', '.') }}</h3>
+            <div class="flex items-center gap-2 text-slate-500">
+                <span class="text-[10px] font-medium uppercase italic">Lifetime Value Projection</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ARPU Card -->
+    <div class="bg-surface-dark rounded-[2.5rem] p-8 border border-slate-800 shadow-2xl relative overflow-hidden group">
+        <div class="absolute -right-4 -top-4 size-32 bg-purple-500/5 rounded-full blur-3xl group-hover:bg-purple-500/10 transition-all duration-500"></div>
+        <div class="relative">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Avg Revenue (ARPU)</span>
+                <div class="size-10 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined text-xl">trending_up</span>
+                </div>
+            </div>
+            <h3 class="text-3xl font-black text-white mb-2">Rp {{ number_format($metrics['arpu'], 0, ',', '.') }}</h3>
+            <div class="flex items-center gap-2 text-slate-500">
+                <span class="text-[10px] font-medium uppercase italic">Revenue Per Account</span>
+            </div>
         </div>
     </div>
 </div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Revenue Breakdown -->
+    <div class="lg:col-span-2 bg-surface-dark rounded-[3rem] p-10 border border-slate-800 shadow-3xl">
+        <div class="flex items-center justify-between mb-10">
+            <div>
+                <h3 class="text-xl font-bold text-white mb-1">Growth Comparison</h3>
+                <p class="text-xs text-slate-500">Perbandingan pendapatan Bulan Ini vs Bulan Lalu.</p>
+            </div>
+            <div class="flex gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="size-3 rounded-full bg-primary/20 border border-primary/40"></span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Last Month</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="size-3 rounded-full bg-primary shadow-lg shadow-primary/50"></span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">This Month</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-8">
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-bold text-slate-300">Target Monthly (Example: 50M)</span>
+                    <span class="text-xs font-black text-primary">{{ round(($metrics['growth']['this_month'] / 50000000) * 100, 1) }}% Reach</span>
+                </div>
+                <div class="h-4 bg-background-dark rounded-full overflow-hidden border border-slate-800 p-0.5">
+                    <div class="h-full bg-gradient-to-r from-primary/50 to-primary rounded-full shadow-[0_0_15px_rgba(19,91,236,0.5)]" style="width: {{ min(100, ($metrics['growth']['this_month'] / 50000000) * 100) }}%"></div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-10 pt-6 border-t border-slate-800/50">
+                <div>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">THIS MONTH TOTAL</p>
+                    <p class="text-2xl font-black text-white">Rp {{ number_format($metrics['growth']['this_month'], 0, ',', '.') }}</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">PREVIOUS MONTH</p>
+                    <p class="text-2xl font-black text-slate-400">Rp {{ number_format($metrics['growth']['last_month'], 0, ',', '.') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SaaS Health Advice -->
+    <div class="bg-primary/5 rounded-[3rem] p-10 border border-primary/10 flex flex-col justify-center text-center relative overflow-hidden group">
+        <div class="absolute -bottom-20 -left-20 size-64 bg-primary/10 rounded-full blur-[80px]"></div>
+        <div class="relative">
+            <div class="size-20 rounded-[2rem] bg-primary shadow-2xl shadow-primary/50 mx-auto flex items-center justify-center text-white mb-6 group-hover:rotate-12 transition-transform duration-500">
+                <span class="material-symbols-outlined text-4xl">psychology</span>
+            </div>
+            <h4 class="text-xl font-black text-white mb-4">SaaS Performance Tip</h4>
+            
+            @if($metrics['churn'] > 5)
+            <p class="text-sm text-slate-400 italic">"Sistem mendeteksi <b>Churn Rate tinggi</b>. Pertimbangkan untuk memberikan penawaran khusus atau survei kepada pengguna yang membatalkan langganan."</p>
+            @elseif($metrics['growth']['percentage'] > 10)
+            <p class="text-sm text-slate-400 italic">"Platform sedang <b>tumbuh pesat!</b> Pastikan server dan infrastruktur siap menangani lonjakan beban pengguna baru."</p>
+            @else
+            <p class="text-sm text-slate-400 italic">"Pertumbuhan stabil. Inilah saatnya untuk fokus pada <b>Upselling</b> fitur VIP kepada pengguna paket standar."</p>
+            @endif
+
+            <button class="mt-8 px-8 py-3 bg-white text-primary rounded-2xl font-black text-xs hover:bg-primary hover:text-white transition shadow-xl">
+                RUN FULL AUDIT
+            </button>
+        </div>
+    </div>
+</div>
+
 @endsection

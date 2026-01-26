@@ -175,6 +175,8 @@
                     </div>
                 </div>
 
+
+
                 {{-- Onboarding Checklist (shows only if incomplete) --}}
                 @include('components.onboarding-checklist', ['user' => $user])
 
@@ -278,26 +280,39 @@
                         </div>
                     </div>
 
-                    {{-- Usage Widget --}}
-                    @include('components.usage-widget', ['user' => $user])
-                    <!-- Response Time Card -->
-                    <div class="flex flex-col gap-4 p-6 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
-                        <h3 class="text-lg font-bold dark:text-white text-slate-900">Performa Bot</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="flex flex-col gap-2 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/30">
-                                <span class="material-symbols-outlined text-emerald-600 text-3xl">speed</span>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">Avg Response Time</p>
-                                <p class="text-2xl font-bold text-emerald-600">{{ $stats['avg_response_time'] }}s</p>
-                            </div>
-                            <div class="flex flex-col gap-2 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
-                                <span class="material-symbols-outlined text-primary text-3xl">psychology</span>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">AI Success Rate</p>
-                                <p class="text-2xl font-bold text-primary">{{ $stats['ai_rate'] }}%</p>
-                            </div>
+                    {{-- Usage Widget in Column --}}
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-center justify-between px-1">
+                            <h3 class="text-lg font-bold dark:text-white text-slate-900">Limit Penggunaan</h3>
                         </div>
-                        <div class="flex items-center gap-2 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                            <span class="material-symbols-outlined text-green-500">check_circle</span>
-                            <p class="text-sm text-slate-600 dark:text-slate-400">Bot berjalan dengan baik</p>
+                        @include('components.usage-widget', ['user' => $user, 'cols' => 1])
+                    </div>
+                    <!-- Response Time Card -->
+                    <div class="flex flex-col gap-4 p-6 rounded-xl bg-surface-dark border border-slate-800 shadow-sm relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 size-20 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all"></div>
+                        <h3 class="text-lg font-bold dark:text-white text-slate-900 relative">AI Intelligence Insight</h3>
+                        <div class="space-y-4 relative">
+                            <div class="flex items-center gap-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
+                                <span class="material-symbols-outlined text-primary text-3xl">insights</span>
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Usage Forecast</p>
+                                    <p class="text-lg font-bold text-white">
+                                        ± {{ $stats['forecast_days'] }} Hari Tersisa
+                                    </p>
+                                    <p class="text-[9px] text-slate-500 italic">Berdasarkan tren 7 hari terakhir.</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="flex flex-col gap-1 p-3 rounded-lg bg-slate-800/50">
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase">Avg Speed</span>
+                                    <p class="text-xl font-black text-emerald-500">{{ $stats['avg_response_time'] }}s</p>
+                                </div>
+                                <div class="flex flex-col gap-1 p-3 rounded-lg bg-slate-800/50">
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase">Success Rate</span>
+                                    <p class="text-xl font-black text-primary">{{ $stats['ai_rate'] }}%</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

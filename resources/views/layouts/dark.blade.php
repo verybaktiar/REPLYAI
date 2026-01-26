@@ -56,6 +56,59 @@
                 </div>
                 
                 <div class="flex items-center gap-4">
+                    <!-- Notifications (Announcements) -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="relative size-9 rounded-full bg-surface-dark border border-border-dark flex items-center justify-center text-text-secondary hover:text-white transition group">
+                            <span class="material-symbols-outlined text-[20px]">notifications</span>
+                            @if(isset($unread_announcements) && $unread_announcements->count() > 0)
+                            <span class="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full border-2 border-background-dark"></span>
+                            @endif
+                        </button>
+
+                        <!-- Dropdown -->
+                        <div x-show="open" @click.away="open = false" x-cloak
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             class="absolute right-0 mt-3 w-80 bg-surface-dark border border-border-dark rounded-2xl shadow-2xl z-50 overflow-hidden">
+                            <div class="px-4 py-3 border-b border-border-dark flex items-center justify-between bg-background-dark/50">
+                                <span class="text-xs font-bold uppercase tracking-widest text-text-secondary">Notifications</span>
+                                @if(isset($unread_announcements) && $unread_announcements->count() > 0)
+                                <span class="px-2 py-0.5 bg-primary/20 text-primary text-[10px] font-black rounded-full">{{ $unread_announcements->count() }} NEW</span>
+                                @endif
+                            </div>
+                            <div class="max-h-[400px] overflow-y-auto">
+                                @forelse($unread_announcements ?? [] as $announcement)
+                                <div class="p-4 border-b border-border-dark last:border-0 hover:bg-white/5 transition group">
+                                    <div class="flex items-start gap-3">
+                                        <div class="mt-1 size-2 rounded-full shrink-0
+                                            {{ $announcement->style === 'danger' ? 'bg-red-500' : 
+                                               ($announcement->style === 'warning' ? 'bg-yellow-500' : 
+                                               ($announcement->style === 'success' ? 'bg-green-500' : 'bg-primary')) }}">
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-bold text-white mb-1 leading-tight">{{ $announcement->title }}</p>
+                                            <p class="text-xs text-text-secondary line-clamp-3 leading-relaxed mb-2">{{ $announcement->message }}</p>
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[10px] text-slate-500">{{ $announcement->created_at->diffForHumans() }}</span>
+                                                <form action="{{ route('announcements.read', $announcement->id) }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" class="text-[10px] font-bold text-primary hover:underline">Mark as read</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @empty
+                                <div class="p-8 text-center">
+                                    <span class="material-symbols-outlined text-4xl text-slate-700 mb-2">notifications_off</span>
+                                    <p class="text-xs text-slate-500 font-medium">No new announcements</p>
+                                </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="flex items-center gap-2 px-3 py-1.5 bg-whatsapp/10 rounded-full border border-whatsapp/20">
                         <div class="size-2 bg-whatsapp rounded-full animate-pulse"></div>
                         <span class="text-[10px] font-bold text-whatsapp uppercase tracking-widest">System Online</span>

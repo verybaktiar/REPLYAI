@@ -1,0 +1,131 @@
+﻿
+   INFO  Running migrations.  
+
+  2026_01_23_201229_add_role_to_admins_table  6.73ms FAIL
+
+   Illuminate\Database\QueryException 
+
+  SQLSTATE[42S02]: Base table or view not found: 1146 Table 'chatwoot.admins' doesn't exist (Connection: mysql, SQL: alter table `admins` add `role` enum('super_admin', 'admin', 'support') not null default 'admin' after `email`)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:824
+    820Γûò                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    821Γûò                 );
+    822Γûò             }
+    823Γûò 
+  Γ₧£ 824Γûò             throw new QueryException(
+    825Γûò                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826Γûò             );
+    827Γûò         }
+    828Γûò     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:570
+      PDOException::("SQLSTATE[42S02]: Base table or view not found: 1146 Table 'chatwoot.admins' doesn't exist")
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:570
+      PDOStatement::execute()
+
+  3   vendor\laravel\framework\src\Illuminate\Database\Connection.php:811
+      Illuminate\Database\Connection::{closure:Illuminate\Database\Connection::statement():559}("alter table `admins` add `role` enum('super_admin', 'admin', 'support') not null default 'admin' after `email`", [])
+
+  4   vendor\laravel\framework\src\Illuminate\Database\Connection.php:778
+      Illuminate\Database\Connection::runQueryCallback("alter table `admins` add `role` enum('super_admin', 'admin', 'support') not null default 'admin' after `email`", [], Object(Closure))
+
+  5   vendor\laravel\framework\src\Illuminate\Database\Connection.php:559
+      Illuminate\Database\Connection::run("alter table `admins` add `role` enum('super_admin', 'admin', 'support') not null default 'admin' after `email`", [], Object(Closure))
+
+  6   vendor\laravel\framework\src\Illuminate\Database\Schema\Blueprint.php:121
+      Illuminate\Database\Connection::statement("alter table `admins` add `role` enum('super_admin', 'admin', 'support') not null default 'admin' after `email`")
+
+  7   vendor\laravel\framework\src\Illuminate\Database\Schema\Builder.php:618
+      Illuminate\Database\Schema\Blueprint::build()
+
+  8   vendor\laravel\framework\src\Illuminate\Database\Schema\Builder.php:460
+      Illuminate\Database\Schema\Builder::build(Object(Illuminate\Database\Schema\Blueprint))
+
+  9   vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:363
+      Illuminate\Database\Schema\Builder::table("admins", Object(Closure))
+
+  10  database\migrations\2026_01_23_201229_add_role_to_admins_table.php:11
+      Illuminate\Support\Facades\Facade::__callStatic("table")
+
+  11  vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:514
+      Illuminate\Database\Migrations\Migration@anonymous\C:\laragon\www\Projek\Replyai\REPLYAI\database\migrations\2026_01_23_201229_add_role_to_admins_table.php:7$119::up()
+
+  12  vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:439
+      Illuminate\Database\Migrations\Migrator::runMethod(Object(Illuminate\Database\MySqlConnection), Object(Illuminate\Database\Migrations\Migration@anonymous\C:\laragon\www\Projek\Replyai\REPLYAI\database\migrations\2026_01_23_201229_add_role_to_admins_table.php:7$119), "up")
+
+  13  vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:448
+      Illuminate\Database\Migrations\Migrator::{closure:Illuminate\Database\Migrations\Migrator::runMigration():435}()
+
+  14  vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:250
+      Illuminate\Database\Migrations\Migrator::runMigration(Object(Illuminate\Database\Migrations\Migration@anonymous\C:\laragon\www\Projek\Replyai\REPLYAI\database\migrations\2026_01_23_201229_add_role_to_admins_table.php:7$119), "up")
+
+  15  vendor\laravel\framework\src\Illuminate\Console\View\Components\Task.php:41
+      Illuminate\Database\Migrations\Migrator::{closure:Illuminate\Database\Migrations\Migrator::runUp():250}()
+
+  16  vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:809
+      Illuminate\Console\View\Components\Task::render("2026_01_23_201229_add_role_to_admins_table", Object(Closure))
+
+  17  vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:250
+      Illuminate\Database\Migrations\Migrator::write("Illuminate\Console\View\Components\Task", "2026_01_23_201229_add_role_to_admins_table", Object(Closure))
+
+  18  vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:210
+      Illuminate\Database\Migrations\Migrator::runUp("C:\laragon\www\Projek\Replyai\REPLYAI\database\migrations/2026_01_23_201229_add_role_to_admins_table.php")
+
+  19  vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:137
+      Illuminate\Database\Migrations\Migrator::runPending([])
+
+  20  vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:116
+      Illuminate\Database\Migrations\Migrator::run([])
+
+  21  vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:666
+      Illuminate\Database\Console\Migrations\MigrateCommand::{closure:Illuminate\Database\Console\Migrations\MigrateCommand::runMigrations():109}()
+
+  22  vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:109
+      Illuminate\Database\Migrations\Migrator::usingConnection(Object(Closure))
+
+  23  vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:88
+      Illuminate\Database\Console\Migrations\MigrateCommand::runMigrations()
+
+  24  vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:36
+      Illuminate\Database\Console\Migrations\MigrateCommand::handle()
+
+  25  vendor\laravel\framework\src\Illuminate\Container\Util.php:43
+      Illuminate\Container\BoundMethod::{closure:Illuminate\Container\BoundMethod::call():35}()
+
+  26  vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:96
+      Illuminate\Container\Util::unwrapIfClosure(Object(Closure))
+
+  27  vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:35
+      Illuminate\Container\BoundMethod::callBoundMethod(Object(Illuminate\Foundation\Application), Object(Closure))
+
+  28  vendor\laravel\framework\src\Illuminate\Container\Container.php:836
+      Illuminate\Container\BoundMethod::call(Object(Illuminate\Foundation\Application), [])
+
+  29  vendor\laravel\framework\src\Illuminate\Console\Command.php:211
+      Illuminate\Container\Container::call()
+
+  30  vendor\symfony\console\Command\Command.php:318
+      Illuminate\Console\Command::execute(Object(Symfony\Component\Console\Input\ArgvInput), Object(Illuminate\Console\OutputStyle))
+
+  31  vendor\laravel\framework\src\Illuminate\Console\Command.php:180
+      Symfony\Component\Console\Command\Command::run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Illuminate\Console\OutputStyle))
+
+  32  vendor\symfony\console\Application.php:1110
+      Illuminate\Console\Command::run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+
+  33  vendor\symfony\console\Application.php:359
+      Symfony\Component\Console\Application::doRunCommand(Object(Illuminate\Database\Console\Migrations\MigrateCommand), Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+
+  34  vendor\symfony\console\Application.php:194
+      Symfony\Component\Console\Application::doRun(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+
+  35  vendor\laravel\framework\src\Illuminate\Foundation\Console\Kernel.php:197
+      Symfony\Component\Console\Application::run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+
+  36  vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1234
+      Illuminate\Foundation\Console\Kernel::handle(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+
+  37  artisan:16
+      Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+

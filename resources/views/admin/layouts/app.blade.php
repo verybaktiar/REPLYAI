@@ -151,6 +151,28 @@
                     <span class="font-medium">System Health</span>
                 </a>
 
+                <a href="{{ route('admin.failed-jobs.index') }}" 
+                   class="sidebar-link flex items-center gap-3 px-5 py-3 mx-2 rounded-lg {{ request()->routeIs('admin.failed-jobs.*') ? 'active text-primary' : 'text-slate-300' }}">
+                    <span class="material-symbols-outlined text-xl">error</span>
+                    <span class="font-medium">Failed Jobs</span>
+                    @php $failedCount = DB::table('failed_jobs')->count(); @endphp
+                    @if($failedCount > 0)
+                    <span class="ml-auto px-2 py-0.5 bg-red-500/20 text-red-500 text-[10px] font-black rounded-full">{{ $failedCount }}</span>
+                    @endif
+                </a>
+
+                <a href="{{ route('admin.logs.index') }}" 
+                   class="sidebar-link flex items-center gap-3 px-5 py-3 mx-2 rounded-lg {{ request()->routeIs('admin.logs.*') ? 'active text-primary' : 'text-slate-300' }}">
+                    <span class="material-symbols-outlined text-xl">terminal</span>
+                    <span class="font-medium">System Logs</span>
+                </a>
+
+                <a href="{{ route('admin.backups.index') }}" 
+                   class="sidebar-link flex items-center gap-3 px-5 py-3 mx-2 rounded-lg {{ request()->routeIs('admin.backups.*') ? 'active text-primary' : 'text-slate-300' }}">
+                    <span class="material-symbols-outlined text-xl">database</span>
+                    <span class="font-medium">System Backups</span>
+                </a>
+
                 <a href="{{ route('admin.settings.index') }}" 
                    class="sidebar-link flex items-center gap-3 px-5 py-3 mx-2 rounded-lg {{ request()->routeIs('admin.settings.*') ? 'active text-primary' : 'text-slate-300' }}">
                     <span class="material-symbols-outlined text-xl">settings</span>

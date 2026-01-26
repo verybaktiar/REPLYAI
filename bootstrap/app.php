@@ -24,7 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'track' => \App\Http\Middleware\TrackUsage::class,
             'admin' => \App\Http\Middleware\AdminAuth::class,
             'has_subscription' => \App\Http\Middleware\EnsureHasActiveSubscription::class,
+            'suspended' => \App\Http\Middleware\CheckSuspendedAccount::class,
+            'global_feature' => \App\Http\Middleware\CheckFeatureFlag::class,
             'onboarding' => \App\Http\Middleware\CheckOnboardingComplete::class,
+            'quota' => \App\Http\Middleware\CheckPlanLimits::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

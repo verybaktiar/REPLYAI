@@ -8,16 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('admins', function (Blueprint $table) {
-            $table->enum('role', ['super_admin', 'admin', 'support'])->default('admin')->after('email');
-            $table->json('permissions')->nullable()->after('role');
+        Schema::table('admin_users', function (Blueprint $table) {
+            // $table->enum('role', ['super_admin', 'admin', 'support'])->default('admin')->after('email'); // Sudah ada
+            $table->json('permissions')->nullable()->after('email'); // Geser ke after email karena role sudah ada
         });
     }
 
     public function down(): void
     {
-        Schema::table('admins', function (Blueprint $table) {
-            $table->dropColumn(['role', 'permissions']);
+        Schema::table('admin_users', function (Blueprint $table) {
+            $table->dropColumn(['permissions']);
         });
     }
 };

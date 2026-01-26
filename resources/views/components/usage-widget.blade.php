@@ -1,85 +1,109 @@
-@props(['user'])
+@props(['user', 'cols' => 3])
 
 @php
-    use App\Models\UsageRecord;
+    $plan = $user->getPlan();
+    $limits = $plan->features ?? [];
     
-    $subscription = $user->activeSubscription();
-    $plan = $subscription?->plan;
+    // Fetch current usage
+    $usage = [
+        'messages' => [
+            'used' => (\App\Models\WaMessage::where('user_id', $user->id)
+                        ->where('direction', 'outgoing')
+                        ->where('created_at', '>=', now()->startOfMonth())
+                        ->count()) + 
+                      (\App\Models\Message::whereHas('conversation', function($q) use ($user) {
+                          $q->where('user_id', $user->id);
+                      })
+                        ->where('sender_type', '!=', 'contact')
+                        ->where('created_at', '>=', now()->startOfMonth())
+                        ->count()),
+            'limit' => $limits['ai_messages'] ?? 100,
+            'label' => 'Pesan Bulanan',
+            'icon' => 'chat'
+        ],
+        'kb_articles' => [
+            'used' => \App\Models\KbArticle::where('user_id', $user->id)->count(),
+            'limit' => $limits['kb_articles'] ?? 5,
+            'label' => 'Knowledge Base',
+            'icon' => 'menu_book'
+        ],
+        'rules' => [
+            'used' => \App\Models\AutoReplyRule::where('user_id', $user->id)->count(),
+            'limit' => $limits['auto_reply_rules'] ?? 10,
+            'label' => 'Aturan Bot',
+            'icon' => 'smart_toy'
+        ]
+    ];
     
-    // Jika tidak ada plan, jangan render widget
-    $hasValidPlan = $plan && isset($plan->limits);
-    
-    if ($hasValidPlan) {
-        // Ambil limits dari plan
-        $limits = [
-            'ai_messages' => $plan->limits['ai_messages_monthly'] ?? 500,
-            'broadcasts' => $plan->limits['broadcasts_monthly'] ?? 5,
-        ];
-        
-        // Ambil usage saat ini
-        $usage = [
-            'ai_messages' => UsageRecord::getUsage($user->id, UsageRecord::FEATURE_AI_MESSAGES),
-            'broadcasts' => UsageRecord::getUsage($user->id, UsageRecord::FEATURE_BROADCASTS),
-        ];
-        
-        // Hitung persentase
-        $aiPercent = $limits['ai_messages'] > 0 ? min(100, round(($usage['ai_messages'] / $limits['ai_messages']) * 100)) : 0;
-        $broadcastPercent = $limits['broadcasts'] > 0 ? min(100, round(($usage['broadcasts'] / $limits['broadcasts']) * 100)) : 0;
-    }
+    $gridCols = [
+        1 => 'grid-cols-1',
+        2 => 'grid-cols-1 md:grid-cols-2',
+        3 => 'grid-cols-1 md:grid-cols-3'
+    ][$cols] ?? 'grid-cols-1 md:grid-cols-3';
 @endphp
 
-@if($hasValidPlan)
-<div class="bg-surface-dark rounded-xl border border-slate-700 p-5">
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="font-bold text-white flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary">monitoring</span>
-            Penggunaan Bulan Ini
-        </h3>
-        <span class="text-xs text-slate-400">Reset: {{ now()->endOfMonth()->format('d M') }}</span>
-    </div>
-    
-    {{-- AI Messages Usage --}}
-    <div class="mb-4">
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-sm text-slate-300">Pesan AI</span>
-            <span class="text-sm font-mono {{ $aiPercent >= 90 ? 'text-red-400' : ($aiPercent >= 70 ? 'text-yellow-400' : 'text-green-400') }}">
-                {{ number_format($usage['ai_messages']) }} / {{ number_format($limits['ai_messages']) }}
-            </span>
+<div class="grid {{ $gridCols }} gap-6">
+    @foreach($usage as $key => $item)
+        @php
+            $percent = $item['limit'] > 0 ? min(100, round(($item['used'] / $item['limit']) * 100)) : 0;
+            $isNearLimit = $percent >= 80;
+            $isOverLimit = $percent >= 100;
+            $strokeDashOffset = 251 - (251 * $percent / 100);
+            
+            // Usage color logic
+            $colorClass = $isOverLimit ? 'text-red-500' : ($isNearLimit ? 'text-yellow-500' : 'text-primary');
+            $ringClass = $isOverLimit ? 'stroke-red-500' : ($isNearLimit ? 'stroke-yellow-500' : 'stroke-primary');
+        @endphp
+        
+        <div class="bg-surface-dark border border-slate-800 rounded-[2rem] p-6 hover:border-slate-700 transition-all group relative overflow-hidden">
+            {{-- Background Glow --}}
+            <div class="absolute -right-4 -top-4 size-24 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity {{ $isOverLimit ? 'bg-red-500' : ($isNearLimit ? 'bg-yellow-500' : 'bg-primary') }}"></div>
+            
+            <div class="flex items-center gap-6 relative">
+                {{-- Radial Progress --}}
+                <div class="relative size-20 flex-shrink-0">
+                    <svg class="size-full -rotate-90" viewBox="0 0 100 100">
+                        <circle class="stroke-slate-800 fill-none" cx="50" cy="50" r="40" stroke-width="8"></circle>
+                        <circle class="{{ $ringClass }} fill-none transition-all duration-1000 ease-out" 
+                                cx="50" cy="50" r="40" stroke-width="8" 
+                                stroke-dasharray="251.2" 
+                                stroke-dashoffset="{{ $strokeDashOffset }}" 
+                                stroke-linecap="round"></circle>
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-sm font-black {{ $colorClass }}">{{ $percent }}%</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="material-symbols-outlined text-lg text-slate-500">{{ $item['icon'] }}</span>
+                        <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate">{{ $item['label'] }}</h4>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-xl font-black text-white">{{ number_format($item['used']) }}</span>
+                        <span class="text-xs text-slate-600 font-medium">/ {{ $item['limit'] == -1 ? '∞' : number_format($item['limit']) }}</span>
+                    </div>
+                    
+                    @if($isOverLimit)
+                        <p class="text-[9px] font-bold text-red-500 mt-1 uppercase italic">Limit Tercapai!</p>
+                    @elseif($isNearLimit)
+                        <p class="text-[9px] font-bold text-yellow-500 mt-1 uppercase italic">Hampir Penuh!</p>
+                    @else
+                        <p class="text-[9px] text-slate-600 mt-1 italic">Penggunaan Normal</p>
+                    @endif
+                </div>
+            </div>
+            
+            @if($isNearLimit && !($user->is_vip ?? false))
+                <div class="mt-4 pt-4 border-t border-slate-800/50">
+                    <a href="{{ route('pricing', ['ref' => $key]) }}" class="flex items-center justify-center gap-2 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-[10px] font-black transition-all group/btn tracking-widest">
+                        UPGRADE LIMIT
+                        <span class="material-symbols-outlined text-sm group-hover/btn:translate-x-1 transition-transform">bolt</span>
+                    </a>
+                </div>
+            @endif
         </div>
-        <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
-            <div class="h-full transition-all duration-500 rounded-full
-                {{ $aiPercent >= 90 ? 'bg-red-500' : ($aiPercent >= 70 ? 'bg-yellow-500' : 'bg-green-500') }}"
-                style="width: {{ $aiPercent }}%"></div>
-        </div>
-        @if($aiPercent >= 80)
-        <p class="text-xs text-yellow-400 mt-1">
-            ⚠️ Hampir mencapai limit. <a href="{{ route('subscription.index') }}" class="underline">Upgrade paket</a>
-        </p>
-        @endif
-    </div>
-    
-    {{-- Broadcasts Usage --}}
-    <div>
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-sm text-slate-300">Broadcast</span>
-            <span class="text-sm font-mono {{ $broadcastPercent >= 90 ? 'text-red-400' : ($broadcastPercent >= 70 ? 'text-yellow-400' : 'text-green-400') }}">
-                {{ number_format($usage['broadcasts']) }} / {{ number_format($limits['broadcasts']) }}
-            </span>
-        </div>
-        <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
-            <div class="h-full transition-all duration-500 rounded-full
-                {{ $broadcastPercent >= 90 ? 'bg-red-500' : ($broadcastPercent >= 70 ? 'bg-yellow-500' : 'bg-green-500') }}"
-                style="width: {{ $broadcastPercent }}%"></div>
-        </div>
-    </div>
-    
-    {{-- Upgrade CTA if near limit --}}
-    @if($aiPercent >= 90 || $broadcastPercent >= 90)
-    <a href="{{ route('subscription.index') }}" 
-       class="mt-4 w-full block text-center py-2 rounded-lg bg-gradient-to-r from-primary to-blue-500 text-white font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all">
-        🚀 Upgrade untuk Unlimited
-    </a>
-    @endif
+    @endforeach
 </div>
-@endif
 

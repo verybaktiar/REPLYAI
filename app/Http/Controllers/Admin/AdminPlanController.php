@@ -37,7 +37,9 @@ class AdminPlanController extends Controller
             'name' => 'required|string|max:100',
             'description' => 'nullable|string|max:500',
             'price_monthly' => 'required|numeric|min:0',
+            'price_monthly_original' => 'nullable|numeric|min:0',
             'price_yearly' => 'nullable|numeric|min:0',
+            'price_yearly_original' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
             
             // Limits
@@ -117,7 +119,9 @@ class AdminPlanController extends Controller
             'name' => $validated['name'],
             'description' => $validated['description'],
             'price_monthly' => $validated['price_monthly'],
+            'price_monthly_original' => $validated['price_monthly_original'] ?? null,
             'price_yearly' => $validated['price_yearly'] ?? null,
+            'price_yearly_original' => $validated['price_yearly_original'] ?? null,
             'is_active' => $request->boolean('is_active'),
             'features' => $features,
         ]);

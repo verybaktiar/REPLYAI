@@ -121,18 +121,14 @@
                          @forelse($rules as $i => $rule)
                             @include('pages.rules._row', ['rule' => $rule, 'i' => $i])
                          @empty
-                            <div id="rules-empty" class="p-12 text-center bg-surface-lighter rounded-xl border border-dashed border-[#232f48]">
-                                <div class="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-4">
-                                    <span class="material-symbols-outlined text-5xl text-slate-500">smart_toy</span>
-                                </div>
-                                <h3 class="text-lg font-bold text-white mb-2">Belum Ada Aturan Bot</h3>
-                                <p class="text-text-secondary text-sm max-w-md mx-auto mb-4">
-                                    Buat aturan auto-reply untuk merespon pesan pelanggan secara otomatis berdasarkan kata kunci tertentu.
-                                </p>
-                                <button id="btn-empty-create" class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-blue-600 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-primary/25">
-                                    <span class="material-symbols-outlined text-xl">add</span>
-                                    Buat Aturan Pertama
-                                </button>
+                            <div id="rules-empty" class="py-12">
+                                <x-empty-state 
+                                    icon="smart_toy" 
+                                    title="Belum Ada Aturan Bot" 
+                                    description="Buat aturan auto-reply untuk merespon pesan pelanggan secara otomatis berdasarkan kata kunci tertentu."
+                                    actionLabel="Buat Aturan Pertama"
+                                    actionUrl="#" {{-- This will be handled by existing JS modal trigger --}}
+                                />
                             </div>
                          @endforelse
                     </div>

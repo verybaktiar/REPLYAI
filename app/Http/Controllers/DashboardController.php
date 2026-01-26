@@ -8,6 +8,7 @@ use App\Models\Message;
 use App\Models\Conversation;
 use App\Models\AutoReplyLog;
 use App\Models\KbArticle;
+use App\Models\WaMessage;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -110,7 +111,36 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // 8. Average Response Time
+        // 8. Forecast & Usage Advice
+        $avgIgDaily = Message::whereIn('conversation_id', $userConversationIds)
+            ->where('sender_type', '!=', 'contact')
+            ->where('created_at', '>=', Carbon::now()->subDays(7))
+            ->count() / 7;
+            
+        $avgWaDaily = WaMessage::where('user_id', $user->id)
+            ->where('direction', 'outgoing')
+            ->where('created_at', '>=', Carbon::now()->subDays(7))
+            ->count() / 7;
+            
+        $avgDailyMsg = $avgIgDaily + $avgWaDaily;
+        
+        $plan = $user->getPlan();
+        $limit = $plan->features['ai_messages'] ?? 100;
+        $usedIg = Message::whereIn('conversation_id', $userConversationIds)
+            ->where('sender_type', '!=', 'contact')
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
+            
+        $usedWa = WaMessage::where('user_id', $user->id)
+            ->where('direction', 'outgoing')
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
+            
+        $used = $usedIg + $usedWa;
+        
+        $daysLeft = $limit > $used && $avgDailyMsg > 0 ? floor(($limit - $used) / $avgDailyMsg) : 0;
+
+        // 9. Average Response Time
         $avgResponseTime = 0;
         $responseLogs = AutoReplyLog::whereIn('conversation_id', $userConversationIds)
             ->whereNotNull('created_at')
@@ -133,6 +163,7 @@ class DashboardController extends Controller
                 'pending_inbox' => $pendingInbox,
                 'kb_count' => $kbCount,
                 'avg_response_time' => $avgResponseTime,
+                'forecast_days' => $daysLeft,
             ],
             'activities' => $recentActivities,
             'trend7Days' => $trend7Days,

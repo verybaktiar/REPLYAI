@@ -30,6 +30,19 @@ class AuthenticatedSessionController extends Controller
 
         $user = auth()->user();
 
+        // 🛡️ SECURITY: Cek apakah akun di-suspend
+        if ($user->is_suspended) {
+            $email = $user->email;
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('suspended')->with([
+                'error' => 'Akun Anda telah ditangguhkan.',
+                'suspended_email' => $email
+            ]);
+        }
+
         // Cek apakah ada selected plan di session
         if ($request->session()->has('selected_plan')) {
             $planSlug = $request->session()->get('selected_plan');

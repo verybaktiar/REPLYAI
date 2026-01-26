@@ -1,16 +1,11 @@
-{{-- ==================== SIDEBAR - DYNAMIC FEATURE GATING ==================== --}}
+{{-- ==================== SIDEBAR - PROFESSIONAL GROUPS ==================== --}}
 @php
     $user = auth()->user();
     $isVip = $user?->is_vip ?? false;
-    
-    // Helper untuk cek akses fitur
     $hasFeature = fn($feature) => $isVip || ($user?->hasFeature($feature) ?? false);
     
-    // Unread message counts - count messages from contacts (incoming) in last 24h that might need attention
-    // Using sender_type='contact' as indicator of incoming messages
-    $unreadInbox = 0;
-    $unreadWhatsApp = 0;
-    
+    // Unread counts (Incoming only)
+    $unreadInbox = 0; $unreadWhatsApp = 0;
     try {
         $unreadInbox = \App\Models\Message::whereHas('conversation', function($q) use ($user) {
                 $q->whereHas('instagramAccount', fn($q2) => $q2->where('user_id', $user?->id));
@@ -19,208 +14,146 @@
             ->where('created_at', '>=', now()->subHours(24))
             ->whereDoesntHave('conversation', fn($q) => $q->where('status', 'agent_handling'))
             ->count();
-    } catch (\Exception $e) {
-        $unreadInbox = 0;
-    }
-    
-    try {
+            
         $unreadWhatsApp = \App\Models\WaMessage::whereHas('waConversation', function($q) use ($user) {
                 $q->where('user_id', $user?->id);
             })
-            ->where('direction', 'incoming')
-            ->where('is_read', false)
-            ->count();
-    } catch (\Exception $e) {
-        $unreadWhatsApp = 0;
-    }
+            ->where('direction', 'incoming')->where('is_read', false)->count();
+    } catch (\Exception $e) {}
 @endphp
 
-{{-- Dashboard (semua user bisa akses) --}}
-<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('dashboard') }}" data-tour="sidebar">
-    <span class="text-lg">🏠</span>
-    <span class="text-sm font-medium">Beranda</span>
+{{-- 1. BERANDA --}}
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('dashboard') }}">
+    <span class="material-symbols-outlined text-[22px]">dashboard</span>
+    <span class="text-sm font-semibold">Beranda</span>
 </a>
 
-{{-- Section: PESAN (semua user bisa akses) --}}
-<div class="mt-4 mb-1 px-4">
-    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">💬 Pesan</p>
-    <p class="text-[9px] text-gray-600">Lihat percakapan pelanggan</p>
+{{-- 2. PESAN --}}
+<div class="mt-6 mb-2 px-4 flex items-center justify-between">
+    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Pesan</p>
 </div>
 
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('inbox*') && !request()->routeIs('whatsapp.inbox*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('inbox') }}" data-tour="inbox">
-    <span class="text-base">📬</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('inbox*') && !request()->routeIs('whatsapp.inbox*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('inbox') }}">
+    <span class="material-symbols-outlined text-[20px]">inbox</span>
     <span class="text-sm">Kotak Masuk</span>
     @if($unreadInbox > 0)
-        <span class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">{{ $unreadInbox > 99 ? '99+' : $unreadInbox }}</span>
+        <span class="ml-auto bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">{{ $unreadInbox > 99 ? '99+' : $unreadInbox }}</span>
     @endif
 </a>
 
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.inbox*') ? 'bg-green-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('whatsapp.inbox') }}">
-    <span class="text-base">💬</span>
-    <span class="text-sm">WhatsApp</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.inbox*') ? 'bg-green-600/10 text-green-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('whatsapp.inbox') }}">
+    <span class="material-symbols-outlined text-[20px]">chat</span>
+    <span class="text-sm font-semibold">WhatsApp</span>
     @if($unreadWhatsApp > 0)
-        <span class="ml-auto bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">{{ $unreadWhatsApp > 99 ? '99+' : $unreadWhatsApp }}</span>
+        <span class="ml-auto bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">{{ $unreadWhatsApp > 99 ? '99+' : $unreadWhatsApp }}</span>
     @endif
 </a>
 
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('contacts*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('contacts.index') }}">
-    <span class="text-base">👥</span>
-    <span class="text-sm">Daftar Pelanggan</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('contacts*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('contacts.index') }}">
+    <span class="material-symbols-outlined text-[20px]">group</span>
+    <span class="text-sm">Pelanggan</span>
 </a>
 
-{{-- Section: CHATBOT --}}
-<div class="mt-4 mb-1 px-4">
-    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">🤖 Chatbot</p>
-    <p class="text-[9px] text-gray-600">Atur respon otomatis</p>
+{{-- 3. CHATBOT --}}
+<div class="mt-6 mb-2 px-4 flex items-center justify-between">
+    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest">AI & Automation</p>
 </div>
 
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('rules*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('rules.index') }}">
-    <span class="text-base">⚙️</span>
-    <span class="text-sm">Pengaturan Bot</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('rules*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('rules.index') }}">
+    <span class="material-symbols-outlined text-[20px]">smart_toy</span>
+    <span class="text-sm">Aturan Bot</span>
 </a>
 
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('kb*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('kb.index') }}">
-    <span class="text-base">📚</span>
-    <span class="text-sm">Info Produk</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('kb*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('kb.index') }}">
+    <span class="material-symbols-outlined text-[20px]">neurology</span>
+    <span class="text-sm">Knowledge Base</span>
 </a>
 
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('quick-replies*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('quick-replies.index') }}">
-    <span class="text-base">⚡</span>
-    <span class="text-sm">Balasan Cepat</span>
-</a>
-
-{{-- Sequences - PRO Feature --}}
+{{-- Sequences --}}
 @if($hasFeature('sequences'))
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('sequences*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('sequences.index') }}">
-    <span class="text-base">📅</span>
-    <span class="text-sm">Pesan Otomatis</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('sequences*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('sequences.index') }}">
+    <span class="material-symbols-outlined text-[20px]">schedule_send</span>
+    <span class="text-sm">Pesan Terjadwal</span>
 </a>
 @else
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-800/50 opacity-60" href="{{ route('upgrade', ['feature' => 'sequences']) }}">
-    <span class="text-base">📅</span>
-    <span class="text-sm">Pesan Otomatis</span>
-    <span class="ml-auto px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold rounded">PRO</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-600 opacity-60" href="{{ route('upgrade', ['feature' => 'sequences']) }}">
+    <span class="material-symbols-outlined text-[20px]">lock</span>
+    <span class="text-sm">Pesan Terjadwal</span>
+    <span class="ml-auto text-[9px] font-bold bg-yellow-500/20 text-yellow-500 px-1 rounded">PRO</span>
 </a>
 @endif
 
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('simulator*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('simulator.index') }}">
-    <span class="text-base">🧪</span>
-    <span class="text-sm">Test Bot</span>
-</a>
-
-{{-- Section: PROMOSI --}}
-<div class="mt-4 mb-1 px-4">
-    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">📢 Promosi</p>
-    <p class="text-[9px] text-gray-600">Kirim pesan massal</p>
+{{-- 4. TOOLS --}}
+<div class="mt-6 mb-2 px-4 flex items-center justify-between">
+    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Growth</p>
 </div>
 
-{{-- Broadcast - PRO Feature --}}
+{{-- Broadcast --}}
 @if($hasFeature('broadcasts'))
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.broadcast*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('whatsapp.broadcast.index') }}">
-    <span class="text-base">📣</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.broadcast*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('whatsapp.broadcast.index') }}">
+    <span class="material-symbols-outlined text-[20px]">campaign</span>
     <span class="text-sm">Broadcast</span>
 </a>
 @else
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-800/50 opacity-60" href="{{ route('upgrade', ['feature' => 'broadcasts']) }}">
-    <span class="text-base">📣</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-600 opacity-60" href="{{ route('upgrade', ['feature' => 'broadcasts']) }}">
+    <span class="material-symbols-outlined text-[20px]">lock</span>
     <span class="text-sm">Broadcast</span>
-    <span class="ml-auto px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold rounded">PRO</span>
 </a>
 @endif
 
-{{-- Web Widget - PRO Feature --}}
-@if($hasFeature('web_widgets'))
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('web-widgets*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('web-widgets.index') }}">
-    <span class="text-base">🌐</span>
-    <span class="text-sm">Chat di Website</span>
-</a>
-@else
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-800/50 opacity-60" href="{{ route('upgrade', ['feature' => 'web_widgets']) }}">
-    <span class="text-base">🌐</span>
-    <span class="text-sm">Chat di Website</span>
-    <span class="ml-auto px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold rounded">PRO</span>
-</a>
-@endif
-
-{{-- Section: LAPORAN --}}
-<div class="mt-4 mb-1 px-4">
-    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">📊 Laporan</p>
-    <p class="text-[9px] text-gray-600">Lihat statistik</p>
-</div>
-
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('analytics*') && !request()->routeIs('whatsapp.analytics*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('analytics.index') }}">
-    <span class="text-base">📈</span>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('analytics*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('analytics.index') }}">
+    <span class="material-symbols-outlined text-[20px]">analytics</span>
     <span class="text-sm">Statistik</span>
 </a>
 
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.analytics*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('whatsapp.analytics') }}">
-    <span class="text-base">📱</span>
-    <span class="text-sm">Laporan WhatsApp</span>
-</a>
-
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('csat*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('csat.index') }}">
-    <span class="text-base">⭐</span>
-    <span class="text-sm">Kepuasan Pelanggan</span>
-</a>
-
-{{-- Section: PENGATURAN --}}
-<div class="mt-4 mb-1 px-4">
-    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">⚙️ Pengaturan</p>
-    <p class="text-[9px] text-gray-600">Konfigurasi sistem</p>
-</div>
-
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.settings*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('whatsapp.settings') }}">
-    <span class="text-base">📲</span>
-    <span class="text-sm">Hubungkan WhatsApp</span>
-</a>
-
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('instagram.settings*') ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('instagram.settings') }}">
-    <span class="text-base">📸</span>
-    <span class="text-sm">Hubungkan Instagram</span>
-</a>
-
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('settings.business*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('settings.business') }}">
-    <span class="text-base">🏢</span>
-    <span class="text-sm">Profil Bisnis</span>
-</a>
-
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('settings.index') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('settings.index') }}">
-    <span class="text-base">🕐</span>
-    <span class="text-sm">Jam Buka</span>
-</a>
-
-<a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('logs*') || request()->routeIs('takeover.logs*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('logs.index') }}">
-    <span class="text-base">📋</span>
-    <span class="text-sm">Riwayat Aktivitas</span>
-</a>
-
-{{-- VIP Badge (hanya untuk VIP users) --}}
-@if($isVip)
-<div class="mt-4 px-4">
-    <div class="px-3 py-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-        <p class="text-xs font-bold text-yellow-400">⭐ VIP Access</p>
-        <p class="text-[10px] text-yellow-500/70">Semua fitur aktif</p>
+{{-- 5. PENGATURAN (Grouped) --}}
+<div class="mt-6 mb-2">
+    <button @click="toggleSubmenu('settings')" 
+            class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-gray-400 hover:bg-gray-800">
+        <span class="material-symbols-outlined text-[20px]">settings</span>
+        <span class="text-sm font-medium">Pengaturan</span>
+        <span class="material-symbols-outlined ml-auto text-sm transition-transform" :class="openSubmenu === 'settings' ? 'rotate-180' : ''">expand_more</span>
+    </button>
+    
+    <div x-show="openSubmenu === 'settings'" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 -translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="mt-1 ml-4 border-l border-gray-800 pl-4 space-y-1">
+        
+        <a class="block py-2 text-xs {{ request()->routeIs('whatsapp.settings*') ? 'text-white' : 'text-gray-500 hover:text-white' }}" href="{{ route('whatsapp.settings') }}">WhatsApp Connect</a>
+        <a class="block py-2 text-xs {{ request()->routeIs('instagram.settings*') ? 'text-white' : 'text-gray-500 hover:text-white' }}" href="{{ route('instagram.settings') }}">Instagram Connect</a>
+        <a class="block py-2 text-xs {{ request()->routeIs('settings.business*') ? 'text-white' : 'text-gray-500 hover:text-white' }}" href="{{ route('settings.business') }}">Profil Bisnis</a>
+        <a class="block py-2 text-xs {{ request()->routeIs('settings.index') ? 'text-white' : 'text-gray-500 hover:text-white' }}" href="{{ route('settings.index') }}">Jam Operasional</a>
+        <a class="block py-2 text-xs {{ request()->routeIs('logs*') ? 'text-white' : 'text-gray-500 hover:text-white' }}" href="{{ route('logs.index') }}">Riwayat Aktivitas</a>
     </div>
 </div>
-@endif
 
-{{-- Subscription Info --}}
-@if($user)
-@php $plan = $user->getPlan(); @endphp
-@if($plan && !$plan->is_free)
-<div class="mt-4 px-4">
-    <div class="px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg">
-        <p class="text-xs font-bold text-primary">{{ $plan->name }}</p>
-        <p class="text-[10px] text-gray-500">Paket aktif</p>
-    </div>
+{{-- VIP/Plan Info --}}
+<div class="mt-auto pt-6 px-4">
+    @if($isVip)
+        <div class="p-3 bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border border-yellow-500/20 rounded-xl">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="material-symbols-outlined text-yellow-500 text-sm">workspace_premium</span>
+                <span class="text-[10px] font-black text-yellow-500 uppercase tracking-tighter">VIP Member</span>
+            </div>
+            <p class="text-[9px] text-gray-500">Akses tanpa batas aktif</p>
+        </div>
+    @elseif($user && ($plan = $user->getPlan()))
+        <div class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl">
+            <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">{{ $plan->name }}</p>
+            <div class="flex items-center justify-between text-[9px] text-gray-500">
+                <span>Status: Aktif</span>
+                <a href="{{ route('pricing') }}" class="text-blue-400 hover:underline">Upgrade</a>
+            </div>
+        </div>
+    @endif
 </div>
-@endif
-@endif
 
 {{-- Bantuan --}}
-<div class="mt-4 pt-3 border-t border-gray-800">
-    <a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('documentation.*') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('documentation.index') }}">
-        <span class="text-base">❓</span>
+<div class="mt-4 pt-4 border-t border-gray-800">
+    <a class="flex items-center gap-3 px-4 py-2 text-gray-500 hover:text-white transition-colors" href="{{ route('documentation.index') }}">
+        <span class="material-symbols-outlined text-[20px]">help</span>
         <span class="text-sm">Bantuan</span>
     </a>
 </div>

@@ -26,9 +26,12 @@ class Plan extends Model
         'name',           // Nama paket
         'slug',           // Slug untuk URL
         'description',    // Deskripsi
-        'price_monthly',  // Harga bulanan
-        'price_yearly',   // Harga tahunan
+        'price_monthly',           // Harga bulanan
+        'price_monthly_original',  // Harga bulanan asli (sebelum diskon)
+        'price_yearly',            // Harga tahunan
+        'price_yearly_original',   // Harga tahunan asli (sebelum diskon)
         'features',       // Batasan fitur (JSON)
+        'features_list',  // Daftar fitur deskriptif (JSON)
         'is_active',      // Aktif atau tidak
         'sort_order',     // Urutan tampilan
         'is_free',        // Apakah ini paket gratis
@@ -41,6 +44,7 @@ class Plan extends Model
      */
     protected $casts = [
         'features' => 'array',    // JSON jadi array PHP
+        'features_list' => 'array',
         'is_active' => 'boolean',
         'is_free' => 'boolean',
         'is_trial' => 'boolean',

@@ -10,33 +10,34 @@
     --primary-dark: hsl(var(--primary-hue), 100%, 55%);
     --primary-light: hsl(var(--primary-hue), 100%, 75%);
     --primary-glow: hsla(var(--primary-hue), 100%, 65%, 0.3);
-    
+
     --secondary: hsl(280, 100%, 65%);
     --accent: hsl(200, 100%, 60%);
-    
+
     --bg-dark: hsl(240, 20%, 8%);
     --bg-primary: hsl(240, 15%, 12%);
     --bg-secondary: hsl(240, 15%, 16%);
     --bg-tertiary: hsl(240, 15%, 20%);
-    
+
     --text-primary: hsl(0, 0%, 98%);
     --text-secondary: hsl(240, 10%, 70%);
     --text-muted: hsl(240, 10%, 50%);
-    
+
     --border: hsla(0, 0%, 100%, 0.1);
     --border-light: hsla(0, 0%, 100%, 0.05);
-    
+
     --success: hsl(150, 80%, 50%);
     --warning: hsl(40, 100%, 60%);
     --error: hsl(0, 80%, 60%);
-    
+
     /* Typography */
-    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    
+    --font-family:
+        "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
     /* Spacing */
     --section-padding: 100px 0;
     --container-max: 1200px;
-    
+
     /* Effects */
     --glass-bg: hsla(240, 15%, 20%, 0.6);
     --glass-border: hsla(0, 0%, 100%, 0.1);
@@ -44,12 +45,12 @@
     --shadow-md: 0 8px 32px hsla(0, 0%, 0%, 0.3);
     --shadow-lg: 0 16px 64px hsla(0, 0%, 0%, 0.4);
     --shadow-glow: 0 0 40px var(--primary-glow);
-    
+
     /* Transitions */
     --transition-fast: 0.15s ease;
     --transition-normal: 0.3s ease;
     --transition-slow: 0.5s ease;
-    
+
     /* Border Radius */
     --radius-sm: 8px;
     --radius-md: 12px;
@@ -58,7 +59,9 @@
 }
 
 /* Reset & Base */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -103,14 +106,24 @@ img {
 }
 
 /* Typography */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     font-weight: 700;
     line-height: 1.2;
     letter-spacing: -0.02em;
 }
 
 .gradient-text {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--primary) 0%,
+        var(--secondary) 50%,
+        var(--accent) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -139,14 +152,20 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--primary) 0%,
+        var(--secondary) 100%
+    );
     color: white;
     box-shadow: var(--shadow-glow), var(--shadow-sm);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 60px var(--primary-glow), var(--shadow-md);
+    box-shadow:
+        0 0 60px var(--primary-glow),
+        var(--shadow-md);
 }
 
 .btn-secondary {
@@ -215,7 +234,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .logo-text {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--primary) 0%,
+        var(--secondary) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -239,7 +262,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .nav-links a::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -6px;
     left: 0;
@@ -289,10 +312,22 @@ h1, h2, h3, h4, h5, h6 {
 .hero-bg {
     position: absolute;
     inset: 0;
-    background: 
-        radial-gradient(circle at 20% 50%, hsla(var(--primary-hue), 100%, 50%, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, hsla(280, 100%, 50%, 0.1) 0%, transparent 40%),
-        radial-gradient(circle at 50% 80%, hsla(200, 100%, 50%, 0.08) 0%, transparent 40%);
+    background:
+        radial-gradient(
+            circle at 20% 50%,
+            hsla(var(--primary-hue), 100%, 50%, 0.15) 0%,
+            transparent 50%
+        ),
+        radial-gradient(
+            circle at 80% 20%,
+            hsla(280, 100%, 50%, 0.1) 0%,
+            transparent 40%
+        ),
+        radial-gradient(
+            circle at 50% 80%,
+            hsla(200, 100%, 50%, 0.08) 0%,
+            transparent 40%
+        );
     pointer-events: none;
 }
 
@@ -470,7 +505,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .message.outgoing {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--primary) 0%,
+        var(--secondary) 100%
+    );
     align-self: flex-end;
     border-bottom-right-radius: 4px;
 }
@@ -513,8 +552,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes typing {
-    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-    30% { opacity: 1; transform: translateY(-4px); }
+    0%,
+    60%,
+    100% {
+        opacity: 0.3;
+        transform: translateY(0);
+    }
+    30% {
+        opacity: 1;
+        transform: translateY(-4px);
+    }
 }
 
 .hero-wave {
@@ -619,7 +666,11 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 20px;
     padding: 24px 32px;
-    background: linear-gradient(135deg, hsla(40, 100%, 60%, 0.1) 0%, hsla(0, 80%, 60%, 0.1) 100%);
+    background: linear-gradient(
+        135deg,
+        hsla(40, 100%, 60%, 0.1) 0%,
+        hsla(0, 80%, 60%, 0.1) 100%
+    );
     border: 1px solid hsla(40, 100%, 60%, 0.3);
     border-radius: var(--radius-lg);
     max-width: 800px;
@@ -722,14 +773,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .comparison-side.before li::before {
-    content: '✗';
+    content: "✗";
     position: absolute;
     left: 0;
     color: var(--error);
 }
 
 .comparison-side.after li::before {
-    content: '✓';
+    content: "✓";
     position: absolute;
     left: 0;
     color: var(--success);
@@ -776,7 +827,11 @@ h1, h2, h3, h4, h5, h6 {
 .step-number {
     width: 56px;
     height: 56px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--primary) 0%,
+        var(--secondary) 100%
+    );
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -867,7 +922,11 @@ h1, h2, h3, h4, h5, h6 {
 .feature-icon {
     width: 64px;
     height: 64px;
-    background: linear-gradient(135deg, hsla(var(--primary-hue), 100%, 65%, 0.2) 0%, hsla(280, 100%, 65%, 0.2) 100%);
+    background: linear-gradient(
+        135deg,
+        hsla(var(--primary-hue), 100%, 65%, 0.2) 0%,
+        hsla(280, 100%, 65%, 0.2) 100%
+    );
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
@@ -958,8 +1017,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .pricing-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
     align-items: stretch;
     margin-bottom: 48px;
 }
@@ -968,7 +1027,7 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--glass-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
-    padding: 40px;
+    padding: 40px 24px;
     position: relative;
     transition: all var(--transition-normal);
     display: flex;
@@ -981,14 +1040,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .pricing-card.popular {
-    background: linear-gradient(180deg, hsla(var(--primary-hue), 100%, 65%, 0.1) 0%, var(--glass-bg) 50%);
+    background: linear-gradient(
+        180deg,
+        hsla(var(--primary-hue), 100%, 65%, 0.1) 0%,
+        var(--glass-bg) 50%
+    );
     border-color: var(--primary);
-    transform: scale(1.05);
     box-shadow: var(--shadow-glow);
 }
 
 .pricing-card.popular:hover {
-    transform: scale(1.05) translateY(-8px);
+    transform: translateY(-8px);
 }
 
 .popular-badge {
@@ -996,7 +1058,11 @@ h1, h2, h3, h4, h5, h6 {
     top: -12px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--primary) 0%,
+        var(--secondary) 100%
+    );
     padding: 6px 20px;
     border-radius: 100px;
     font-size: 13px;
@@ -1014,7 +1080,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .pricing-desc {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-muted);
 }
 
@@ -1024,21 +1090,34 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom: 1px solid var(--border);
 }
 
+.original-price {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-decoration: line-through;
+    margin-bottom: 4px;
+    display: block;
+}
+
 .currency {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
     vertical-align: top;
 }
 
 .amount {
-    font-size: 56px;
+    font-size: 44px;
     font-weight: 800;
     line-height: 1;
 }
 
 .period {
-    font-size: 16px;
+    font-size: 14px;
     color: var(--text-muted);
+}
+
+.btn-pro {
+    background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%) !important;
+    box-shadow: 0 10px 30px -10px rgba(139, 92, 246, 0.5) !important;
 }
 
 .pricing-features {
@@ -1231,7 +1310,11 @@ h1, h2, h3, h4, h5, h6 {
    CTA Section
    ======================================== */
 .cta-section {
-    background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-dark) 100%);
+    background: linear-gradient(
+        180deg,
+        var(--bg-primary) 0%,
+        var(--bg-dark) 100%
+    );
     padding: 120px 0;
 }
 
@@ -1358,12 +1441,20 @@ h1, h2, h3, h4, h5, h6 {
     animation: fadeInUp 0.8s ease forwards;
 }
 
-.delay-1 { animation-delay: 0.2s; }
-.delay-2 { animation-delay: 0.4s; }
-.delay-3 { animation-delay: 0.6s; }
+.delay-1 {
+    animation-delay: 0.2s;
+}
+.delay-2 {
+    animation-delay: 0.4s;
+}
+.delay-3 {
+    animation-delay: 0.6s;
+}
 
 @keyframes fadeIn {
-    to { opacity: 1; }
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes fadeInUp {
@@ -1392,94 +1483,94 @@ h1, h2, h3, h4, h5, h6 {
         grid-template-columns: 1fr;
         text-align: center;
     }
-    
+
     .hero-content {
         max-width: 100%;
     }
-    
+
     .hero-cta {
         justify-content: center;
     }
-    
+
     .hero-stats {
         justify-content: center;
     }
-    
+
     .hero-visual {
         order: -1;
     }
-    
+
     .chat-preview {
         max-width: 360px;
     }
-    
+
     .problems-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .solution-content {
         grid-template-columns: 1fr;
         gap: 48px;
     }
-    
+
     .solution-text {
         max-width: 100%;
         text-align: center;
     }
-    
+
     .solution-benefits {
         align-items: center;
     }
-    
+
     .steps-container {
         flex-direction: column;
         gap: 24px;
     }
-    
+
     .step {
         padding: 0;
     }
-    
+
     .step-connector {
         width: 2px;
         height: 40px;
         margin: 0 auto;
     }
-    
+
     .features-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .audience-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .pricing-grid {
         grid-template-columns: 1fr;
         max-width: 400px;
         margin: 0 auto 48px;
     }
-    
+
     .pricing-card.popular {
         transform: none;
     }
-    
+
     .pricing-card.popular:hover {
         transform: translateY(-8px);
     }
-    
+
     .testimonials-grid {
         grid-template-columns: 1fr;
         max-width: 500px;
         margin: 0 auto;
     }
-    
+
     .footer-content {
         grid-template-columns: 1fr;
         gap: 48px;
         text-align: center;
     }
-    
+
     .footer-links {
         justify-items: center;
     }
@@ -1489,16 +1580,16 @@ h1, h2, h3, h4, h5, h6 {
     :root {
         --section-padding: 80px 0;
     }
-    
+
     .nav-links,
     .nav-cta {
         display: none;
     }
-    
+
     .hamburger {
         display: flex;
     }
-    
+
     .nav-links.active {
         display: flex;
         flex-direction: column;
@@ -1512,66 +1603,66 @@ h1, h2, h3, h4, h5, h6 {
         gap: 20px;
         border-bottom: 1px solid var(--border);
     }
-    
+
     .hero {
         min-height: auto;
         padding: 100px 0 60px;
     }
-    
+
     .hero-title {
         font-size: clamp(32px, 8vw, 48px);
     }
-    
+
     .hero-stats {
         flex-wrap: wrap;
         gap: 20px;
     }
-    
+
     .stat-divider {
         display: none;
     }
-    
+
     .problems-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .problem-summary {
         flex-direction: column;
         text-align: center;
     }
-    
+
     .comparison-card {
         flex-direction: column;
         gap: 16px;
     }
-    
+
     .comparison-divider {
         padding: 8px 0;
     }
-    
+
     .features-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .audience-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .footer-links {
         grid-template-columns: 1fr;
         gap: 32px;
     }
-    
+
     .footer-bottom {
         flex-direction: column;
         gap: 20px;
         text-align: center;
     }
-    
+
     .cta-buttons {
         flex-direction: column;
     }
-    
+
     .btn-xl {
         width: 100%;
     }
@@ -1581,20 +1672,20 @@ h1, h2, h3, h4, h5, h6 {
     .container {
         padding: 0 16px;
     }
-    
+
     .hero-badge {
         font-size: 12px;
     }
-    
+
     .btn-lg {
         padding: 16px 24px;
         font-size: 15px;
     }
-    
+
     .pricing-card {
         padding: 32px 24px;
     }
-    
+
     .amount {
         font-size: 48px;
     }
@@ -1663,7 +1754,11 @@ h1, h2, h3, h4, h5, h6 {
     position: absolute;
     top: -8px;
     right: -8px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--primary) 0%,
+        var(--secondary) 100%
+    );
     padding: 4px 10px;
     border-radius: 20px;
     font-size: 10px;
@@ -1742,7 +1837,9 @@ h1, h2, h3, h4, h5, h6 {
 .faq-answer {
     max-height: 0;
     overflow: hidden;
-    transition: max-height var(--transition-normal), padding var(--transition-normal);
+    transition:
+        max-height var(--transition-normal),
+        padding var(--transition-normal);
 }
 
 .faq-item.active .faq-answer {

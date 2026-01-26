@@ -1,3 +1,4 @@
+@include('components.impersonation-banner')
 <style>
     /* Sidebar scrollbar styling - applied globally when sidebar is included */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -19,7 +20,11 @@
 </style>
 
 <!-- Mobile Sidebar Wrapper with Alpine.js -->
-<div x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
+<div x-data="{ 
+    sidebarOpen: false, 
+    openSubmenu: null,
+    toggleSubmenu(menu) { this.openSubmenu = (this.openSubmenu === menu) ? null : menu }
+}" @keydown.escape.window="sidebarOpen = false">
     
     <!-- Mobile Header with Hamburger -->
     <div class="lg:hidden fixed top-0 left-0 right-0 z-40 bg-[#111722] border-b border-[#232f48] px-4 py-3 flex items-center justify-between">

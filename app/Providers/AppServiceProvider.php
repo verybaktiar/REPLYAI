@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Auth;
 use App\Models\WaMessage;
 use App\Models\WaConversation;
+use App\Models\Announcement;
 use Carbon\Carbon;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +25,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register Observers for automated activity logging
+        \App\Models\KbArticle::observe(\App\Observers\ActivityObserver::class);
+        \App\Models\AutoReplyRule::observe(\App\Observers\ActivityObserver::class);
+        \App\Models\User::observe(\App\Observers\ActivityObserver::class);
+        \App\Models\Subscription::observe(\App\Observers\ActivityObserver::class);
+
         // Share sidebar stats with all views that include the sidebar
         View::composer('components.sidebar', function ($view) {
             try {
@@ -57,6 +65,28 @@ class AppServiceProvider extends ServiceProvider
                     'human_replies' => 0,
                 ]);
                 $view->with('wa_connected', false);
+            }
+        });
+
+        // Share Announcements with User Layout
+        View::composer('layouts.dark', function ($view) {
+            if (Auth::check()) {
+                $user = Auth::user();
+                $readIds = $user->read_announcements ?? [];
+                
+                $announcements = Announcement::where('is_active', true)
+                    ->where('starts_at', '<=', now())
+                    ->where('expires_at', '>=', now())
+                    ->where(function($q) use ($user) {
+                        $q->where('audience', 'all');
+                        if ($user->is_vip) $q->orWhere('audience', 'vip');
+                        if ($user->subscription && $user->subscription->status === 'active') $q->orWhere('audience', 'active');
+                    })
+                    ->whereNotIn('id', $readIds)
+                    ->orderByDesc('created_at')
+                    ->get();
+                
+                $view->with('unread_announcements', $announcements);
             }
         });
     }

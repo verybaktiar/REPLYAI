@@ -24,6 +24,171 @@ class PlanSeeder extends Seeder
      */
     public function run(): void
     {
+        // Deaktifkan semua paket lama agar tidak muncul di UI
+        Plan::query()->update(['is_active' => false]);
+
+        // ==========================================
+        // PAKET PRO (UMKM & Bisnis Baru)
+        // ==========================================
+        Plan::updateOrCreate(
+            ['slug' => 'pro'],
+            [
+                'name' => 'Pro',
+                'description' => 'Untuk UMKM & bisnis yang mulai otomatisasi chat',
+                'price_monthly' => 500000,
+                'price_monthly_original' => 1100000,
+                'price_yearly' => 5000000,
+                'price_yearly_original' => 11000000,
+                'features' => [
+                    'wa_devices' => 1,
+                    'contacts' => 5000,
+                    'ai_messages' => 1000,
+                    'ai_reply' => true,
+                    'knowledge_base' => true,
+                    'rules_management' => true,
+                    'unified_inbox' => true,
+                    'takeover' => true,
+                    'quick_reply' => true,
+                ],
+                'features_list' => [
+                    '1 Saluran (Pilih: WhatsApp, Instagram, atau Facebook)',
+                    'Kotak Masuk Terpadu',
+                    'Balasan Otomatis Berbasis Kata Kunci',
+                    'Balasan AI Dasar',
+                    'Pesan Cepat untuk CS',
+                    'Pengalihan Chat ke CS (Manual)',
+                    'Dasbor & Statistik Dasar',
+                    'Manajemen Kontak (Tag Terbatas)',
+                    'Dukungan Email',
+                ],
+                'is_active' => true,
+                'sort_order' => 1,
+                'is_free' => false,
+                'is_trial' => false,
+            ]
+        );
+
+        // ==========================================
+        // PAKET BUSINESS (Bisnis & Tim CS)
+        // ==========================================
+        Plan::updateOrCreate(
+            ['slug' => 'business'],
+            [
+                'name' => 'Business',
+                'description' => 'Paling populer untuk bisnis & tim CS',
+                'price_monthly' => 1500000,
+                'price_monthly_original' => 2500000,
+                'price_yearly' => 15000000,
+                'price_yearly_original' => 25000000,
+                'features' => [
+                    'wa_devices' => -1,
+                    'contacts' => -1,
+                    'ai_messages' => 5000,
+                    'ai_reply' => true,
+                    'knowledge_base' => true,
+                    'rules_management' => true,
+                    'unified_inbox' => true,
+                    'takeover' => true,
+                    'quick_reply' => true,
+                    'analytics' => true,
+                    'api_access' => true,
+                    'sequences' => true,
+                ],
+                'features_list' => [
+                    'Semua fitur Paket Pro',
+                    'Semua Saluran + Website',
+                    'Balasan Otomatis Tanpa Batas',
+                    'Basis Pengetahuan (Dokumen & Website)',
+                    'Balasan AI Lanjutan',
+                    'Pesan Bertahap Otomatis',
+                    'Pengalihan & Kembali Otomatis ke Bot',
+                    'Manajemen Kontak Tanpa Batas',
+                    'Analitik & Laporan Lengkap',
+                    'Banyak Pengguna CS',
+                    'Integrasi Sistem (API)',
+                    'Sistem Tiket Bantuan',
+                ],
+                'is_active' => true,
+                'sort_order' => 2,
+                'is_free' => false,
+                'is_trial' => false,
+            ]
+        );
+
+        // ==========================================
+        // PAKET ENTERPRISE (Perusahaan & Institusi)
+        // ==========================================
+        Plan::updateOrCreate(
+            ['slug' => 'enterprise'],
+            [
+                'name' => 'Enterprise',
+                'description' => 'Untuk perusahaan & institusi skala besar',
+                'price_monthly' => 3500000,
+                'price_monthly_original' => 4800000,
+                'price_yearly' => 35000000,
+                'price_yearly_original' => 48000000,
+                'features' => [
+                    'wa_devices' => -1,
+                    'contacts' => -1,
+                    'ai_messages' => -1,
+                    'broadcasts' => 5000,
+                    'ai_reply' => true,
+                    'knowledge_base' => true,
+                    'rules_management' => true,
+                    'unified_inbox' => true,
+                    'takeover' => true,
+                    'quick_reply' => true,
+                    'analytics' => true,
+                    'api_access' => true,
+                    'sequences' => true,
+                    'priority_support' => true,
+                    'multi_business' => true,
+                    'activity_logs' => true,
+                ],
+                'features_list' => [
+                    'Semua fitur Paket Business',
+                    'Kirim Pesan Massal (Limit 5.000/bln)',
+                    'Semua Saluran + SMS & Email',
+                    'Banyak Profil Bisnis',
+                    'AI Khusus per Industri',
+                    'Alur Otomatis Sesuai SOP',
+                    'Hak Akses & Peran Lanjutan',
+                    'Log Aktivitas Lengkap',
+                    'Pendampingan & Pelatihan Tim',
+                    'Dukungan Prioritas (SLA)',
+                    'Integrasi Sistem Internal',
+                ],
+                'is_active' => true,
+                'sort_order' => 3,
+                'is_free' => false,
+                'is_trial' => false,
+            ]
+        );
+
+        // ==========================================
+        // PAKET CUSTOM (Solusi Khusus)
+        // ==========================================
+        Plan::updateOrCreate(
+            ['slug' => 'custom'],
+            [
+                'name' => 'Custom',
+                'description' => 'Solusi khusus sesuai kebutuhan bisnis',
+                'price_monthly' => 0, // Dihandle via text "Custom" di view bila 0
+                'is_active' => true,
+                'sort_order' => 4,
+                'is_free' => false,
+                'features' => [],
+                'features_list' => [
+                    'Fitur Sesuai Permintaan',
+                    'White Label (Tanpa Branding ReplyAI)',
+                    'Server Khusus',
+                    'Integrasi Sistem Khusus',
+                    'AI Dilatih Data Internal',
+                    'Dukungan Teknis Dedicated',
+                ]
+            ]
+        );
+
         // ==========================================
         // PAKET GRATIS (Starter)
         // ==========================================
@@ -31,153 +196,21 @@ class PlanSeeder extends Seeder
             ['slug' => 'gratis'],
             [
                 'name' => 'Gratis',
-                'description' => 'Cocok untuk UMKM yang baru mulai. Coba semua fitur dasar tanpa biaya.',
+                'description' => 'Versi starter untuk uji coba sistem',
                 'price_monthly' => 0,
-                'price_yearly' => 0,
-                'features' => [
-                    // Batasan kuantitas
-                    'wa_devices' => 1,          // 1 WhatsApp device
-                    'contacts' => 100,           // 100 kontak
-                    'ai_messages' => 50,         // 50 pesan AI per bulan
-                    'kb_storage' => 5242880,     // 5 MB (dalam bytes)
-                    'quick_replies' => 5,        // 5 template
-                    'team_members' => 1,         // 1 orang
-                    
-                    // Akses fitur (true/false)
-                    'broadcasts' => 0,           // Tidak bisa broadcast
-                    'sequences' => 0,            // Tidak bisa sequence
-                    'web_widgets' => 0,          // Tidak bisa web widget
-                    'analytics_export' => false, // Tidak bisa export
-                    'remove_branding' => false,  // Ada "Powered by ReplyAI"
-                    'api_access' => false,       // Tidak bisa akses API
-                    
-                    // Analytics
-                    'analytics_days' => 7,       // Data 7 hari terakhir
-                ],
-                'is_active' => true,
-                'sort_order' => 1,
+                'is_active' => false,
+                'sort_order' => 0,
                 'is_free' => true,
-                'is_trial' => false,
-                'trial_days' => 0,
-            ]
-        );
-
-        // ==========================================
-        // PAKET HEMAT (Starter Plus)
-        // ==========================================
-        Plan::updateOrCreate(
-            ['slug' => 'hemat'],
-            [
-                'name' => 'Hemat',
-                'description' => 'Semua fitur penting untuk bisnis online. Cocok untuk toko online & reseller.',
-                'price_monthly' => 99000,        // Rp 99.000/bulan
-                'price_yearly' => 990000,        // Rp 990.000/tahun (hemat 2 bulan)
                 'features' => [
-                    // Batasan kuantitas
-                    'wa_devices' => 2,           // 2 WhatsApp device
-                    'contacts' => 1000,          // 1.000 kontak
-                    'ai_messages' => 500,        // 500 pesan AI per bulan
-                    'kb_storage' => 52428800,    // 50 MB
-                    'quick_replies' => 20,       // 20 template
-                    'team_members' => 2,         // 2 orang
-                    
-                    // Akses fitur
-                    'broadcasts' => 500,         // 500 broadcast per bulan
-                    'sequences' => 3,            // 3 sequence aktif
-                    'web_widgets' => 0,          // Tidak bisa web widget
-                    'analytics_export' => false, // Tidak bisa export
-                    'remove_branding' => false,  // Ada "Powered by ReplyAI"
-                    'api_access' => false,       // Tidak bisa akses API
-                    
-                    // Analytics
-                    'analytics_days' => 30,      // Data 30 hari
+                    'wa_devices' => 1,
+                    'contacts' => 50,
+                    'ai_messages' => 20,
                 ],
-                'is_active' => true,
-                'sort_order' => 2,
-                'is_free' => false,
-                'is_trial' => false,
-                'trial_days' => 0,
-            ]
-        );
-
-        // ==========================================
-        // PAKET PRO (Business)
-        // ==========================================
-        Plan::updateOrCreate(
-            ['slug' => 'pro'],
-            [
-                'name' => 'Pro',
-                'description' => 'Untuk bisnis yang serius scale up. Fitur lengkap untuk bisnis menengah.',
-                'price_monthly' => 249000,       // Rp 249.000/bulan
-                'price_yearly' => 2490000,       // Rp 2.490.000/tahun
-                'features' => [
-                    // Batasan kuantitas
-                    'wa_devices' => 5,           // 5 WhatsApp device
-                    'contacts' => 5000,          // 5.000 kontak
-                    'ai_messages' => 2000,       // 2.000 pesan AI per bulan
-                    'kb_storage' => 209715200,   // 200 MB
-                    'quick_replies' => 50,       // 50 template
-                    'team_members' => 5,         // 5 orang
-                    
-                    // Akses fitur
-                    'broadcasts' => 5000,        // 5.000 broadcast per bulan
-                    'sequences' => 10,           // 10 sequence aktif
-                    'web_widgets' => 3,          // 3 web widget
-                    'analytics_export' => true,  // Bisa export CSV
-                    'remove_branding' => true,   // Tanpa "Powered by ReplyAI"
-                    'api_access' => true,        // Bisa akses API
-                    
-                    // Analytics
-                    'analytics_days' => 90,      // Data 90 hari
-                ],
-                'is_active' => true,
-                'sort_order' => 3,
-                'is_free' => false,
-                'is_trial' => false,
-                'trial_days' => 0,
-            ]
-        );
-
-        // ==========================================
-        // PAKET ENTERPRISE (Custom)
-        // ==========================================
-        Plan::updateOrCreate(
-            ['slug' => 'enterprise'],
-            [
-                'name' => 'Enterprise',
-                'description' => 'Solusi lengkap untuk enterprise. Unlimited semua fitur + dedicated support.',
-                'price_monthly' => 500000,       // Mulai Rp 500.000/bulan
-                'price_yearly' => 5000000,       // Rp 5.000.000/tahun
-                'features' => [
-                    // Batasan kuantitas (-1 = unlimited)
-                    'wa_devices' => -1,          // Unlimited
-                    'contacts' => -1,            // Unlimited
-                    'ai_messages' => -1,         // Unlimited
-                    'kb_storage' => -1,          // Unlimited
-                    'quick_replies' => -1,       // Unlimited
-                    'team_members' => -1,        // Unlimited
-                    
-                    // Akses fitur
-                    'broadcasts' => -1,          // Unlimited
-                    'sequences' => -1,           // Unlimited
-                    'web_widgets' => -1,         // Unlimited
-                    'analytics_export' => true,
-                    'remove_branding' => true,
-                    'api_access' => true,
-                    
-                    // Analytics
-                    'analytics_days' => 365,     // Data 1 tahun
-                    
-                    // Bonus enterprise
-                    'priority_support' => true,
-                    'sla' => true,
-                    'custom_integration' => true,
-                ],
-                'is_active' => true,
-                'sort_order' => 4,
-                'is_free' => false,
-                'is_trial' => false,
-                'trial_days' => 0,
+                'features_list' => [
+                    '1 WhatsApp Device',
+                    '50 Kontak',
+                    '20 Pesan AI per bulan',
+                ]
             ]
         );
 

@@ -4,221 +4,161 @@
 @section('page_title', 'System Health')
 
 @section('content')
-@php
-    // Check Database Connection
-    $dbStatus = true;
-    $dbMessage = 'Connected';
-    try {
-        DB::connection()->getPdo();
-    } catch (\Exception $e) {
-        $dbStatus = false;
-        $dbMessage = 'Connection failed';
-    }
-    
-    // Check Redis/Cache
-    $cacheStatus = true;
-    $cacheMessage = 'Working';
-    try {
-        Cache::put('health_check', 'ok', 10);
-        $cacheStatus = Cache::get('health_check') === 'ok';
-        $cacheMessage = $cacheStatus ? 'Working' : 'Not working';
-    } catch (\Exception $e) {
-        $cacheStatus = false;
-        $cacheMessage = 'Not configured';
-    }
-    
-    // Check Queue
-    $queueDriver = config('queue.default');
-    $queueStatus = $queueDriver !== 'sync';
-    $queueMessage = ucfirst($queueDriver);
-    
-    // Check Disk Space
-    $diskTotal = disk_total_space(base_path());
-    $diskFree = disk_free_space(base_path());
-    $diskUsedPercent = round((($diskTotal - $diskFree) / $diskTotal) * 100);
-    $diskStatus = $diskUsedPercent < 90;
-    
-    // Check Instagram Webhook Config
-    $igWebhookUrl = config('services.instagram.webhook_url');
-    $igConfigured = !empty(config('services.instagram.app_id')) && !empty(config('services.instagram.app_secret'));
-    
-    // Check WhatsApp Config
-    $waConfigured = !empty(config('services.fonnte.token'));
-    
-    // Recent Logs Summary
-    $recentErrorCount = 0;
-    $logPath = storage_path('logs/laravel.log');
-    if (file_exists($logPath)) {
-        $logContent = file_get_contents($logPath);
-        $today = now()->format('Y-m-d');
-        $recentErrorCount = substr_count($logContent, "[$today ") && substr_count($logContent, '.ERROR:');
-    }
-    
-    // Active Users (last 24h)
-    $activeUsers24h = \App\Models\User::where('updated_at', '>=', now()->subDay())->count();
-    
-    // Instagram Accounts Status
-    $activeIgAccounts = \App\Models\InstagramAccount::where('is_active', true)->count();
-    $expiringTokens = \App\Models\InstagramAccount::where('is_active', true)
-        ->whereNotNull('token_expires_at')
-        ->where('token_expires_at', '<=', now()->addDays(7))
-        ->count();
-@endphp
+
+<!-- Health Notification -->
+@if($disconnectedWa->count() > 0 || $disconnectedIg->count() > 0)
+<div class="bg-red-500/10 border border-red-500/30 text-red-500 p-4 rounded-xl mb-8 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined animate-pulse">report</span>
+        <div>
+            <p class="font-bold">Proactive Alert: {{ $disconnectedWa->count() + $disconnectedIg->count() }} Accounts Disconnected</p>
+            <p class="text-sm opacity-80">Beberapa akun user memerlukan perhatian segera untuk menjaga kelangsungan layanan.</p>
+        </div>
+    </div>
+    <a href="#outages" class="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-bold transition hover:bg-red-600">Lihat Detail</a>
+</div>
+@endif
 
 <!-- Status Overview -->
-<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-    <!-- Database -->
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
     <div class="bg-surface-dark rounded-xl p-4 border border-slate-800">
         <div class="flex items-center gap-3 mb-2">
-            <div class="w-3 h-3 rounded-full {{ $dbStatus ? 'bg-green-500' : 'bg-red-500' }} animate-pulse"></div>
-            <span class="text-sm font-medium">Database</span>
+            <div class="w-2.5 h-2.5 rounded-full {{ $dbStatus ? 'bg-green-500' : 'bg-red-500' }}"></div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Database</span>
         </div>
-        <p class="text-xs text-slate-500">{{ $dbMessage }}</p>
+        <p class="text-sm font-bold text-white">{{ $dbStatus ? 'ONLINE' : 'OFFLINE' }}</p>
     </div>
     
-    <!-- Cache -->
     <div class="bg-surface-dark rounded-xl p-4 border border-slate-800">
         <div class="flex items-center gap-3 mb-2">
-            <div class="w-3 h-3 rounded-full {{ $cacheStatus ? 'bg-green-500' : 'bg-yellow-500' }}"></div>
-            <span class="text-sm font-medium">Cache</span>
+            <div class="w-2.5 h-2.5 rounded-full {{ $cacheStatus ? 'bg-green-500' : 'bg-yellow-500' }}"></div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Cache</span>
         </div>
-        <p class="text-xs text-slate-500">{{ $cacheMessage }}</p>
+        <p class="text-sm font-bold text-white">{{ $cacheStatus ? 'WORKING' : 'DEGRADED' }}</p>
     </div>
-    
-    <!-- Queue -->
+
     <div class="bg-surface-dark rounded-xl p-4 border border-slate-800">
         <div class="flex items-center gap-3 mb-2">
-            <div class="w-3 h-3 rounded-full {{ $queueStatus ? 'bg-green-500' : 'bg-yellow-500' }}"></div>
-            <span class="text-sm font-medium">Queue</span>
+            <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Disk Usage</span>
         </div>
-        <p class="text-xs text-slate-500">{{ $queueMessage }}</p>
+        <p class="text-sm font-bold text-white">{{ $diskUsedPercent }}% USED</p>
     </div>
-    
-    <!-- Disk -->
+
     <div class="bg-surface-dark rounded-xl p-4 border border-slate-800">
         <div class="flex items-center gap-3 mb-2">
-            <div class="w-3 h-3 rounded-full {{ $diskStatus ? 'bg-green-500' : 'bg-red-500' }}"></div>
-            <span class="text-sm font-medium">Disk</span>
+            <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">24h Users</span>
         </div>
-        <p class="text-xs text-slate-500">{{ $diskUsedPercent }}% used</p>
+        <p class="text-sm font-bold text-white">{{ $activeUsers24h }} ACTIVE</p>
     </div>
-    
-    <!-- Instagram API -->
+
     <div class="bg-surface-dark rounded-xl p-4 border border-slate-800">
         <div class="flex items-center gap-3 mb-2">
-            <div class="w-3 h-3 rounded-full {{ $igConfigured ? 'bg-green-500' : 'bg-red-500' }}"></div>
-            <span class="text-sm font-medium">Instagram</span>
+            <div class="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">PHP Version</span>
         </div>
-        <p class="text-xs text-slate-500">{{ $igConfigured ? 'Configured' : 'Not configured' }}</p>
-    </div>
-    
-    <!-- WhatsApp API -->
-    <div class="bg-surface-dark rounded-xl p-4 border border-slate-800">
-        <div class="flex items-center gap-3 mb-2">
-            <div class="w-3 h-3 rounded-full {{ $waConfigured ? 'bg-green-500' : 'bg-red-500' }}"></div>
-            <span class="text-sm font-medium">WhatsApp</span>
-        </div>
-        <p class="text-xs text-slate-500">{{ $waConfigured ? 'Configured' : 'Not configured' }}</p>
+        <p class="text-sm font-bold text-white">{{ PHP_VERSION }}</p>
     </div>
 </div>
 
-<!-- Detailed Stats -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    <!-- Instagram Accounts -->
-    <div class="bg-surface-dark rounded-2xl p-6 border border-slate-800">
-        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-            <span>📸</span> Instagram Accounts
-        </h3>
-        <div class="space-y-4">
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400">Active Accounts</span>
-                <span class="font-bold text-green-400">{{ $activeIgAccounts }}</span>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+    <!-- Proactive Outages Monitoring -->
+    <div id="outages" class="lg:col-span-2 space-y-6">
+        <div class="bg-surface-dark rounded-2xl border border-slate-800 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-800 bg-surface-light/30 flex items-center justify-between">
+                <h3 class="font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-red-500">cell_tower</span>
+                    Proactive Outages Monitoring
+                </h3>
             </div>
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400">Expiring Tokens (7 days)</span>
-                <span class="font-bold {{ $expiringTokens > 0 ? 'text-yellow-400' : 'text-slate-500' }}">{{ $expiringTokens }}</span>
-            </div>
-        </div>
-        @if($expiringTokens > 0)
-        <div class="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-            <p class="text-yellow-400 text-sm">⚠️ {{ $expiringTokens }} token(s) will expire soon. Run <code class="bg-slate-800 px-1 rounded">php artisan instagram:refresh-tokens</code></p>
-        </div>
-        @endif
-    </div>
-    
-    <!-- System Activity -->
-    <div class="bg-surface-dark rounded-2xl p-6 border border-slate-800">
-        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-            <span>📊</span> System Activity
-        </h3>
-        <div class="space-y-4">
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400">Active Users (24h)</span>
-                <span class="font-bold text-primary">{{ $activeUsers24h }}</span>
-            </div>
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400">Disk Usage</span>
-                <div class="flex items-center gap-2">
-                    <div class="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
-                        <div class="h-full {{ $diskUsedPercent > 80 ? 'bg-red-500' : ($diskUsedPercent > 60 ? 'bg-yellow-500' : 'bg-green-500') }}" style="width: {{ $diskUsedPercent }}%"></div>
+            <div class="divide-y divide-slate-800">
+                @forelse($disconnectedWa->merge($disconnectedIg) as $account)
+                    @php 
+                        $isWa = $account instanceof \App\Models\WhatsAppDevice;
+                        $user = $isWa ? ($account->businessProfile?->user) : $account->user;
+                    @endphp
+                    @if($user)
+                    <div class="px-6 py-4 flex items-center justify-between hover:bg-surface-light/20 transition">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl {{ $isWa ? 'bg-green-500/10 text-green-500' : 'bg-pink-500/10 text-pink-500' }}">
+                                <span>{{ $isWa ? 'WA' : 'IG' }}</span>
+                            </div>
+                            <div>
+                                <div class="font-bold text-white">{{ $isWa ? ($account->phone_number ?? $account->session_id) : $account->username }}</div>
+                                <div class="text-xs text-slate-400">Owner: {{ $user->name }} ({{ $user->email }})</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="px-2 py-1 rounded bg-red-500/10 text-red-400 text-[10px] font-bold uppercase border border-red-500/20">Disconnected</span>
+                            <a href="{{ route('admin.users.show', $user->id) }}" class="p-2 text-slate-400 hover:text-white transition" title="Contact / Manage User">
+                                <span class="material-symbols-outlined text-lg">person_search</span>
+                            </a>
+                        </div>
                     </div>
-                    <span class="text-sm">{{ $diskUsedPercent }}%</span>
-                </div>
+                    @endif
+                @empty
+                    <div class="px-6 py-12 text-center text-slate-500">
+                        <span class="material-symbols-outlined text-4xl mb-2 opacity-20">verified_user</span>
+                        <p>Semua saluran WhatsApp & Instagram lancar.</p>
+                    </div>
+                @endforelse
             </div>
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400">PHP Version</span>
-                <span class="font-mono text-sm">{{ PHP_VERSION }}</span>
+        </div>
+    </div>
+
+    <!-- 3rd Party Health -->
+    <div class="space-y-6">
+        <div class="bg-surface-dark rounded-2xl border border-slate-800 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-800 bg-surface-light/30">
+                <h3 class="font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">hub</span>
+                    3rd Party API Health
+                </h3>
             </div>
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400">Laravel Version</span>
-                <span class="font-mono text-sm">{{ app()->version() }}</span>
+            <div class="p-6 space-y-4">
+                @foreach($externalHealth as $provider)
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-surface-light/30 border border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 rounded-full {{ $provider['status'] === 'online' ? 'bg-green-500' : ($provider['status'] === 'degraded' ? 'bg-yellow-500' : 'bg-red-500') }}"></div>
+                            <span class="font-medium text-sm">{{ $provider['name'] }}</span>
+                        </div>
+                        <span class="text-[10px] font-bold uppercase {{ $provider['status'] === 'online' ? 'text-green-400' : 'text-yellow-400' }}">
+                            {{ $provider['message'] }}
+                        </span>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- Quick Maintenance -->
+        <div class="bg-surface-dark rounded-2xl border border-slate-800 p-6">
+            <h3 class="font-bold mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-yellow-500">build</span>
+                Quick Maintenance
+            </h3>
+            <div class="grid grid-cols-1 gap-2">
+                <form method="POST" action="{{ route('admin.maintenance.clear-cache') }}">
+                    @csrf
+                    <button class="w-full text-left px-4 py-2 rounded-lg bg-surface-light hover:bg-slate-700 transition text-sm flex items-center gap-3">
+                        <span class="material-symbols-outlined text-blue-400 text-lg">mop</span>
+                        Clear Cache
+                    </button>
+                </form>
+                <form method="POST" action="{{ route('admin.maintenance.refresh-tokens') }}">
+                    @csrf
+                    <button class="w-full text-left px-4 py-2 rounded-lg bg-surface-light hover:bg-slate-700 transition text-sm flex items-center gap-3">
+                        <span class="material-symbols-outlined text-purple-400 text-lg">sync_lock</span>
+                        Refresh IG Tokens
+                    </button>
+                </form>
+                <a href="{{ route('admin.failed-jobs.index') }}" class="w-full text-left px-4 py-2 rounded-lg bg-surface-light hover:bg-slate-700 transition text-sm flex items-center gap-3 text-red-400">
+                    <span class="material-symbols-outlined text-lg">error</span>
+                    Failed Jobs Center
+                </a>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="bg-surface-dark rounded-2xl p-6 border border-slate-800">
-    <h3 class="font-bold text-lg mb-4">🔧 Maintenance Actions</h3>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <form method="POST" action="{{ route('admin.maintenance.clear-cache') }}" class="inline">
-            @csrf
-            <button type="submit" class="w-full p-4 bg-surface-light hover:bg-primary/10 rounded-xl border border-slate-800 hover:border-primary/50 transition text-left">
-                <div class="text-lg mb-1">🗑️</div>
-                <div class="font-semibold text-sm">Clear Cache</div>
-                <div class="text-xs text-slate-500">Application cache</div>
-            </button>
-        </form>
-        
-        <form method="POST" action="{{ route('admin.maintenance.clear-views') }}" class="inline">
-            @csrf
-            <button type="submit" class="w-full p-4 bg-surface-light hover:bg-primary/10 rounded-xl border border-slate-800 hover:border-primary/50 transition text-left">
-                <div class="text-lg mb-1">🖼️</div>
-                <div class="font-semibold text-sm">Clear Views</div>
-                <div class="text-xs text-slate-500">Compiled views</div>
-            </button>
-        </form>
-        
-        <form method="POST" action="{{ route('admin.maintenance.refresh-tokens') }}" class="inline">
-            @csrf
-            <button type="submit" class="w-full p-4 bg-surface-light hover:bg-primary/10 rounded-xl border border-slate-800 hover:border-primary/50 transition text-left">
-                <div class="text-lg mb-1">🔄</div>
-                <div class="font-semibold text-sm">Refresh IG Tokens</div>
-                <div class="text-xs text-slate-500">Instagram tokens</div>
-            </button>
-        </form>
-        
-        <a href="{{ route('admin.activity-logs.index') }}" class="w-full p-4 bg-surface-light hover:bg-primary/10 rounded-xl border border-slate-800 hover:border-primary/50 transition text-left block">
-            <div class="text-lg mb-1">📋</div>
-            <div class="font-semibold text-sm">View Logs</div>
-            <div class="text-xs text-slate-500">Activity logs</div>
-        </a>
-    </div>
-</div>
-
-@if(session('success'))
-<script>
-    alert('{{ session('success') }}');
-</script>
-@endif
 @endsection

@@ -5,7 +5,7 @@
 @section('content')
 @php
     $user = Auth::user();
-    $subscription = $user->activeSubscription;
+    $subscription = $user->getActiveSubscription();
     $plan = $subscription?->plan;
     
     // Usage Stats
@@ -15,30 +15,30 @@
     
     // AI Messages
     $aiMessagesUsed = $usageRecords->sum('ai_messages_used');
-    $aiMessagesLimit = $plan?->features['ai_messages'] ?? 0;
+    $aiMessagesLimit = $plan?->limits['ai_messages_monthly'] ?? 500;
     $aiMessagesPercent = $aiMessagesLimit > 0 ? round(($aiMessagesUsed / $aiMessagesLimit) * 100) : 0;
     
-    // Contacts
-    $totalContacts = \App\Models\Contact::where('user_id', $user->id)->count();
-    $contactsLimit = $plan?->features['contacts'] ?? 0;
+    // Contacts (use WaConversation as contacts proxy)
+    $totalContacts = \App\Models\WaConversation::where('user_id', $user->id)->count();
+    $contactsLimit = $plan?->limits['contacts'] ?? 1000;
     $contactsPercent = $contactsLimit > 0 ? round(($totalContacts / $contactsLimit) * 100) : 0;
     
     // Broadcasts
     $broadcastsUsed = $usageRecords->sum('broadcasts_used');
-    $broadcastsLimit = $plan?->features['broadcasts'] ?? 0;
+    $broadcastsLimit = $plan?->limits['broadcasts_monthly'] ?? 5;
     $broadcastsPercent = $broadcastsLimit > 0 ? round(($broadcastsUsed / $broadcastsLimit) * 100) : 0;
     
-    // Message Stats (last 7 days)
+    // Message Stats (last 7 days) - use WaMessage
     $messageStats = [];
     for ($i = 6; $i >= 0; $i--) {
         $date = now()->subDays($i)->format('Y-m-d');
         $messageStats[$date] = [
-            'incoming' => \App\Models\Message::whereDate('created_at', $date)
-                ->whereHas('conversation', fn($q) => $q->where('user_id', $user->id))
+            'incoming' => \App\Models\WaMessage::where('user_id', $user->id)
+                ->whereDate('created_at', $date)
                 ->where('direction', 'incoming')
                 ->count(),
-            'outgoing' => \App\Models\Message::whereDate('created_at', $date)
-                ->whereHas('conversation', fn($q) => $q->where('user_id', $user->id))
+            'outgoing' => \App\Models\WaMessage::where('user_id', $user->id)
+                ->whereDate('created_at', $date)
                 ->where('direction', 'outgoing')
                 ->count(),
         ];

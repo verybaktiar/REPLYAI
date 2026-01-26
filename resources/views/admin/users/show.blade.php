@@ -21,6 +21,9 @@
                 <div class="flex-1">
                     <div class="flex items-center gap-3">
                         <h2 class="text-xl font-bold">{{ $user->name }}</h2>
+                        @if($user->is_suspended)
+                        <span class="px-3 py-1 bg-red-500/20 text-red-500 border border-red-500/30 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">Account Suspended</span>
+                        @endif
                         @if($user->is_vip)
                         <span class="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs font-bold">⭐ VIP</span>
                         @endif
@@ -58,6 +61,25 @@
                         Impersonate
                     </button>
                 </form>
+
+                @if($user->is_suspended)
+                <form action="{{ route('admin.users.activate', $user) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 bg-green-500/20 text-green-400 hover:bg-green-500/30 rounded-xl text-sm font-medium transition">
+                        <span class="material-symbols-outlined align-middle mr-1 text-lg">check_circle</span>
+                        Activate
+                    </button>
+                </form>
+                @else
+                <form action="{{ route('admin.users.suspend', $user) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-xl text-sm font-medium transition" onclick="return confirm('Suspend user ini?')">
+                        <span class="material-symbols-outlined align-middle mr-1 text-lg">block</span>
+                        Suspend
+                    </button>
+                </form>
+                @endif
+
                 <form action="{{ route('admin.users.reset-usage', $user) }}" method="POST">
                     @csrf
                     <button type="submit" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-medium transition">

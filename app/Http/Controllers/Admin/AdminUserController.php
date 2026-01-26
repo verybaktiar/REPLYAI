@@ -7,9 +7,18 @@ use App\Models\User;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\AdminActivityLog;
+use App\Models\ActivityLog;
+use App\Models\WaSession;
+use App\Models\WaMessage;
+use App\Models\WaConversation;
+use App\Models\KbArticle;
+use App\Models\AutoReplyRule;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 /**
  * Controller untuk manajemen user di SuperAdmin panel.
@@ -25,11 +34,11 @@ class AdminUserController extends Controller
     /**
      * Tampilkan daftar semua users
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = User::query()
             ->with(['subscription.plan'])
-            ->withCount('payments');
+            ->withCount(['payments', 'kbArticles', 'autoReplyRules']);
 
         // Search by name or email
         if ($request->filled('search')) {
@@ -62,16 +71,33 @@ class AdminUserController extends Controller
             }
         }
 
+        // Filter by suspension status
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_suspended', false);
+            } elseif ($request->status === 'suspended') {
+                $query->where('is_suspended', true);
+            }
+        }
+
         $users = $query->orderBy('created_at', 'desc')->paginate(20);
         $plans = Plan::where('is_active', true)->orderBy('sort_order')->get();
 
-        return view('admin.users.index', compact('users', 'plans'));
+        // Extra Stats for Admin Dashboard
+        $stats = [
+            'total' => User::count(),
+            'active_today' => User::whereDate('last_login_at', today())->count(),
+            'new_this_week' => User::where('created_at', '>=', now()->subDays(7))->count(),
+            'suspended' => User::where('is_suspended', true)->count(),
+        ];
+
+        return view('admin.users.index', compact('users', 'plans', 'stats'));
     }
 
     /**
      * Tampilkan detail user
      */
-    public function show(User $user)
+    public function show(User $user): View
     {
         $user->load(['subscription.plan', 'payments' => function ($q) {
             $q->orderBy('created_at', 'desc')->limit(10);
@@ -79,7 +105,22 @@ class AdminUserController extends Controller
 
         $plans = Plan::where('is_active', true)->orderBy('sort_order')->get();
 
-        return view('admin.users.show', compact('user', 'plans'));
+        // Usage stats (from UserManagementController)
+        $usageStats = [
+            'kb_articles' => KbArticle::where('user_id', $user->id)->count(),
+            'auto_rules' => AutoReplyRule::where('user_id', $user->id)->count(),
+            'wa_sessions' => WaSession::where('user_id', $user->id)->count(),
+            'wa_messages' => WaMessage::where('user_id', $user->id)->count(),
+            'wa_conversations' => WaConversation::where('user_id', $user->id)->count(),
+        ];
+
+        // Recent activity (from UserManagementController)
+        $activities = ActivityLog::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->take(20)
+            ->get();
+
+        return view('admin.users.show', compact('user', 'plans', 'usageStats', 'activities'));
     }
 
     /**
@@ -149,6 +190,38 @@ class AdminUserController extends Controller
     }
 
     /**
+     * Suspend a user
+     */
+    public function suspend(User $user): RedirectResponse
+    {
+        if ($user->is_admin) {
+            return back()->with('error', 'Tidak bisa suspend admin');
+        }
+
+        $user->update(['is_suspended' => true]);
+
+        // Log to both systems for compatibility
+        AdminActivityLog::log(Auth::guard('admin')->user(), 'suspend_user', "Suspend user {$user->email}", ['user_id' => $user->id], $user);
+        ActivityLogService::log(ActivityLog::ACTION_USER_SUSPENDED, "User {$user->email} suspended by admin", $user);
+
+        return back()->with('success', "User {$user->name} telah di-suspend");
+    }
+
+    /**
+     * Activate a suspended user
+     */
+    public function activate(User $user): RedirectResponse
+    {
+        $user->update(['is_suspended' => false]);
+
+        // Log to both systems for compatibility
+        AdminActivityLog::log(Auth::guard('admin')->user(), 'activate_user', "Activate user {$user->email}", ['user_id' => $user->id], $user);
+        ActivityLogService::log(ActivityLog::ACTION_USER_ACTIVATED, "User {$user->email} activated by admin", $user);
+
+        return back()->with('success', "User {$user->name} telah diaktifkan");
+    }
+
+    /**
      * Assign subscription manual ke user
      */
     public function assignSubscription(Request $request, User $user)
@@ -170,7 +243,7 @@ class AdminUserController extends Controller
         // Cancel subscription lama jika ada
         if ($user->subscription) {
             $user->subscription->update([
-                'status' => 'cancelled',
+                'status' => Subscription::STATUS_CANCELED,
                 'cancelled_at' => now(),
             ]);
         }
@@ -229,19 +302,13 @@ class AdminUserController extends Controller
         return back()->with('success', "Usage records untuk {$user->name} berhasil di-reset!");
     }
 
-    /**
-     * Form tambah user baru
-     */
-    public function create()
+    public function create(): View
     {
         $plans = Plan::where('is_active', true)->orderBy('sort_order')->get();
         return view('admin.users.create', compact('plans'));
     }
 
-    /**
-     * Simpan user baru
-     */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -287,19 +354,13 @@ class AdminUserController extends Controller
             ->with('success', "User {$user->name} berhasil dibuat!");
     }
 
-    /**
-     * Form edit user
-     */
-    public function edit(User $user)
+    public function edit(User $user): View
     {
         $plans = Plan::where('is_active', true)->orderBy('sort_order')->get();
         return view('admin.users.edit', compact('user', 'plans'));
     }
 
-    /**
-     * Update user
-     */
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $user): RedirectResponse
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -331,10 +392,7 @@ class AdminUserController extends Controller
             ->with('success', "User {$user->name} berhasil diupdate!");
     }
 
-    /**
-     * Hapus user
-     */
-    public function destroy(User $user)
+    public function destroy(User $user): RedirectResponse
     {
         $userName = $user->name;
         $userId = $user->id;
@@ -361,10 +419,10 @@ class AdminUserController extends Controller
     /**
      * Impersonate user (login sebagai user)
      */
-    public function impersonate(User $user)
+    public function impersonate(User $user): RedirectResponse
     {
-        // Simpan admin ID ke session
-        session(['impersonating_from_admin' => Auth::guard('admin')->id()]);
+        // Get admin ID before switching auth
+        $adminId = Auth::guard('admin')->id();
         
         // Log aktivitas
         AdminActivityLog::log(
@@ -374,9 +432,16 @@ class AdminUserController extends Controller
             ['user_id' => $user->id],
             $user
         );
+        
+        // Log to ActivityLogService as well
+        ActivityLogService::log(ActivityLog::ACTION_IMPERSONATION_START, "Admin started impersonating user #{$user->id}", $user);
 
         // Login sebagai user
         Auth::login($user);
+        
+        // IMPORTANT: Set session AFTER login to prevent session regeneration from losing it
+        session()->put('impersonating_from_admin', $adminId);
+        session()->save();
 
         return redirect('/dashboard')->with('info', "Anda sekarang login sebagai {$user->name}. Klik 'Kembali ke Admin' untuk keluar.");
     }
@@ -384,9 +449,12 @@ class AdminUserController extends Controller
     /**
      * Stop impersonating (kembali ke admin)
      */
-    public function stopImpersonate()
+    public function stopImpersonate(): RedirectResponse
     {
         if (session()->has('impersonating_from_admin')) {
+            // Log to ActivityLogService 
+            ActivityLogService::log(ActivityLog::ACTION_IMPERSONATION_END, 'Admin stopped impersonating user');
+            
             Auth::logout();
             session()->forget('impersonating_from_admin');
         }

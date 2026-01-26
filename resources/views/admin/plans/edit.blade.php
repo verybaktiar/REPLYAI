@@ -44,11 +44,20 @@
     <div class="bg-surface-dark rounded-2xl p-6 border border-slate-800">
         <h2 class="text-xl font-bold mb-4">Pricing</h2>
         
-        <div class="grid md:grid-cols-2 gap-4">
+        <div class="grid md:grid-cols-2 gap-6">
             <div>
                 <label class="block text-sm font-medium mb-2">Monthly Price (Rp) <span class="text-red-500">*</span></label>
                 <input type="number" name="price_monthly" value="{{ old('price_monthly', $plan->price_monthly) }}" required min="0"
                        class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary">
+                <p class="text-[10px] text-slate-500 mt-1">Harga yang dibayar user saat ini.</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Monthly Original Price (Rp) - Coret</label>
+                <input type="number" name="price_monthly_original" value="{{ old('price_monthly_original', $plan->price_monthly_original) }}" min="0"
+                       class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary"
+                       placeholder="Misal: 4000000">
+                <p class="text-[10px] text-slate-500 mt-1">Harga asli sebelum diskon (akan dicoret).</p>
             </div>
 
             <div>
@@ -56,6 +65,13 @@
                 <input type="number" name="price_yearly" value="{{ old('price_yearly', $plan->price_yearly) }}" min="0"
                        class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary"
                        placeholder="Kosongkan jika tidak ada">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Yearly Original Price (Rp) - Coret</label>
+                <input type="number" name="price_yearly_original" value="{{ old('price_yearly_original', $plan->price_yearly_original) }}" min="0"
+                       class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary"
+                       placeholder="Misal: 40000000">
             </div>
         </div>
     </div>

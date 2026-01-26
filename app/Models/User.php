@@ -30,6 +30,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'csat_delay_minutes',
         'onboarding_completed_at',
         'business_industry',
+        'is_suspended',
+        'last_login_at',
     ];
 
     /**
@@ -57,6 +59,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'csat_instagram_enabled' => 'boolean',
             'csat_whatsapp_enabled' => 'boolean',
             'csat_delay_minutes' => 'integer',
+            'is_suspended' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
     }
 
@@ -77,6 +81,22 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get all knowledge base articles for the user.
+     */
+    public function kbArticles()
+    {
+        return $this->hasMany(\App\Models\KbArticle::class);
+    }
+
+    /**
+     * Get all auto reply rules for the user.
+     */
+    public function autoReplyRules()
+    {
+        return $this->hasMany(\App\Models\AutoReplyRule::class);
+    }
+
+    /**
      * Get all subscriptions for the user (including historical).
      */
     public function subscriptions()
@@ -86,8 +106,9 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Get the user's active subscription.
+     * Note: Named with 'get' prefix to avoid Laravel relationship conflict
      */
-    public function activeSubscription()
+    public function getActiveSubscription()
     {
         return $this->subscriptions()
             ->where('status', 'active')
