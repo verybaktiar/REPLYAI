@@ -47,6 +47,83 @@
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden antialiased">
+
+{{-- Welcome Popup Modal --}}
+@if(isset($isFirstLogin) && $isFirstLogin)
+<div x-data="{ open: true }" 
+     x-show="open" 
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    
+    <div x-show="open"
+         x-transition:enter="transition ease-out duration-300 delay-100"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+         class="relative bg-gradient-to-br from-surface-dark to-background-dark rounded-3xl p-8 max-w-md w-full border border-slate-700 shadow-2xl">
+        
+        {{-- Close Button --}}
+        <button @click="open = false" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white transition">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        
+        {{-- Animated Icon --}}
+        <div class="flex justify-center mb-6">
+            <div class="relative">
+                <div class="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center animate-pulse">
+                    <span class="text-5xl">🎉</span>
+                </div>
+                <div class="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-4 border-surface-dark">
+                    <span class="material-symbols-outlined text-white text-sm">check</span>
+                </div>
+            </div>
+        </div>
+        
+        {{-- Content --}}
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-black text-white mb-2">
+                Selamat Datang, {{ $user->name ?? 'User' }}! 👋
+            </h2>
+            <p class="text-slate-400">
+                Akun Anda berhasil diverifikasi. Sekarang Anda siap menggunakan <span class="text-primary font-bold">REPLYAI</span> untuk mengotomatisasi percakapan Anda!
+            </p>
+        </div>
+        
+        {{-- Tips --}}
+        <div class="bg-slate-800/50 rounded-xl p-4 mb-6">
+            <h4 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-lg">tips_and_updates</span>
+                Mulai dengan:
+            </h4>
+            <ul class="space-y-2 text-sm text-slate-300">
+                <li class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
+                    Hubungkan WhatsApp atau Instagram
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
+                    Latih AI dengan Knowledge Base
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
+                    Buat Rules untuk balasan otomatis
+                </li>
+            </ul>
+        </div>
+        
+        {{-- CTA Button --}}
+        <button @click="open = false" 
+                class="w-full py-4 px-6 bg-gradient-to-r from-primary to-blue-500 hover:from-blue-600 hover:to-primary text-white font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg shadow-primary/30">
+            Mulai Sekarang 🚀
+        </button>
+    </div>
+</div>
+@endif
+
 <div class="flex flex-col lg:flex-row h-screen w-full">
     <!-- Sidebar Navigation -->
     <!-- Sidebar Navigation -->
@@ -56,7 +133,7 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0">
         <!-- Top Header -->
-        <header class="hidden lg:flex h-16 items-center justify-between px-6 lg:px-8 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-20">
+        <header class="hidden lg:flex h-16 items-center justify-between px-6 lg:px-8 border-b border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-20">
             <div class="flex items-center gap-2 lg:hidden">
                 <button class="p-2 -ml-2 text-slate-600 dark:text-slate-400">
                     <span class="material-symbols-outlined">menu</span>
@@ -98,10 +175,13 @@
                     </div>
                 </div>
 
+                {{-- Onboarding Checklist (shows only if incomplete) --}}
+                @include('components.onboarding-checklist', ['user' => $user])
+
                 <!-- Stats Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Stat 1: Total Messages -->
-                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
                         <div class="flex items-start justify-between">
                             <div class="p-2 bg-blue-50 dark:bg-blue-900/20 text-primary rounded-lg">
                                 <span class="material-symbols-outlined text-2xl">forum</span>
@@ -117,7 +197,7 @@
                     </div>
 
                     <!-- Stat 2: AI Rate -->
-                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
                         <div class="flex items-start justify-between">
                             <div class="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-lg">
                                 <span class="material-symbols-outlined text-2xl">smart_toy</span>
@@ -133,7 +213,7 @@
                     </div>
 
                     <!-- Stat 3: Pending Inbox -->
-                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
                         <div class="flex items-start justify-between">
                             <div class="p-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-lg">
                                 <span class="material-symbols-outlined text-2xl">mark_chat_unread</span>
@@ -146,7 +226,7 @@
                     </div>
 
                     <!-- Stat 4: KB Count -->
-                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
                         <div class="flex items-start justify-between">
                             <div class="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-lg">
                                 <span class="material-symbols-outlined text-2xl">library_books</span>
@@ -160,7 +240,7 @@
                 </div>
 
                 <!-- Main Chart Section with Chart.js -->
-                <div class="flex flex-col gap-6 p-6 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="flex flex-col gap-6 p-6 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
                     <div class="flex items-center justify-between flex-wrap gap-4">
                         <div>
                             <h3 class="text-lg font-bold dark:text-white text-slate-900">Interaction Volume (7 Hari)</h3>
@@ -177,8 +257,8 @@
                 </div>
 
                 <!-- Top Questions Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="flex flex-col gap-4 p-6 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="flex flex-col gap-4 p-6 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-bold dark:text-white text-slate-900">Top Pertanyaan</h3>
                             <span class="text-xs text-slate-500">5 Terbanyak</span>
@@ -198,8 +278,10 @@
                         </div>
                     </div>
 
+                    {{-- Usage Widget --}}
+                    @include('components.usage-widget', ['user' => $user])
                     <!-- Response Time Card -->
-                    <div class="flex flex-col gap-4 p-6 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex flex-col gap-4 p-6 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
                         <h3 class="text-lg font-bold dark:text-white text-slate-900">Performa Bot</h3>
                         <div class="grid grid-cols-2 gap-4">
                             <div class="flex flex-col gap-2 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/30">
@@ -226,25 +308,25 @@
                     <div class="xl:col-span-1 flex flex-col gap-4">
                         <h3 class="text-lg font-bold dark:text-white text-slate-900 px-1">Quick Actions</h3>
                         <div class="grid grid-cols-2 gap-3">
-                            <a href="{{ route('inbox') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
+                            <a href="{{ route('inbox') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-surface-dark border border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
                                 <div class="p-3 bg-blue-50 dark:bg-blue-900/20 text-primary rounded-full group-hover:scale-110 transition-transform">
                                     <span class="material-symbols-outlined">chat</span>
                                 </div>
                                 <span class="text-sm font-semibold dark:text-white text-slate-800">Inbox</span>
                             </a>
-                            <a href="{{ route('kb.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
+                            <a href="{{ route('kb.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-surface-dark border border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
                                 <div class="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-full group-hover:scale-110 transition-transform">
                                     <span class="material-symbols-outlined">school</span>
                                 </div>
                                 <span class="text-sm font-semibold dark:text-white text-slate-800">Train AI</span>
                             </a>
-                            <a href="{{ route('rules.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
+                            <a href="{{ route('rules.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-surface-dark border border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
                                 <div class="p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-full group-hover:scale-110 transition-transform">
                                     <span class="material-symbols-outlined">settings_suggest</span>
                                 </div>
                                 <span class="text-sm font-semibold dark:text-white text-slate-800">Rules</span>
                             </a>
-                             <a href="{{ route('logs.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
+                             <a href="{{ route('logs.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-surface-dark border border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
                                 <div class="p-3 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full group-hover:scale-110 transition-transform">
                                     <span class="material-symbols-outlined">terminal</span>
                                 </div>
@@ -258,7 +340,7 @@
                         <div class="flex items-center justify-between px-1">
                             <h3 class="text-lg font-bold dark:text-white text-slate-900">Recent Activity</h3>
                         </div>
-                        <div class="flex flex-col rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 overflow-hidden">
+                        <div class="flex flex-col rounded-xl bg-surface-dark border border-slate-800 overflow-hidden">
                             
                             @forelse($activities as $activity)
                             <div class="flex items-center gap-4 p-4 border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">

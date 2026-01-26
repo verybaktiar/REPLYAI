@@ -54,10 +54,13 @@ return [
     'timeout' => (int) env('PERPLEXITY_TIMEOUT', 30),
     ],
     'instagram' => [
-        'access_token' => env('INSTAGRAM_ACCESS_TOKEN'),
+        'app_id' => env('INSTAGRAM_APP_ID'),
+        'app_secret' => env('INSTAGRAM_APP_SECRET'),
+        'redirect_uri' => env('INSTAGRAM_REDIRECT_URI', '/instagram/callback'),
+        'access_token' => env('INSTAGRAM_ACCESS_TOKEN'), // Legacy global token
         'webhook_verify_token' => env('WEBHOOK_VERIFY_TOKEN'),
         'meta_app_secret' => env('META_APP_SECRET'),
-        'instagram_user_id' => env('INSTAGRAM_USER_ID'),
+        'instagram_user_id' => env('INSTAGRAM_USER_ID'), // Legacy global ID
     ],
 
     'whatsapp' => [

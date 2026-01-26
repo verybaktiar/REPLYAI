@@ -147,7 +147,7 @@
 
 <!-- Main Content Area -->
 <main class="flex flex-1 overflow-hidden h-full relative">
-    
+    @if($hasInstagramAccount ?? false)
     <!-- Conversation List (Middle Column) -->
     <div class="w-full md:w-[340px] lg:w-[360px] flex flex-col border-r border-white/5 bg-[#111722] shrink-0 h-full z-10 {{ $selectedId ? 'hidden md:flex' : 'flex' }}">
         <!-- Header -->
@@ -258,9 +258,24 @@
                     </div>
                 </a>
             @empty
-                <div class="p-8 text-center text-slate-500 text-sm">
-                    Belum ada percakapan.
-                </div>
+                @if(!($hasInstagramAccount ?? false))
+                    <!-- User belum connect Instagram -->
+                    <div class="p-8 text-center">
+                        <div class="size-16 bg-pink-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="material-symbols-outlined text-pink-400 text-3xl">photo_camera</span>
+                        </div>
+                        <h3 class="text-white font-semibold mb-2">Hubungkan Instagram</h3>
+                        <p class="text-slate-400 text-xs mb-4">Hubungkan akun Instagram Anda untuk mulai menerima pesan.</p>
+                        <a href="{{ route('instagram.settings') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white text-xs font-medium rounded-lg hover:opacity-90 transition">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">add_link</span>
+                            Hubungkan Sekarang
+                        </a>
+                    </div>
+                @else
+                    <div class="p-8 text-center text-slate-500 text-sm">
+                        Belum ada percakapan.
+                    </div>
+                @endif
             @endforelse
         </div>
     </div>
@@ -367,114 +382,140 @@
             </header>
 
             <!-- Messages Area -->
-            <div id="messages-area" class="flex-1 overflow-y-auto p-6 flex flex-col gap-4 bg-background-dark bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1e2634] to-background-dark">
+            <!-- Messages Area -->
+            <div id="messages-area" class="flex-1 overflow-y-auto p-6 flex flex-col gap-4 bg-background-dark bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1e2634] to-background-dark relative">
                 
-                @php $lastDate = null; @endphp
-                @forelse($messages as $msg)
-                    @php
-                        // Timestamp grouping
-                        $msgDate = \Carbon\Carbon::parse($msg->created_at);
-                        $dateLabel = null;
-                        if (!$lastDate || !$msgDate->isSameDay($lastDate)) {
-                            if ($msgDate->isToday()) {
-                                $dateLabel = 'Hari ini';
-                            } elseif ($msgDate->isYesterday()) {
-                                $dateLabel = 'Kemarin';
-                            } else {
-                                $dateLabel = $msgDate->translatedFormat('d F Y');
-                            }
-                            $lastDate = $msgDate;
-                        }
-                        
-                        // Logic Deteksi Pengirim
-                        $type = strtolower($msg->sender_type ?? 'contact');
-                        
-                        // Cek flag bot dari DB atau sender type
-                        $isBot = ($type === 'bot') || ($msg->is_replied_by_bot ?? false);
-                        $isAgent = in_array($type, ['agent', 'admin']);
-                        
-                        // Pesan "Saya" (Kanan) adalah Bot atau Agent
-                        $isMe = $isBot || $isAgent;
-                        
-                        $time = \Carbon\Carbon::parse($msg->created_at)->format('H:i');
-                        
-                        // Simple Markdown Parser (Bold & Newline)
-                        $content = e($msg->content);
-                        $content = preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', $content); // Bold **text**
-                        $content = preg_replace('/\*(.*?)\*/', '<em>$1</em>', $content); // Italic *text*
-                        $content = nl2br($content); // Newline
-                    @endphp
-                    
-                    <!-- Date Separator -->
-                    @if($dateLabel)
-                        <div class="flex items-center justify-center my-4">
-                            <div class="h-px bg-white/10 flex-1"></div>
-                            <span class="px-4 text-xs font-medium text-slate-500 bg-background-dark">{{ $dateLabel }}</span>
-                            <div class="h-px bg-white/10 flex-1"></div>
-                        </div>
-                    @endif
+                @if(!($hasInstagramAccount ?? false))
+                    <!-- Full Cover Disconnected State -->
+                    <div class="absolute inset-0 z-20 bg-[#101622]/90 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center">
+                         <div class="max-w-lg w-full bg-[#1e2634] rounded-2xl border border-white/5 p-10 shadow-2xl relative overflow-hidden group">
+                            <!-- Glow Effect -->
+                            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-gradient-to-b from-purple-500/10 to-transparent blur-3xl -z-10 group-hover:from-purple-500/20 transition-all duration-700"></div>
 
-                    <!-- Message Bubble -->
-                    <div class="flex gap-3 max-w-[85%] w-fit message-animate-in group/msg {{ $isMe ? 'ml-auto flex-row-reverse' : '' }}">
-                        <!-- Avatar -->
-                        <div class="size-8 rounded-full flex items-center justify-center shrink-0 
-                             {{ $isMe ? ($isBot ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-slate-700 bg-center bg-cover') : 'bg-slate-700 bg-center bg-cover' }}"
-                             style="{{ (!$isMe || !$isBot) ? 'background-image: url("'. ($isMe ? 'https://ui-avatars.com/api/?name=Admin&background=135bec&color=fff' : ($contact['avatar'] ?: 'https://ui-avatars.com/api/?name='.urlencode($contact['name']).'&background=374151&color=fff')).'");' : '' }}">
-                             @if($isBot)
-                                <span class="material-symbols-outlined" style="font-size: 16px;">smart_toy</span>
-                             @endif
+                            <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center shadow-lg shadow-pink-500/20 group-hover:scale-110 transition-transform duration-500">
+                                <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-3">Hubungkan Instagram</h3>
+                            <p class="text-slate-400 text-sm mb-8 leading-relaxed">
+                                Hubungkan akun Instagram Business Anda untuk menerima dan membalas DM pelanggan secara otomatis dengan AI.
+                            </p>
+                            
+                            <a href="{{ route('instagram.connect') }}" class="inline-flex w-full justify-center items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 rounded-xl font-bold text-white transition shadow-lg shadow-orange-500/20 transform hover:scale-[1.02] active:scale-[0.98]">
+                                <span class="material-symbols-outlined">add_link</span>
+                                Hubungkan Instagram
+                            </a>
                         </div>
+                    </div>
+                @else
+                    @php $lastDate = null; @endphp
+                    @forelse($messages as $msg)
+                        @php
+                            // Timestamp grouping
+                            $msgDate = \Carbon\Carbon::parse($msg->created_at);
+                            $dateLabel = null;
+                            if (!$lastDate || !$msgDate->isSameDay($lastDate)) {
+                                if ($msgDate->isToday()) {
+                                    $dateLabel = 'Hari ini';
+                                } elseif ($msgDate->isYesterday()) {
+                                    $dateLabel = 'Kemarin';
+                                } else {
+                                    $dateLabel = $msgDate->translatedFormat('d F Y');
+                                }
+                                $lastDate = $msgDate;
+                            }
+                            
+                            // Logic Deteksi Pengirim
+                            $type = strtolower($msg->sender_type ?? 'contact');
+                            
+                            // Cek flag bot dari DB atau sender type
+                            $isBot = ($type === 'bot') || ($msg->is_replied_by_bot ?? false);
+                            $isAgent = in_array($type, ['agent', 'admin']);
+                            
+                            // Pesan "Saya" (Kanan) adalah Bot atau Agent
+                            $isMe = $isBot || $isAgent;
+                            
+                            $time = \Carbon\Carbon::parse($msg->created_at)->format('H:i');
+                            
+                            // Simple Markdown Parser (Bold & Newline)
+                            $content = e($msg->content);
+                            $content = preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', $content); // Bold **text**
+                            $content = preg_replace('/\*(.*?)\*/', '<em>$1</em>', $content); // Italic *text*
+                            $content = nl2br($content); // Newline
+                        @endphp
                         
-                        <div class="flex flex-col gap-1 {{ $isMe ? 'items-end' : 'items-start' }} min-w-0">
-                            <!-- Name & Time with Read Receipt -->
-                            <div class="flex items-center gap-2 {{ $isMe ? 'flex-row-reverse' : '' }}">
-                                <span class="text-xs font-semibold {{ $isBot ? 'text-indigo-300' : ($isMe ? 'text-white' : 'text-slate-200') }}">
-                                    {{ $isBot ? 'ReplyAI Bot' : ($isMe ? 'Admin' : $contact['name']) }}
-                                </span>
-                                <span class="text-[10px] text-slate-500 flex items-center gap-0.5">
-                                    {{ $time }}
-                                    @if($isMe)
-                                        <!-- Read Receipt -->
-                                        <span class="read-receipt read ml-1" title="Terkirim">
-                                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-                                                <path d="M15 6L4 17" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
-                                            </svg>
-                                        </span>
-                                    @endif
-                                </span>
+                        <!-- Date Separator -->
+                        @if($dateLabel)
+                            <div class="flex items-center justify-center my-4">
+                                <div class="h-px bg-white/10 flex-1"></div>
+                                <span class="px-4 text-xs font-medium text-slate-500 bg-background-dark">{{ $dateLabel }}</span>
+                                <div class="h-px bg-white/10 flex-1"></div>
+                            </div>
+                        @endif
+
+                        <!-- Message Bubble -->
+                        <div class="flex gap-3 max-w-[85%] w-fit message-animate-in group/msg {{ $isMe ? 'ml-auto flex-row-reverse' : '' }}">
+                            <!-- Avatar -->
+                            <div class="size-8 rounded-full flex items-center justify-center shrink-0 
+                                 {{ $isMe ? ($isBot ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-slate-700 bg-center bg-cover') : 'bg-slate-700 bg-center bg-cover' }}"
+                                 style="{{ (!$isMe || !$isBot) ? 'background-image: url("'. ($isMe ? 'https://ui-avatars.com/api/?name=Admin&background=135bec&color=fff' : ($contact['avatar'] ?: 'https://ui-avatars.com/api/?name='.urlencode($contact['name']).'&background=374151&color=fff')).'");' : '' }}">
+                                 @if($isBot)
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">smart_toy</span>
+                                 @endif
                             </div>
                             
-                            <!-- Bubble Box with Hover Actions -->
-                            <div class="message-bubble relative">
-                                <div class="p-3 rounded-2xl text-sm shadow-sm break-words 
-                                    {{ $isMe 
-                                        ? 'bg-[#135bec] text-white rounded-tr-none' 
-                                        : 'bg-[#2a3446] text-slate-200 rounded-tl-none border border-white/5' 
-                                    }}">
-                                    {!! $content !!}
+                            <div class="flex flex-col gap-1 {{ $isMe ? 'items-end' : 'items-start' }} min-w-0">
+                                <!-- Name & Time with Read Receipt -->
+                                <div class="flex items-center gap-2 {{ $isMe ? 'flex-row-reverse' : '' }}">
+                                    <span class="text-xs font-semibold {{ $isBot ? 'text-indigo-300' : ($isMe ? 'text-white' : 'text-slate-200') }}">
+                                        {{ $isBot ? 'ReplyAI Bot' : ($isMe ? 'Admin' : $contact['name']) }}
+                                    </span>
+                                    <span class="text-[10px] text-slate-500 flex items-center gap-0.5">
+                                        {{ $time }}
+                                        @if($isMe)
+                                            <!-- Read Receipt -->
+                                            <span class="read-receipt read ml-1" title="Terkirim">
+                                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M15 6L4 17" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+                                                </svg>
+                                            </span>
+                                        @endif
+                                    </span>
                                 </div>
                                 
-                                <!-- Hover Actions (Reactions) -->
-                                <div class="message-actions absolute {{ $isMe ? 'left-0 -translate-x-full pl-1' : 'right-0 translate-x-full pr-1' }} top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-                                    <button type="button" class="p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors" title="Suka">
-                                        <span class="material-symbols-outlined" style="font-size: 14px;">thumb_up</span>
-                                    </button>
-                                    <button type="button" class="p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors" title="Reply">
-                                        <span class="material-symbols-outlined" style="font-size: 14px;">reply</span>
-                                    </button>
-                                    <button type="button" class="p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors" title="More">
-                                        <span class="material-symbols-outlined" style="font-size: 14px;">more_vert</span>
-                                    </button>
+                                <!-- Bubble Box with Hover Actions -->
+                                <div class="message-bubble relative">
+                                    <div class="p-3 rounded-2xl text-sm shadow-sm break-words 
+                                        {{ $isMe 
+                                            ? 'bg-[#135bec] text-white rounded-tr-none' 
+                                            : 'bg-[#2a3446] text-slate-200 rounded-tl-none border border-white/5' 
+                                        }}">
+                                        {!! $content !!}
+                                    </div>
+                                    
+                                    <!-- Hover Actions (Reactions) -->
+                                    <div class="message-actions absolute {{ $isMe ? 'left-0 -translate-x-full pl-1' : 'right-0 translate-x-full pr-1' }} top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                                        <button type="button" class="p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors" title="Suka">
+                                            <span class="material-symbols-outlined" style="font-size: 14px;">thumb_up</span>
+                                        </button>
+                                        <button type="button" class="p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors" title="Reply">
+                                            <span class="material-symbols-outlined" style="font-size: 14px;">reply</span>
+                                        </button>
+                                        <button type="button" class="p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors" title="More">
+                                            <span class="material-symbols-outlined" style="font-size: 14px;">more_vert</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                @empty
-                    <div class="flex justify-center mt-10">
-                         <span class="text-xs font-medium text-slate-500 bg-[#1e2634] px-4 py-2 rounded-full border border-white/5">Belum ada history pesan.</span>
-                    </div>
-                @endforelse
+                    @empty
+                        <div class="flex justify-center mt-10">
+                             <span class="text-xs font-medium text-slate-500 bg-[#1e2634] px-4 py-2 rounded-full border border-white/5">Belum ada history pesan.</span>
+                        </div>
+                    @endforelse
+                @endif
                 
                 <!-- Typing Indicator (hidden by default, shown via JS) -->
                 <div id="typing-indicator" class="hidden flex gap-3 max-w-[85%] w-fit">
@@ -498,7 +539,8 @@
             </div>
 
             <!-- Input Area -->
-            <div class="p-4 border-t border-white/5 bg-[#111722] z-20 shrink-0">
+            @if($hasInstagramAccount ?? false)
+            <div class="p-4 border-t border-white/5 bg-[#111722] z-20 shrink-0 relative">
                 <form action="{{ route('inbox.send') }}" method="POST" class="relative flex items-end gap-2 bg-[#1e2634] p-2 rounded-xl border border-white/5 focus-within:ring-1 focus-within:ring-primary/50 transition-all">
                     @csrf
                     <input type="hidden" name="conversation_id" value="{{ $selectedId }}">
@@ -546,15 +588,34 @@
                      </div>
                 @endif
             </div>
+            @endif
 
         @else
             <!-- Empty State -->
             <div class="flex flex-col items-center justify-center h-full text-center p-8">
-                <div class="size-20 bg-[#1e2634] rounded-full flex items-center justify-center mb-4">
-                    <span class="material-symbols-outlined text-slate-500 text-4xl">chat</span>
-                </div>
-                <h3 class="text-white font-bold text-lg">Pilih Percakapan</h3>
-                <p class="text-slate-400 text-sm mt-2 max-w-xs">Pilih salah satu kontak dari daftar di sebelah kiri untuk melihat riwayat pesan dan membalas chat.</p>
+                
+                @if(!($hasInstagramAccount ?? false))
+                    <!-- Connect Call to Action -->
+                    <div class="max-w-md w-full bg-[#1e2634] rounded-2xl border border-white/5 p-8 shadow-2xl">
+                         <div class="size-20 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-500/20">
+                            <span class="material-symbols-outlined text-white text-4xl">add_link</span>
+                        </div>
+                        <h3 class="text-white font-bold text-xl mb-2">Hubungkan Instagram</h3>
+                        <p class="text-slate-400 text-sm mb-6">
+                            Akun Instagram Anda saat ini terputus. Hubungkan kembali agar Anda dapat membalas pesan pelanggan langsung dari sini.
+                        </p>
+                        <a href="{{ route('instagram.connect') }}" class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 rounded-xl font-semibold text-white transition shadow-lg shadow-orange-500/20 transform hover:scale-105 active:scale-95">
+                            Hubungkan Sekarang
+                        </a>
+                    </div>
+                @else
+                    <!-- Select Conversation State -->
+                    <div class="size-20 bg-[#1e2634] rounded-full flex items-center justify-center mb-4">
+                        <span class="material-symbols-outlined text-slate-500 text-4xl">chat</span>
+                    </div>
+                    <h3 class="text-white font-bold text-lg">Pilih Percakapan</h3>
+                    <p class="text-slate-400 text-sm mt-2 max-w-xs">Pilih salah satu kontak dari daftar di sebelah kiri untuk melihat riwayat pesan dan membalas chat.</p>
+                @endif
             </div>
         @endif
     </div>
@@ -606,6 +667,45 @@
     </aside>
     @endif
     
+@else
+    <!-- Full Screen Disconnected State (Inside Main) -->
+    <div class="w-full h-full flex flex-col items-center justify-center bg-[#101622] text-center p-8 relative overflow-hidden">
+        <!-- Background Effects -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute top-[20%] left-[20%] w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+            <div class="absolute bottom-[20%] right-[20%] w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+        </div>
+
+        <div class="relative z-10 max-w-lg w-full bg-[#1e2634]/50 backdrop-blur-xl rounded-3xl border border-white/5 p-12 shadow-2xl flex flex-col items-center">
+            
+            <div class="w-24 h-24 mb-8 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center shadow-lg shadow-pink-500/30 ring-4 ring-white/5">
+                <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+            </div>
+            
+            <h1 class="text-3xl font-bold text-white mb-4">Hubungkan Instagram</h1>
+            <p class="text-slate-400 text-base mb-10 max-w-sm mx-auto leading-relaxed">
+                Hubungkan akun Instagram Business Anda untuk menerima dan membalas DM pelanggan secara otomatis dengan AI.
+            </p>
+            
+            <a href="{{ route('instagram.connect') }}" class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-pink-500/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+                <span class="material-symbols-outlined">add_link</span>
+                <span>Hubungkan Instagram</span>
+            </a>
+            
+            <div class="mt-8 flex items-center justify-center gap-6 text-slate-500 text-xs font-medium">
+                <span class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm">lock</span> Aman & Terenkripsi
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm">verified</span> Mitra Resmi Meta
+                </span>
+            </div>
+            
+        </div>
+    </div>
+@endif
 </main>
 
 <script>

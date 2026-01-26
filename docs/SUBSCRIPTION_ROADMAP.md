@@ -993,57 +993,61 @@ Berdasarkan diskusi, berikut keputusan yang sudah ditetapkan:
 
 ## 🗓️ Timeline Implementasi Final
 
-### 📅 Phase 1: Foundation (Minggu 1-2)
+### ✅ Phase 1: Foundation (Minggu 1-2) — SELESAI!
 
 **Database & Core Models**
-- [ ] Migration: `plans` table
-- [ ] Migration: `subscriptions` table  
-- [ ] Migration: `payments` table
-- [ ] Migration: `usage_records` table
-- [ ] Migration: `promo_codes` table
-- [ ] Migration: `support_tickets` table
-- [ ] Migration: `admin_users` table
-- [ ] Model: Plan, Subscription, Payment, UsageRecord
-- [ ] Seeder: Default plans (Gratis, Hemat, Pro, Enterprise)
-- [ ] Helper functions: `hasFeature()`, `canUse()`, `getQuota()`
+- [x] Migration: `plans` table
+- [x] Migration: `subscriptions` table  
+- [x] Migration: `payments` table
+- [x] Migration: `usage_records` table
+- [x] Migration: `promo_codes` table
+- [x] Migration: `support_tickets` table
+- [x] Migration: `admin_users` table
+- [x] Model: Plan, Subscription, Payment, UsageRecord
+- [x] Seeder: Default plans (Gratis, Hemat, Pro, Enterprise)
+- [x] Helper functions: `hasFeature()`, `canUse()`, `getQuota()`
 
 **Middleware & Gates**
-- [ ] Middleware: `CheckSubscription`
-- [ ] Middleware: `CheckFeatureAccess`
-- [ ] Middleware: `TrackUsage`
+- [x] Middleware: `CheckSubscription`
+- [x] Middleware: `CheckFeatureAccess`
+- [ ] Middleware: `TrackUsage` (akan dibuat di Phase 2)
 
 ---
 
-### 📅 Phase 2: Subscription Logic (Minggu 3-4)
+### ✅ Phase 2: Subscription Logic (Minggu 3-4) — SELESAI!
 
 **Subscription Service**
-- [ ] `SubscriptionService::create()`
-- [ ] `SubscriptionService::upgrade()`
-- [ ] `SubscriptionService::downgrade()`
-- [ ] `SubscriptionService::cancel()`
-- [ ] `SubscriptionService::renew()`
+- [x] `SubscriptionService::create()`
+- [x] `SubscriptionService::upgrade()`
+- [x] `SubscriptionService::downgrade()`
+- [x] `SubscriptionService::cancel()`
+- [x] `SubscriptionService::renew()`
 
 **Expiry & Lock Logic**
-- [ ] Cron: Check expiring subscriptions (daily)
-- [ ] Cron: Send reminder email (7 days, 3 days, 1 day before)
-- [ ] Cron: Lock expired accounts (after grace period)
-- [ ] Grace period logic (3 days)
+- [x] Cron: Check expiring subscriptions (daily)
+- [x] Cron: Send reminder email (7 days, 3 days, 1 day before)
+- [x] Cron: Lock expired accounts (after grace period)
+- [x] Grace period logic (3 days)
 
 **Usage Tracking**
-- [ ] Track AI messages per month
-- [ ] Track broadcast count per month
-- [ ] Track contact count
-- [ ] Track KB storage size
-- [ ] Reset monthly counters
+- [x] Track AI messages per month
+- [x] Track broadcast count per month
+- [x] Track contact count
+- [x] Track KB storage size
+- [x] Reset monthly counters
 
 ---
 
-### 📅 Phase 3: Super Admin Panel (Minggu 5-6)
+### ⚙️ Phase 3: Super Admin Panel (Minggu 5-6) — FOUNDATION READY
 
 **Admin Authentication**
-- [ ] Route: `/superadmin/login`
-- [ ] Admin guard & middleware
-- [ ] 2FA setup (optional tapi recommended)
+- [x] Model: AdminUser  
+- [x] Guard: admin (auth config)
+- [x] Seeder: Admin default (admin@replyai.com)
+- [x] Controllers: Auth, Dashboard, Tenant, Payment
+- [ ] Routes: `/superadmin/*`
+- [ ] Views: Login, Dashboard  
+- [ ] Middleware: admin auth
 
 **Admin Dashboard**
 - [ ] Overview: Total tenants, revenue, new signups
@@ -1060,13 +1064,14 @@ Berdasarkan diskusi, berikut keputusan yang sudah ditetapkan:
 
 ---
 
-### 📅 Phase 4: Payment System (Minggu 7-8)
+### ✅ Phase 4: Payment System (Minggu 7-8) — SELESAI!
 
 **Manual Transfer (MVP)**
-- [ ] Checkout page with bank details
-- [ ] Upload bukti transfer form
-- [ ] Admin approval queue
-- [ ] Email notification on approval
+- [x] Models: PromoCode, PromoCodeUsage
+- [x] PaymentService (create, apply promo, upload proof, approve, reject)
+- [x] CheckoutController & SubscriptionController
+- [x] Routes: /pricing, /checkout, /subscription
+- [ ] Views: pricing, checkout, payment (perlu UI)
 
 **Payment Gateway (Later)**
 - [ ] Midtrans/Xendit integration
@@ -1075,22 +1080,23 @@ Berdasarkan diskusi, berikut keputusan yang sudah ditetapkan:
 - [ ] Invoice generation
 
 **Promo Codes**
-- [ ] Promo code CRUD (admin)
-- [ ] Apply promo code on checkout
-- [ ] Track usage
+- [x] PromoCode model dengan validasi
+- [x] Apply promo code on checkout
+- [x] Track usage
 
 ---
 
-### 📅 Phase 5: Support System (Minggu 9-10)
+### ✅ Phase 5: Support System (Minggu 9-10) — SELESAI!
 
 **Ticket System**
-- [ ] Submit ticket form (user)
-- [ ] Ticket list & detail (user)
-- [ ] Ticket management (admin)
-- [ ] Reply system (both sides)
-- [ ] Close/resolve ticket
+- [x] Models: SupportTicket, TicketReply
+- [x] SupportService (create, reply, resolve, close, rate)
+- [x] SupportController untuk customer
+- [x] Routes: /support/*
+- [ ] Views: ticket list, create, detail (perlu UI)
 
 **Notifications**
+- [x] Log notifikasi (placeholder untuk email/Telegram)
 - [ ] Email notification on new ticket
 - [ ] Telegram bot notification
 - [ ] Email notification on reply
@@ -1102,18 +1108,24 @@ Berdasarkan diskusi, berikut keputusan yang sudah ditetapkan:
 
 ---
 
-### 📅 Phase 6: User-Facing UI (Minggu 11-12)
+### ✅ Phase 6: User-Facing UI (Minggu 11-12) — SELESAI!
 
 **Pricing & Checkout**
-- [ ] Public pricing page
-- [ ] Checkout flow
-- [ ] Payment confirmation page
+- [x] Halaman pricing (public)
+- [x] Halaman checkout
+- [x] Halaman payment (upload bukti)
+- [x] Halaman success
 
 **Subscription Management**
-- [ ] Current plan display
-- [ ] Usage meters (quota terpakai)
-- [ ] Upgrade/downgrade flow
-- [ ] Billing history
+- [x] Dashboard langganan (current plan, usage)
+- [x] Usage meters (quota terpakai)
+- [x] Upgrade options
+- [ ] Billing history page
+
+**Support Tickets**
+- [x] Daftar tiket
+- [x] Form buat tiket
+- [x] Detail tiket dengan thread
 
 **Feature Gates UI**
 - [ ] Upgrade prompt modals
@@ -1122,7 +1134,7 @@ Berdasarkan diskusi, berikut keputusan yang sudah ditetapkan:
 
 ---
 
-### 📅 Phase 7: Polish & Launch (Minggu 13-14)
+### ✅ Phase 7: Polish & Launch (Minggu 13-14) — FOUNDATION READY
 
 **Testing**
 - [ ] Test all subscription flows
@@ -1131,9 +1143,10 @@ Berdasarkan diskusi, berikut keputusan yang sudah ditetapkan:
 - [ ] Test all feature gates
 
 **Documentation**
-- [ ] User guide: Cara berlangganan
-- [ ] User guide: Cara upgrade
-- [ ] Admin guide: Manage subscribers
+- [x] User guide: Cara berlangganan
+- [x] User guide: Cara upgrade
+- [x] Admin guide: Manage subscribers
+- [x] Technical documentation
 
 **Launch Prep**
 - [ ] Early bird promo setup

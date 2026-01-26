@@ -14,6 +14,17 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+        ]);
+        
+        // Daftarkan middleware alias untuk sistem langganan
+        $middleware->alias([
+            'subscription' => \App\Http\Middleware\CheckSubscription::class,
+            'feature' => \App\Http\Middleware\CheckFeatureAccess::class,
+            'track' => \App\Http\Middleware\TrackUsage::class,
+            'admin' => \App\Http\Middleware\AdminAuth::class,
+            'has_subscription' => \App\Http\Middleware\EnsureHasActiveSubscription::class,
+            'onboarding' => \App\Http\Middleware\CheckOnboardingComplete::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

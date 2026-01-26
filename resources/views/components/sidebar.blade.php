@@ -91,14 +91,19 @@
         <!-- Mobile User Profile -->
         <div class="border-t border-[#232f48] p-3">
             <div class="p-3 rounded-lg bg-[#232f48]/50 flex items-center gap-3">
-                <div class="size-8 rounded-full bg-gradient-to-tr from-purple-500 to-primary flex items-center justify-center text-xs font-bold text-white">DM</div>
-                <div class="flex flex-col overflow-hidden flex-1">
-                    <p class="text-white text-sm font-medium truncate">Admin</p>
-                    <p class="text-[#92a4c9] text-xs truncate">admin@rspkusolo.com</p>
+                <div class="size-8 rounded-full bg-gradient-to-tr from-purple-500 to-primary flex items-center justify-center text-xs font-bold text-white">
+                    {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
                 </div>
-                <button class="text-[#92a4c9] hover:text-white">
-                    <span class="material-symbols-outlined text-[20px]">logout</span>
-                </button>
+                <div class="flex flex-col overflow-hidden flex-1">
+                    <p class="text-white text-sm font-medium truncate">{{ Auth::user()->name ?? 'User' }}</p>
+                    <p class="text-[#92a4c9] text-xs truncate">{{ Auth::user()->email ?? '' }}</p>
+                </div>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="text-[#92a4c9] hover:text-red-400 transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">logout</span>
+                    </button>
+                </form>
             </div>
         </div>
     </aside>
@@ -123,17 +128,20 @@
             @include('components.sidebar-nav-links')
         </nav>
         
-        <!-- User Profile -->
+        <!-- User Profile with Logout -->
         <div class="border-t border-gray-800 p-3">
-            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors">
-                <div class="size-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
-                    {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-white truncate">{{ Auth::user()->name ?? 'Admin' }}</p>
-                </div>
-                <span class="material-symbols-outlined text-gray-500 text-lg">logout</span>
-            </div>
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors group">
+                    <div class="size-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
+                        {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
+                    </div>
+                    <div class="flex-1 min-w-0 text-left">
+                        <p class="text-sm font-medium text-white truncate">{{ Auth::user()->name ?? 'Admin' }}</p>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-500 group-hover:text-red-400 text-lg transition-colors">logout</span>
+                </button>
+            </form>
         </div>
     </aside>
 </div>

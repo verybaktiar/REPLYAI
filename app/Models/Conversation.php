@@ -4,12 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\BelongsToUser;
 
 class Conversation extends Model
 {
+    use BelongsToUser;
     protected $fillable = [
         'chatwoot_id',
-        'instagram_user_id',      // BARU - untuk Meta API
+        'user_id',                // User owner
+        'instagram_account_id',   // Link ke akun IG bisnis yang spesifik
+        'instagram_user_id',      // BARU - untuk Meta API (contact ID)
         'ig_username',
         'display_name',
         'avatar',
@@ -35,9 +39,18 @@ class Conversation extends Model
     {
         return $this->hasMany(Message::class);
     }
+    
     public function logs()
     {
         return $this->hasMany(AutoReplyLog::class);
+    }
+    
+    /**
+     * Get the Instagram account this conversation belongs to
+     */
+    public function instagramAccount()
+    {
+        return $this->belongsTo(InstagramAccount::class);
     }
 
 }

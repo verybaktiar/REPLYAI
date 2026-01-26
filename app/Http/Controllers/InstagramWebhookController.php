@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\AutoReplyLog;
+use App\Models\InstagramAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -87,15 +88,39 @@ class InstagramWebhookController extends Controller
 
     protected function processMessage(string $senderId, string $messageText, ?string $messageId, string $igUserId)
     {
-        $userInfo = $this->getInstagramUserInfo($senderId);
+        // ✅ Multi-tenancy: Find which user owns this Instagram account
+        $igAccount = InstagramAccount::findByInstagramId($igUserId);
+        
+        // Log warning only if account not found (important for troubleshooting)
+        if (!$igAccount) {
+            Log::warning('Instagram webhook: Account not found for recipient', [
+                'instagram_user_id' => $igUserId,
+            ]);
+        }
+        
+        $userId = $igAccount?->user_id;
+        $igAccountId = $igAccount?->id;
+        $accessToken = $igAccount?->access_token ?? config('services.instagram.access_token');
+        
+        if (!$accessToken) {
+            Log::warning('Instagram: No access token found for recipient', ['igUserId' => $igUserId]);
+            return;
+        }
+
+        $userInfo = $this->getInstagramUserInfo($senderId, $accessToken);
 
         $username = $userInfo['username'] ?? null;
         $name     = $userInfo['name'] ?? null;
         $avatar   = $userInfo['profile_pic'] ?? null;
 
+        // ✅ Include user_id AND instagram_account_id for proper multi-tenancy
         $conversation = Conversation::firstOrCreate(
-            ['instagram_user_id' => $senderId],
             [
+                'instagram_user_id' => $senderId, 
+                'instagram_account_id' => $igAccountId  // ✅ Link ke akun IG spesifik
+            ],
+            [
+                'user_id' => $userId,
                 'chatwoot_id' => null,
                 'ig_username' => $username,
                 'display_name' => $name ?? $username ?? 'Instagram User',
@@ -113,7 +138,13 @@ class InstagramWebhookController extends Controller
             'avatar' => $avatar ?? $conversation->avatar,
             'last_message' => $messageText,
             'last_activity_at' => now()->toDateTimeString(),
+            // ✅ Always link to user and IG account if we found one
+            'user_id' => $userId ?? $conversation->user_id,
+            'instagram_account_id' => $igAccountId ?? $conversation->instagram_account_id,
         ]);
+        
+        // Store access token for later use in this request
+        $this->currentAccessToken = $accessToken;
 
                 // ✅ Welcome 1x per conversation
         if (!$conversation->has_sent_welcome) {
@@ -213,9 +244,13 @@ class InstagramWebhookController extends Controller
         return $text;
     }
 
-    protected function sendInstagramMessage(string $toUserId, string $message, string $igUserId): bool
+    // Property to store current request's access token
+    protected ?string $currentAccessToken = null;
+
+    protected function sendInstagramMessage(string $toUserId, string $message, string $igUserId, ?string $accessToken = null): bool
     {
-        $accessToken = config('services.instagram.access_token');
+        // ✅ Use provided token, stored token, or fallback to global config
+        $accessToken = $accessToken ?? $this->currentAccessToken ?? config('services.instagram.access_token');
         
         // Bersihkan markdown sebelum kirim ke Instagram
         $message = $this->stripMarkdown($message);
@@ -246,9 +281,10 @@ class InstagramWebhookController extends Controller
         }
     }
 
-    protected function getInstagramUserInfo(string $userId): array
+    protected function getInstagramUserInfo(string $userId, ?string $accessToken = null): array
     {
-        $accessToken = config('services.instagram.access_token');
+        // ✅ Use provided token or fallback to global config
+        $accessToken = $accessToken ?? $this->currentAccessToken ?? config('services.instagram.access_token');
 
         try {
             $response = Http::acceptJson()->get("https://graph.instagram.com/v21.0/{$userId}", [

@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\BelongsToUser;
+use Illuminate\Support\Facades\Auth;
 
 class WaSession extends Model
 {
+    use BelongsToUser;
+    
     protected $fillable = [
         'phone_number',
         'session_id',
@@ -19,6 +23,7 @@ class WaSession extends Model
         'idle_warning_minutes',
         'session_idle_timeout_minutes',
         'session_followup_timeout_minutes',
+        'user_id',
     ];
 
     protected $casts = [
@@ -43,13 +48,25 @@ class WaSession extends Model
     }
 
     /**
-     * Get or create default session
+     * Get or create default session for current user
+     * Fixed for multi-tenant: each user has their own default session
      */
-    public static function getDefault(): self
+    public static function getDefault(): ?self
     {
-        return self::firstOrCreate(
-            ['session_id' => 'default'],
-            ['status' => 'disconnected']
-        );
+        // Ambil session pertama user, atau null jika belum ada
+        return self::first();
+    }
+    
+    /**
+     * Create new session for user
+     */
+    public static function createForUser(array $data = []): self
+    {
+        return self::create(array_merge([
+            'session_id' => 'user_' . Auth::id() . '_' . time(),
+            'status' => 'disconnected',
+            'user_id' => Auth::id(),
+        ], $data));
     }
 }
+

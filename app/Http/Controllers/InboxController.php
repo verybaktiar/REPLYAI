@@ -5,24 +5,51 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\InstagramAccount;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class InboxController extends Controller
 {
-    // tampilkan inbox dari DB lokal
+    // tampilkan inbox dari DB lokal - HANYA milik akun IG yang aktif
     public function index(Request $request)
     {
-        $conversations = Conversation::orderByDesc('last_activity_at')->get();
+        $user = Auth::user();
         
-        // Ambil ID dari query atau pakai conversation terbaru
-        $selectedId = $request->query('conversation_id');
-        if (!$selectedId && $conversations->isNotEmpty()) {
-            $selectedId = $conversations->first()->id;
+        // Guard against unauthenticated access
+        if (!$user) {
+            return redirect()->route('login');
         }
         
-        $selectedConversation = $selectedId ? Conversation::find($selectedId) : null;
+        // ✅ Get the currently active Instagram account for this user
+        $activeIgAccount = InstagramAccount::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->first();
+        
+        // Check if user has connected Instagram
+        $hasInstagramAccount = $activeIgAccount !== null;
+        
+        // ✅ Multi-tenancy: Hanya tampilkan conversation milik akun IG yang aktif
+        $conversations = collect();
+        if ($activeIgAccount) {
+            $conversations = Conversation::where('instagram_account_id', $activeIgAccount->id)
+                ->orderByDesc('last_activity_at')
+                ->get();
+        }
+        
+        // ✅ Hanya pilih conversation jika ada di query parameter
+        // Tidak auto-select conversation pertama
+        $selectedId = $request->query('conversation_id');
+        
+        // Pastikan selected conversation milik akun IG ini
+        $selectedConversation = null;
+        if ($selectedId && $activeIgAccount) {
+            $selectedConversation = Conversation::where('id', $selectedId)
+                ->where('instagram_account_id', $activeIgAccount->id)
+                ->first();
+        }
         
         return view('pages.inbox.index', [
             'title' => 'Inbox Instagram',
@@ -34,6 +61,8 @@ class InboxController extends Controller
                 'avatar' => $selectedConversation->avatar,
                 'ig_username' => $selectedConversation->ig_username,
             ] : null,
+            'hasInstagramAccount' => $hasInstagramAccount,
+            'instagramAccount' => $activeIgAccount,
         ]);
     }
 
@@ -92,31 +121,45 @@ class InboxController extends Controller
 
     /**
      * Kirim pesan ke Instagram via Meta Graph API
+     * Menggunakan token dari database berdasarkan user yang login
      * @return array{success: bool, error_message?: string}
      */
     protected function sendInstagramMessage(string $recipientId, string $message): array
     {
-        $accessToken = config('services.instagram.access_token');
-        $igUserId = config('services.instagram.instagram_user_id'); // Instagram Business Account ID
+        // ✅ Ambil token dari database berdasarkan user yang login
+        $user = Auth::user();
+        $igAccount = InstagramAccount::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$igAccount) {
+            Log::error('❌ User tidak memiliki akun Instagram yang terhubung', ['user_id' => $user->id]);
+            return [
+                'success' => false, 
+                'error_message' => 'Akun Instagram belum terhubung. Silakan hubungkan di Pengaturan Instagram.'
+            ];
+        }
+
+        // Cek apakah token expired
+        if ($igAccount->isTokenExpired()) {
+            Log::error('❌ Token Instagram sudah expired', ['user_id' => $user->id]);
+            return [
+                'success' => false, 
+                'error_message' => '🔑 Token Instagram sudah kadaluarsa. Silakan hubungkan ulang di Pengaturan Instagram.'
+            ];
+        }
+
+        $accessToken = $igAccount->access_token;
+        $igUserId = $igAccount->instagram_user_id;
 
         // 🔍 Debug: Log konfigurasi
         Log::info('📤 Attempting to send Instagram message', [
             'recipient_id' => $recipientId,
             'ig_user_id' => $igUserId,
+            'user_id' => $user->id,
             'has_access_token' => !empty($accessToken),
             'message_length' => strlen($message),
         ]);
-
-        // ❌ Validasi konfigurasi
-        if (empty($igUserId)) {
-            Log::error('❌ INSTAGRAM_USER_ID tidak disetel di .env');
-            return ['success' => false, 'error_message' => 'Konfigurasi Instagram belum lengkap (User ID).'];
-        }
-        
-        if (empty($accessToken)) {
-            Log::error('❌ INSTAGRAM_ACCESS_TOKEN tidak disetel di .env');
-            return ['success' => false, 'error_message' => 'Konfigurasi Instagram belum lengkap (Access Token).'];
-        }
 
         try {
             $response = Http::acceptJson()->asJson()->post(
@@ -132,7 +175,7 @@ class InboxController extends Controller
                 $errorData = $response->json();
                 $errorSubcode = $errorData['error']['error_subcode'] ?? null;
                 $metaMessage = $errorData['error']['message'] ?? 'Unknown error';
-                
+
                 Log::error('❌ Failed to send Instagram message', [
                     'status' => $response->status(),
                     'error' => $errorData,

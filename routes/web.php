@@ -5,6 +5,7 @@ use App\Http\Controllers\InboxController;
 use App\Http\Controllers\AutoReplyRuleController;
 use App\Http\Controllers\AutoReplyLogController;
 use App\Http\Controllers\KbArticleController;
+use App\Http\Controllers\OnboardingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -12,8 +13,125 @@ use App\Http\Controllers\KbArticleController;
 |--------------------------------------------------------------------------
 */
 
-// Dashboard (ReplyAI)
-Route::get('/', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+// Landing Page (untuk visitor/guest)
+Route::get('/', function () {
+    // Jika sudah login, redirect ke dashboard
+    if (auth()->check()) {
+        return redirect('/dashboard');
+    }
+    // Jika belum login, redirect ke landing page
+    return redirect('/landingpage/index.html');
+})->name('home');
+
+// Dashboard (untuk user yang sudah login DAN punya active subscription)
+Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified', 'has_subscription'])
+    ->name('dashboard');
+
+// ============================
+// ONBOARDING WIZARD
+// ============================
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/onboarding', [OnboardingController::class, 'index'])->name('onboarding');
+    Route::post('/onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');
+    Route::get('/onboarding/skip', [OnboardingController::class, 'skip'])->name('onboarding.skip');
+});
+
+// ============================
+// SESSION MANAGEMENT
+// ============================
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/account/sessions', [\App\Http\Controllers\SessionController::class, 'index'])->name('sessions.index');
+    Route::delete('/account/sessions/{session}', [\App\Http\Controllers\SessionController::class, 'destroy'])->name('sessions.destroy');
+    Route::delete('/account/sessions', [\App\Http\Controllers\SessionController::class, 'destroyAll'])->name('sessions.destroy-all');
+});
+
+// Pricing Page dengan Plan Selection
+Route::get('/pricing', function (Illuminate\Http\Request $request) {
+    $planSlug = $request->get('plan');
+    
+    // Jika user sudah login
+    if (auth()->check()) {
+        // Jika ada plan dipilih, redirect ke checkout
+        if ($planSlug) {
+            return redirect()->route('checkout.index', ['plan' => $planSlug]);
+        }
+        
+        // Cek apakah user punya pending invoice
+        $pendingPayment = \App\Models\Payment::where('user_id', auth()->id())
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        // Jika tidak ada plan, tampilkan pricing page
+        $plans = \App\Models\Plan::where('is_active', true)->orderBy('sort_order')->get();
+        return view('pages.pricing.index', compact('plans', 'pendingPayment'));
+    }
+    
+    // Jika belum login dan ada plan dipilih, save ke session lalu redirect ke register
+    if ($planSlug) {
+        session(['selected_plan' => $planSlug]);
+        return redirect()->route('register')->with('plan', $planSlug);
+    }
+    
+    // Jika belum login dan tidak ada plan, tampilkan pricing page
+    $plans = \App\Models\Plan::where('is_active', true)->orderBy('sort_order')->get();
+    $pendingPayment = null;
+    return view('pages.pricing.index', compact('plans', 'pendingPayment'));
+})->name('pricing');
+
+// Upgrade Required Page (ketika user tidak punya akses ke fitur)
+Route::get('/upgrade', function (Illuminate\Http\Request $request) {
+    $feature = $request->get('feature');
+    
+    // Mapping feature key ke nama yang user-friendly
+    $featureNames = [
+        'broadcasts' => 'Broadcast Messages',
+        'broadcast' => 'Broadcast Messages',
+        'sequences' => 'Drip Sequences',
+        'web_widgets' => 'Web Chat Widget',
+        'api_access' => 'Akses API',
+        'analytics_export' => 'Export Laporan',
+        'remove_branding' => 'Hapus Branding',
+    ];
+    
+    $featureName = $featureNames[$feature] ?? ucwords(str_replace('_', ' ', $feature ?? 'ini'));
+    
+    return view('pages.upgrade-required', compact('feature', 'featureName'));
+})->middleware(['auth'])->name('upgrade');
+
+// Subscription Pending Page
+Route::get('/subscription/pending', function () {
+    return view('subscription.pending');
+})->middleware(['auth'])->name('subscription.pending');
+
+// My Account Page
+Route::get('/account', function () {
+    return view('account.index');
+})->middleware(['auth', 'verified'])->name('account.index');
+
+// ============================
+// CHECKOUT & PAYMENT
+// ============================
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Checkout page untuk plan tertentu
+    Route::get('/checkout/{plan:slug}', [App\Http\Controllers\CheckoutController::class, 'checkout'])->name('checkout.index');
+    Route::post('/checkout/{plan:slug}', [App\Http\Controllers\CheckoutController::class, 'processCheckout'])->name('checkout.process');
+    
+    // Payment page (invoice)
+    Route::get('/payment/{invoiceNumber}', [App\Http\Controllers\CheckoutController::class, 'payment'])->name('checkout.payment');
+    Route::post('/payment/{payment}/apply-promo', [App\Http\Controllers\CheckoutController::class, 'applyPromo'])->name('checkout.apply-promo');
+    Route::post('/payment/{payment}/upload-proof', [App\Http\Controllers\CheckoutController::class, 'uploadProof'])->name('checkout.upload-proof');
+    
+    // Midtrans Payment
+    Route::get('/payment/{invoiceNumber}/midtrans', [App\Http\Controllers\CheckoutController::class, 'payWithMidtrans'])->name('checkout.midtrans.pay');
+    Route::get('/checkout/midtrans/finish', [App\Http\Controllers\CheckoutController::class, 'midtransFinish'])->name('checkout.midtrans.finish');
+    
+    // Success & History
+    Route::get('/checkout/success/{invoiceNumber}', [App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
+    Route::get('/payment/history', [App\Http\Controllers\CheckoutController::class, 'history'])->name('checkout.history');
+});
+
 // ============================
 // SETTINGS
 // ============================
@@ -34,6 +152,18 @@ Route::delete('/settings/business/{id}', [App\Http\Controllers\BusinessProfileCo
 Route::post('/settings/business/{id}/default', [App\Http\Controllers\BusinessProfileController::class, 'setDefault'])->name('settings.business.setDefault');
 Route::get('/api/business/template', [App\Http\Controllers\BusinessProfileController::class, 'getTemplate'])->name('api.business.template');
 
+// ============================
+// INSTAGRAM OAUTH
+// ============================
+Route::middleware(['auth', 'verified'])->prefix('instagram')->group(function () {
+    Route::get('/settings', [App\Http\Controllers\InstagramOAuthController::class, 'settings'])->name('instagram.settings');
+    Route::get('/connect', [App\Http\Controllers\InstagramOAuthController::class, 'connect'])->name('instagram.connect');
+    Route::post('/disconnect', [App\Http\Controllers\InstagramOAuthController::class, 'disconnect'])->name('instagram.disconnect');
+    Route::post('/refresh-token', [App\Http\Controllers\InstagramOAuthController::class, 'refreshToken'])->name('instagram.refresh-token');
+});
+// Instagram OAuth Callback (no auth required for callback)
+Route::get('/instagram/callback', [App\Http\Controllers\InstagramOAuthController::class, 'callback'])->name('instagram.callback');
+
 // Test route
 Route::get('/settings/business-test', function() {
     $profile = \App\Models\BusinessProfile::first();
@@ -51,6 +181,28 @@ Route::get('/settings/business-test', function() {
 // ============================
 Route::get('/analytics', [App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics.index');
 Route::get('/analytics/export', [App\Http\Controllers\AnalyticsController::class, 'export'])->name('analytics.export');
+Route::get('/csat', function() {
+    return view('pages.csat.index');
+})->middleware(['auth', 'verified'])->name('csat.index');
+
+Route::get('/csat/settings', function() {
+    return view('pages.csat.settings');
+})->middleware(['auth', 'verified'])->name('csat.settings');
+
+Route::post('/csat/settings', function(Illuminate\Http\Request $request) {
+    $user = auth()->user();
+    
+    $user->update([
+        'csat_enabled' => $request->boolean('csat_enabled'),
+        'csat_instagram_enabled' => $request->boolean('csat_instagram_enabled'),
+        'csat_whatsapp_enabled' => $request->boolean('csat_whatsapp_enabled'),
+        'csat_delay_minutes' => (int) $request->csat_delay_minutes,
+        'csat_message' => $request->csat_message,
+    ]);
+    
+    return back()->with('success', 'Pengaturan CSAT berhasil disimpan!');
+})->middleware(['auth', 'verified'])->name('csat.settings.update');
+
 Route::get('/contacts', [App\Http\Controllers\ContactController::class, 'index'])->name('contacts.index');
 Route::get('/contacts/export', [App\Http\Controllers\ContactController::class, 'export'])->name('contacts.export');
 
@@ -157,10 +309,12 @@ Route::prefix('whatsapp')->group(function () {
     // Analytics
     Route::get('/analytics', [WhatsAppAnalyticsController::class, 'index'])->name('whatsapp.analytics');
 
-    // Broadcast
-    Route::resource('/broadcast', WhatsAppBroadcastController::class, [
-        'as' => 'whatsapp'
-    ])->only(['index', 'create', 'store', 'show']);
+    // Broadcast - PRO Feature (memerlukan akses fitur broadcasts)
+    Route::middleware(['feature:broadcasts'])->group(function () {
+        Route::resource('/broadcast', WhatsAppBroadcastController::class, [
+            'as' => 'whatsapp'
+        ])->only(['index', 'create', 'store', 'show']);
+    });
 
     // Inbox
     Route::get('/inbox', [WhatsAppInboxController::class, 'index'])->name('whatsapp.inbox');
@@ -243,4 +397,52 @@ Route::prefix('sequences')->group(function () {
     Route::post('/{sequence}/enroll', [SequenceController::class, 'manualEnroll'])->name('sequences.enroll');
     Route::post('/enrollments/{enrollment}/cancel', [SequenceController::class, 'cancelEnrollment'])->name('sequences.enrollment.cancel');
 });
+
+// ============================
+// SUBSCRIPTION & CHECKOUT
+// ============================
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\SubscriptionController;
+
+// Pricing route sudah didefinisikan di atas (line 31-54) dengan logic redirect
+// JANGAN define ulang pricing route di sini!
+
+// Checkout & Payment (perlu login) - routes ini sudah didefinisikan di atas
+// Subscription Management (perlu login)
+
+// Subscription Management (perlu login)
+Route::prefix('subscription')->middleware('auth')->group(function () {
+    Route::get('/', [SubscriptionController::class, 'index'])->name('subscription.index');
+    Route::get('/upgrade', [SubscriptionController::class, 'upgrade'])->name('subscription.upgrade');
+    Route::post('/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+    Route::post('/reactivate', [SubscriptionController::class, 'reactivate'])->name('subscription.reactivate');
+});
+
+// ============================
+// SUPPORT TICKETS
+// ============================
+use App\Http\Controllers\SupportController;
+
+Route::prefix('support')->middleware('auth')->group(function () {
+    Route::get('/', [SupportController::class, 'index'])->name('support.index');
+    Route::get('/create', [SupportController::class, 'create'])->name('support.create');
+    Route::post('/', [SupportController::class, 'store'])->name('support.store');
+    Route::get('/{ticket}', [SupportController::class, 'show'])->name('support.show');
+    Route::post('/{ticket}/reply', [SupportController::class, 'reply'])->name('support.reply');
+    Route::post('/{ticket}/rate', [SupportController::class, 'rate'])->name('support.rate');
+    Route::post('/{ticket}/reopen', [SupportController::class, 'reopen'])->name('support.reopen');
+});
+
+// ============================
+// AUTHENTICATION (Laravel Breeze)
+// ============================
+require __DIR__.'/auth.php';
+
+// ============================
+// ADMIN ROUTES
+// ============================
+Route::prefix('admin')->group(function () {
+    require __DIR__.'/admin.php';
+});
+
 

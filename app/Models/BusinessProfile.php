@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToUser;
 
 class BusinessProfile extends Model
 {
+    use BelongsToUser;
     protected $fillable = [
         'business_name',
         'business_type',

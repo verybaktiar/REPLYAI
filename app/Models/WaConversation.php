@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\BelongsToUser;
 
 class WaConversation extends Model
 {
+    use BelongsToUser;
+    
     protected $fillable = [
         'phone_number',
         'display_name',
