@@ -107,7 +107,6 @@ timeout /t 10
 :: Jalankan Service WhatsApp
 cd /d "C:\laragon\www\REPLYAI\wa-service"
 start "WA_SERVICE" npm start
-
 :: Jalankan Laravel Queue (Bot)
 cd /d "C:\laragon\www\REPLYAI"
 start "LARAVEL_QUEUE" php artisan queue:work --tries=3

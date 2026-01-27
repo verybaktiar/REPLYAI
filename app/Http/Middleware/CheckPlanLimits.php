@@ -35,17 +35,17 @@ class CheckPlanLimits
                     ->where('direction', 'outgoing')
                     ->where('created_at', '>=', now()->startOfMonth())
                     ->count();
-                $message = "Maaf, kuota pesan bulanan Anda ({$limit}) sudah habis. Silakan upgrade paket untuk melanjutkan.";
+                $message = "Maaf, kuota pesan AI bulanan Anda ({$limit}) sudah habis. Silakan upgrade paket Anda untuk terus menggunakan AI!";
                 break;
                 
             case 'kb_articles':
                 $usage = \App\Models\KbArticle::where('user_id', $user->id)->count();
-                $message = "Maaf, Anda sudah mencapai batas maksimal Info Produk ({$limit}) untuk paket ini. Silakan upgrade untuk menambah lebih banyak.";
+                $message = "Maaf, Anda sudah mencapai batas maksimal Info Produk ({$limit}) untuk paket ini. Silakan upgrade paket Anda untuk menambah lebih banyak!";
                 break;
                 
             case 'auto_reply_rules':
                 $usage = \App\Models\AutoReplyRule::where('user_id', $user->id)->count();
-                $message = "Maaf, Anda sudah mencapai batas maksimal Aturan Bot ({$limit}) untuk paket ini. Silakan upgrade paket Anda.";
+                $message = "Maaf, Anda sudah mencapai batas maksimal Aturan Bot ({$limit}) untuk paket ini. Silakan upgrade paket Anda untuk menambah lebih banyak!";
                 break;
         }
 
