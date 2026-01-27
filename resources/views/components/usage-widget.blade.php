@@ -18,19 +18,19 @@
                         ->where('created_at', '>=', now()->startOfMonth())
                         ->count()),
             'limit' => $limits['ai_messages'] ?? 100,
-            'label' => 'Pesan Bulanan',
+            'label' => __('dashboard.monthly_messages'),
             'icon' => 'chat'
         ],
         'kb_articles' => [
             'used' => \App\Models\KbArticle::where('user_id', $user->id)->count(),
             'limit' => $limits['kb_articles'] ?? 5,
-            'label' => 'Knowledge Base',
+            'label' => __('dashboard.knowledge_base'),
             'icon' => 'menu_book'
         ],
         'rules' => [
             'used' => \App\Models\AutoReplyRule::where('user_id', $user->id)->count(),
             'limit' => $limits['auto_reply_rules'] ?? 10,
-            'label' => 'Aturan Bot',
+            'label' => __('dashboard.bot_rules'),
             'icon' => 'smart_toy'
         ]
     ];
@@ -86,11 +86,11 @@
                     </div>
                     
                     @if($isOverLimit)
-                        <p class="text-[9px] font-bold text-red-500 mt-1 uppercase italic">Limit Tercapai!</p>
+                        <p class="text-[9px] font-bold text-red-500 mt-1 uppercase italic">{{ __('dashboard.limit_reached') }}</p>
                     @elseif($isNearLimit)
-                        <p class="text-[9px] font-bold text-yellow-500 mt-1 uppercase italic">Hampir Penuh!</p>
+                        <p class="text-[9px] font-bold text-yellow-500 mt-1 uppercase italic">{{ __('dashboard.near_limit') }}</p>
                     @else
-                        <p class="text-[9px] text-slate-600 mt-1 italic">Penggunaan Normal</p>
+                        <p class="text-[9px] text-slate-600 mt-1 italic">{{ __('dashboard.normal_usage') }}</p>
                     @endif
                 </div>
             </div>
@@ -98,7 +98,7 @@
             @if($isNearLimit && !($user->is_vip ?? false))
                 <div class="mt-4 pt-4 border-t border-slate-800/50">
                     <a href="{{ route('pricing', ['ref' => $key]) }}" class="flex items-center justify-center gap-2 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-[10px] font-black transition-all group/btn tracking-widest">
-                        UPGRADE LIMIT
+                        {{ __('dashboard.upgrade_limit') }}
                         <span class="material-symbols-outlined text-sm group-hover/btn:translate-x-1 transition-transform">bolt</span>
                     </a>
                 </div>

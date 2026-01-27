@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>REPLYAI - Kotak Masuk</title>
+    <title>REPLYAI - {{ __('inbox.title') }}</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -146,7 +146,23 @@
 @include('components.sidebar')
 
 <!-- Main Content Area -->
-<main class="flex flex-1 overflow-hidden h-full relative">
+<main class="flex flex-1 flex-col overflow-hidden h-full relative">
+    <!-- Top Header for Inbox -->
+    <header class="h-14 border-b border-white/5 bg-[#111722] flex items-center justify-between px-6 z-20 shrink-0">
+        <div class="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-widest">
+            <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+            {{ now()->translatedFormat('l, d F Y') }}
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 px-3 py-1 bg-green-500/10 rounded-full border border-green-500/20">
+                <div class="size-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-[10px] font-bold text-green-500 uppercase tracking-widest">{{ __('inbox.system_online') }}</span>
+            </div>
+            @include('components.language-switcher')
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden h-full">
     @if($hasInstagramAccount ?? false)
     <!-- Conversation List (Middle Column) -->
     <div class="w-full md:w-[340px] lg:w-[360px] flex flex-col border-r border-white/5 bg-[#111722] shrink-0 h-full z-10 {{ $selectedId ? 'hidden md:flex' : 'flex' }}">
@@ -154,16 +170,16 @@
         <div class="p-5 pb-2">
             <div class="flex justify-between items-start mb-1">
                 <div class="flex items-center gap-2">
-                    <h2 class="text-2xl font-bold text-white tracking-tight">Kotak Masuk</h2>
+                    <h2 class="text-2xl font-bold text-white tracking-tight">{{ __('inbox.title') }}</h2>
                     @include('components.page-help', [
-                        'title' => 'Kotak Masuk',
-                        'description' => 'Tempat melihat dan membalas semua pesan dari pelanggan melalui Instagram.',
+                        'title' => __('inbox.title'),
+                        'description' => __('inbox.help_description'),
                         'tips' => [
-                            'Pilih percakapan dari daftar di kiri',
-                            'Warna hijau = Bot yang menjawab',
-                            'Warna merah = CS yang menangani',
-                            'Klik "Ambil Alih" untuk menjawab manual',
-                            'Klik "Bot Kembali" untuk mengaktifkan bot lagi'
+                            __('inbox.tip_1', ['default' => 'Pilih percakapan dari daftar di kiri']),
+                            __('inbox.tip_2', ['default' => 'Warna hijau = Bot yang menjawab']),
+                            __('inbox.tip_3', ['default' => 'Warna merah = CS yang menangani']),
+                            __('inbox.tip_4', ['default' => 'Klik "Ambil Alih" untuk menjawab manual']),
+                            __('inbox.tip_5', ['default' => 'Klik "Bot Kembali" untuk mengaktifkan bot lagi'])
                         ]
                     ])
                 </div>
@@ -175,25 +191,25 @@
             <!-- Search Filter Client Side -->
             <div class="relative mb-4 mt-4">
                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" style="font-size: 20px;">search</span>
-                <input id="conv-search" class="w-full bg-[#1e2634] border-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:ring-1 focus:ring-primary/50" placeholder="Cari nama pasien..." type="text"/>
+                <input id="conv-search" class="w-full bg-[#1e2634] border-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:ring-1 focus:ring-primary/50" placeholder="{{ __('inbox.search_placeholder') }}" type="text"/>
             </div>
             
              <!-- Chips - Functional Filters -->
             <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1" id="filter-chips">
                 <button data-filter="all" class="filter-chip active shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-primary/20 text-primary border border-primary/30 rounded-full text-xs font-medium hover:bg-primary/30 transition-colors">
-                    <span>Semua</span>
+                    <span>{{ __('inbox.filter_all') }}</span>
                 </button>
                 <button data-filter="bot_handling" class="filter-chip shrink-0 flex items-center gap-1 px-3 py-1.5 bg-[#1e2634] text-slate-300 border border-white/5 rounded-full text-xs font-medium hover:bg-[#2a3446] transition-colors">
                     <span class="material-symbols-outlined text-green-400" style="font-size: 14px;">smart_toy</span>
-                    <span>Bot</span>
+                    <span>{{ __('inbox.filter_bot') }}</span>
                 </button>
                 <button data-filter="agent_handling" class="filter-chip shrink-0 flex items-center gap-1 px-3 py-1.5 bg-[#1e2634] text-slate-300 border border-white/5 rounded-full text-xs font-medium hover:bg-[#2a3446] transition-colors">
                     <span class="material-symbols-outlined text-red-400" style="font-size: 14px;">headset_mic</span>
-                    <span>CS</span>
+                    <span>{{ __('inbox.filter_cs') }}</span>
                 </button>
                 <button data-filter="escalated" class="filter-chip shrink-0 flex items-center gap-1 px-3 py-1.5 bg-[#1e2634] text-slate-300 border border-white/5 rounded-full text-xs font-medium hover:bg-[#2a3446] transition-colors">
                     <span class="material-symbols-outlined text-orange-400" style="font-size: 14px;">priority_high</span>
-                    <span>Escalated</span>
+                    <span>{{ __('inbox.filter_escalated') }}</span>
                 </button>
             </div>
         </div>
@@ -235,15 +251,15 @@
                          <div class="flex items-center gap-1.5 mb-1">
                              @if($conv->status == 'agent_handling')
                                 <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[10px]">headset_mic</span> CS Handling
+                                    <span class="material-symbols-outlined text-[10px]">headset_mic</span> {{ __('inbox.status_agent') }}
                                 </span>
                              @elseif($conv->status == 'escalated')
                                 <span class="text-[10px] bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[10px]">priority_high</span> Escalated
+                                    <span class="material-symbols-outlined text-[10px]">priority_high</span> {{ __('inbox.status_escalated') }}
                                 </span>
                              @else
                                 <span class="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[10px]">smart_toy</span> Bot
+                                    <span class="material-symbols-outlined text-[10px]">smart_toy</span> {{ __('inbox.status_bot') }}
                                 </span>
                              @endif
                         </div>
@@ -253,7 +269,7 @@
                             @else
                                 <span class="material-symbols-outlined text-slate-500" style="font-size: 12px;">person</span>
                             @endif
-                            {{ $conv->last_message ?: 'No messages yet' }}
+                            {{ $conv->last_message ?: __('inbox.no_messages') }}
                         </p>
                     </div>
                 </a>
@@ -264,16 +280,16 @@
                         <div class="size-16 bg-pink-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                             <span class="material-symbols-outlined text-pink-400 text-3xl">photo_camera</span>
                         </div>
-                        <h3 class="text-white font-semibold mb-2">Hubungkan Instagram</h3>
-                        <p class="text-slate-400 text-xs mb-4">Hubungkan akun Instagram Anda untuk mulai menerima pesan.</p>
+                        <h3 class="text-white font-semibold mb-2">{{ __('inbox.connect_title') }}</h3>
+                        <p class="text-slate-400 text-xs mb-4">{{ __('inbox.connect_text') }}</p>
                         <a href="{{ route('instagram.settings') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white text-xs font-medium rounded-lg hover:opacity-90 transition">
                             <span class="material-symbols-outlined" style="font-size: 16px;">add_link</span>
-                            Hubungkan Sekarang
+                            {{ __('inbox.connect_button') }}
                         </a>
                     </div>
                 @else
                     <div class="p-8 text-center text-slate-500 text-sm">
-                        Belum ada percakapan.
+                        {{ __('inbox.no_conversations') }}
                     </div>
                 @endif
             @endforelse
@@ -314,7 +330,7 @@
 
                     <!-- 24-Hour Window Indicator -->
                     @if($windowExpired)
-                        <span class="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] lg:text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30" title="Jendela 24 jam sudah berakhir. Tunggu user mengirim pesan baru.">
+                        <span class="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] lg:text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30" title="{{ __('inbox.window_expired_title', ['default' => 'Jendela 24 jam sudah berakhir. Tunggu user mengirim pesan baru.']) }}">
                             <span class="material-symbols-outlined" style="font-size: 12px;">schedule</span>
                             <span class="hidden sm:inline">Expired</span>
                         </span>
@@ -334,17 +350,17 @@
                     @if($convStatus === 'agent_handling')
                         <span class="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] lg:text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">
                             <span class="material-symbols-outlined" style="font-size: 12px;">headset_mic</span>
-                            <span class="hidden lg:inline">CS</span>
+                            <span class="hidden lg:inline">{{ __('inbox.filter_cs') }}</span>
                         </span>
                     @elseif($convStatus === 'escalated')
                         <span class="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] lg:text-xs font-medium bg-orange-500/20 text-orange-400 border border-orange-500/30">
                             <span class="material-symbols-outlined" style="font-size: 12px;">priority_high</span>
-                            <span class="hidden lg:inline">Escalated</span>
+                            <span class="hidden lg:inline">{{ __('inbox.filter_escalated') }}</span>
                         </span>
                     @else
                         <span class="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] lg:text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
                             <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span>
-                            <span class="hidden lg:inline">Bot</span>
+                            <span class="hidden lg:inline">{{ __('inbox.filter_bot') }}</span>
                         </span>
                     @endif
 
@@ -352,9 +368,9 @@
                     @if($convStatus === 'bot_handling' || !$convStatus)
                         <form action="{{ route('takeover.ig.takeover', $selectedId) }}" method="POST" class="inline">
                             @csrf
-                            <button type="submit" class="flex items-center gap-1 px-2 lg:px-3 py-1.5 rounded-lg text-[10px] lg:text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white transition-colors" title="Ambil Alih">
+                            <button type="submit" class="flex items-center gap-1 px-2 lg:px-3 py-1.5 rounded-lg text-[10px] lg:text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white transition-colors" title="{{ __('inbox.takeover_button') }}">
                                 <span class="material-symbols-outlined" style="font-size: 14px;">headset_mic</span>
-                                <span class="hidden sm:inline">Ambil Alih</span>
+                                <span class="hidden sm:inline">{{ __('inbox.takeover_button') }}</span>
                             </button>
                         </form>
                     @endif
@@ -363,9 +379,9 @@
                     @if($convStatus === 'agent_handling' || $convStatus === 'escalated')
                         <form action="{{ route('inbox.handback', $selectedId) }}" method="POST" class="inline">
                             @csrf
-                            <button type="submit" class="flex items-center gap-1 px-2 lg:px-3 py-1.5 rounded-lg text-[10px] lg:text-xs font-medium bg-green-500 hover:bg-green-600 text-white transition-colors" title="Aktifkan Bot">
+                            <button type="submit" class="flex items-center gap-1 px-2 lg:px-3 py-1.5 rounded-lg text-[10px] lg:text-xs font-medium bg-green-500 hover:bg-green-600 text-white transition-colors" title="{{ __('inbox.handback_button') }}">
                                 <span class="material-symbols-outlined" style="font-size: 14px;">replay</span>
-                                <span class="hidden sm:inline">Bot Kembali</span>
+                                <span class="hidden sm:inline">{{ __('inbox.handback_button') }}</span>
                             </button>
                         </form>
                     @endif
@@ -397,14 +413,14 @@
                                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                                 </svg>
                             </div>
-                            <h3 class="text-2xl font-bold text-white mb-3">Hubungkan Instagram</h3>
+                            <h3 class="text-2xl font-bold text-white mb-3">{{ __('inbox.connect_title') }}</h3>
                             <p class="text-slate-400 text-sm mb-8 leading-relaxed">
-                                Hubungkan akun Instagram Business Anda untuk menerima dan membalas DM pelanggan secara otomatis dengan AI.
+                                {{ __('inbox.connect_text') }}
                             </p>
                             
                             <a href="{{ route('instagram.connect') }}" class="inline-flex w-full justify-center items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 rounded-xl font-bold text-white transition shadow-lg shadow-orange-500/20 transform hover:scale-[1.02] active:scale-[0.98]">
                                 <span class="material-symbols-outlined">add_link</span>
-                                Hubungkan Instagram
+                                {{ __('inbox.connect_button') }}
                             </a>
                         </div>
                     </div>
@@ -417,9 +433,9 @@
                             $dateLabel = null;
                             if (!$lastDate || !$msgDate->isSameDay($lastDate)) {
                                 if ($msgDate->isToday()) {
-                                    $dateLabel = 'Hari ini';
+                                    $dateLabel = __('inbox.today');
                                 } elseif ($msgDate->isYesterday()) {
-                                    $dateLabel = 'Kemarin';
+                                    $dateLabel = __('inbox.yesterday');
                                 } else {
                                     $dateLabel = $msgDate->translatedFormat('d F Y');
                                 }
@@ -512,7 +528,7 @@
                         </div>
                     @empty
                         <div class="flex justify-center mt-10">
-                             <span class="text-xs font-medium text-slate-500 bg-[#1e2634] px-4 py-2 rounded-full border border-white/5">Belum ada history pesan.</span>
+                             <span class="text-xs font-medium text-slate-500 bg-[#1e2634] px-4 py-2 rounded-full border border-white/5">{{ __('inbox.no_messages') }}</span>
                         </div>
                     @endforelse
                 @endif
@@ -552,17 +568,17 @@
                         <!-- Dropdown -->
                         <div id="qr-dropdown" class="hidden absolute bottom-full left-0 mb-2 w-72 bg-[#1e2634] border border-white/10 rounded-xl shadow-xl overflow-hidden z-30 transform origin-bottom-left transition-all">
                             <div class="px-3 py-2 border-b border-white/5 text-xs font-semibold text-slate-400 bg-[#111722]/50 flex justify-between items-center">
-                                <span>Quick Replies</span>
+                                <span>{{ __('inbox.quick_replies') }}</span>
                                 <span class="text-[10px] bg-slate-700 px-1.5 rounded">Esc to close</span>
                             </div>
                             <div id="qr-list" class="max-h-60 overflow-y-auto custom-scrollbar">
                                 <div class="p-4 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
                                     <span class="material-symbols-outlined animate-spin text-lg">autorenew</span>
-                                    Loading templates...
+                                    {{ __('inbox.loading_templates') }}
                                 </div>
                             </div>
                             <a href="{{ route('quick-replies.index') }}" class="block p-2 text-center text-[10px] text-primary hover:bg-white/5 border-t border-white/5 bg-[#111722]/30">
-                                + Kelola Template
+                                + {{ __('inbox.manage_templates') }}
                             </a>
                         </div>
                     </div>
@@ -576,7 +592,7 @@
 
                     <textarea name="content" required 
                               class="w-full bg-transparent border-none text-sm text-white placeholder-slate-500 focus:ring-0 resize-none max-h-32 py-2" 
-                              placeholder="Ketik pesan balasan..." rows="1"></textarea>
+                              placeholder="{{ __('inbox.input_placeholder') }}" rows="1"></textarea>
                     
                     <button type="submit" class="p-2 bg-primary text-white rounded-lg hover:bg-blue-600 shadow-lg shadow-primary/20 transition-all hover:scale-105 shrink-0">
                         <span class="material-symbols-outlined fill-current" style="font-size: 20px;">send</span>
@@ -596,16 +612,16 @@
                 
                 @if(!($hasInstagramAccount ?? false))
                     <!-- Connect Call to Action -->
-                    <div class="max-w-md w-full bg-[#1e2634] rounded-2xl border border-white/5 p-8 shadow-2xl">
+                     <div class="max-w-md w-full bg-[#1e2634] rounded-2xl border border-white/5 p-8 shadow-2xl">
                          <div class="size-20 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-500/20">
                             <span class="material-symbols-outlined text-white text-4xl">add_link</span>
                         </div>
-                        <h3 class="text-white font-bold text-xl mb-2">Hubungkan Instagram</h3>
+                        <h3 class="text-white font-bold text-xl mb-2">{{ __('inbox.connect_title') }}</h3>
                         <p class="text-slate-400 text-sm mb-6">
-                            Akun Instagram Anda saat ini terputus. Hubungkan kembali agar Anda dapat membalas pesan pelanggan langsung dari sini.
+                            {{ __('inbox.connect_text') }}
                         </p>
                         <a href="{{ route('instagram.connect') }}" class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 rounded-xl font-semibold text-white transition shadow-lg shadow-orange-500/20 transform hover:scale-105 active:scale-95">
-                            Hubungkan Sekarang
+                            {{ __('inbox.connect_button') }}
                         </a>
                     </div>
                 @else
@@ -613,8 +629,8 @@
                     <div class="size-20 bg-[#1e2634] rounded-full flex items-center justify-center mb-4">
                         <span class="material-symbols-outlined text-slate-500 text-4xl">chat</span>
                     </div>
-                    <h3 class="text-white font-bold text-lg">Pilih Percakapan</h3>
-                    <p class="text-slate-400 text-sm mt-2 max-w-xs">Pilih salah satu kontak dari daftar di sebelah kiri untuk melihat riwayat pesan dan membalas chat.</p>
+                    <h3 class="text-white font-bold text-lg">{{ __('inbox.select_conversation') }}</h3>
+                    <p class="text-slate-400 text-sm mt-2 max-w-xs">{{ __('inbox.select_conversation_text') }}</p>
                 @endif
             </div>
         @endif
@@ -684,28 +700,29 @@
                 </svg>
             </div>
             
-            <h1 class="text-3xl font-bold text-white mb-4">Hubungkan Instagram</h1>
+            <h1 class="text-3xl font-bold text-white mb-4">{{ __('inbox.connect_title') }}</h1>
             <p class="text-slate-400 text-base mb-10 max-w-sm mx-auto leading-relaxed">
-                Hubungkan akun Instagram Business Anda untuk menerima dan membalas DM pelanggan secara otomatis dengan AI.
+                {{ __('inbox.connect_text') }}
             </p>
             
             <a href="{{ route('instagram.connect') }}" class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-pink-500/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
                 <span class="material-symbols-outlined">add_link</span>
-                <span>Hubungkan Instagram</span>
+                <span>{{ __('inbox.connect_button') }}</span>
             </a>
             
             <div class="mt-8 flex items-center justify-center gap-6 text-slate-500 text-xs font-medium">
                 <span class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-sm">lock</span> Aman & Terenkripsi
+                    <span class="material-symbols-outlined text-sm">lock</span> {{ __('common.secure_encrypted', ['default' => 'Secure & Encrypted']) }}
                 </span>
                 <span class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-sm">verified</span> Mitra Resmi Meta
+                    <span class="material-symbols-outlined text-sm">verified</span> {{ __('common.meta_official_partner', ['default' => 'Meta Official Partner']) }}
                 </span>
             </div>
             
         </div>
     </div>
 @endif
+    </div>
 </main>
 
 <script>
@@ -806,7 +823,7 @@
             badge = document.createElement('button');
             badge.id = 'new-msg-badge';
             badge.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-primary text-white text-sm font-medium rounded-full shadow-lg flex items-center gap-2 animate-bounce';
-            badge.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">arrow_downward</span> Pesan baru';
+            badge.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">arrow_downward</span> ' + (typeof LANG !== 'undefined' && LANG.new_messages ? LANG.new_messages : 'New Message');
             badge.onclick = () => {
                 window.location.reload();
             };

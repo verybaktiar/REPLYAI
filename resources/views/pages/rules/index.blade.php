@@ -4,7 +4,7 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Manajemen Bot REPLYAI</title>
+    <title>{{ __('rules.title') }} - ReplyAI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -56,7 +56,21 @@
 @include('components.sidebar')
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0">
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <!-- Top Header for Rules -->
+        <header class="h-14 border-b border-border-dark bg-background-dark/80 backdrop-blur-md flex items-center justify-between px-6 z-20 shrink-0">
+            <div class="flex items-center gap-2 text-text-secondary text-xs font-bold uppercase tracking-widest">
+                <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                {{ now()->translatedFormat('l, d F Y') }}
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 px-3 py-1 bg-whatsapp/10 rounded-full border border-whatsapp/20">
+                    <div class="size-1.5 bg-whatsapp rounded-full animate-pulse"></div>
+                    <span class="text-[10px] font-bold text-whatsapp uppercase tracking-widest">{{ __('common.system_online', ['default' => 'System Online']) }}</span>
+                </div>
+                @include('components.language-switcher')
+            </div>
+        </header>
         <!-- Remove redundant mobile header - sidebar already provides it -->
 
         <div class="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12">
@@ -65,26 +79,26 @@
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div class="flex flex-col gap-2 max-w-2xl">
                         <div class="flex items-center gap-3">
-                            <h1 class="text-white text-3xl md:text-4xl font-black leading-tight tracking-tight">Pengaturan Bot</h1>
+                            <h1 class="text-white text-3xl md:text-4xl font-black leading-tight tracking-tight">{{ __('rules.title') }}</h1>
                             @include('components.page-help', [
-                                'title' => 'Pengaturan Bot',
-                                'description' => 'Di sini Anda bisa mengatur kata kunci (keyword) yang akan memicu balasan otomatis dari bot.',
+                                'title' => __('rules.help_title'),
+                                'description' => __('rules.help_description'),
                                 'tips' => [
-                                    'Klik "Buat Bot Baru" untuk menambah aturan baru',
-                                    'Masukkan keyword yang sering ditanyakan pelanggan',
-                                    'Tulis balasan yang informatif dan ramah',
-                                    'Gunakan toggle untuk mengaktifkan/menonaktifkan aturan',
-                                    'Pisahkan beberapa keyword dengan tanda | (contoh: harga|biaya|tarif)'
+                                    __('rules.tip_1'),
+                                    __('rules.tip_2'),
+                                    __('rules.tip_3'),
+                                    __('rules.tip_4'),
+                                    __('rules.tip_5')
                                 ]
                             ])
                         </div>
                         <p class="text-text-secondary text-base font-normal">
-                            Atur keyword dan balasan otomatis untuk chatbot.
+                            {{ __('rules.subtitle') }}
                         </p>
                     </div>
                     <button id="btn-open-create" class="flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-primary hover:bg-blue-600 transition-colors text-white text-sm font-bold shadow-lg shadow-blue-900/20">
                         <span class="material-symbols-outlined text-[20px]">add</span>
-                        <span>Buat Bot Baru</span>
+                        <span>{{ __('rules.create_button') }}</span>
                     </button>
                 </div>
 
@@ -96,12 +110,12 @@
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <span class="material-symbols-outlined text-text-secondary group-focus-within:text-white transition-colors">search</span>
                             </div>
-                            <input id="rules-search" class="block w-full h-full pl-10 pr-3 py-2 border-none rounded-lg bg-[#111722] text-white placeholder-text-secondary focus:ring-1 focus:ring-primary focus:bg-[#0f1520] transition-all text-sm" placeholder="Cari keyword bot..." type="text"/>
+                            <input id="rules-search" class="block w-full h-full pl-10 pr-3 py-2 border-none rounded-lg bg-[#111722] text-white placeholder-text-secondary focus:ring-1 focus:ring-primary focus:bg-[#0f1520] transition-all text-sm" placeholder="{{ __('rules.search_placeholder') }}" type="text"/>
                         </div>
                     </div>
                     <div class="w-px h-6 bg-[#232f48] mx-2 self-center hidden lg:block"></div>
                      <div class="flex items-center px-2 text-text-secondary text-sm">
-                        Total: <span id="rules-total" class="ml-1 text-white font-bold">{{ $rules->count() }}</span> Rules
+                        {{ __('rules.total_rules', ['count' => $rules->count()]) }}
                     </div>
                 </div>
 
@@ -109,11 +123,11 @@
                 <div class="flex flex-col gap-3">
                     <!-- Header (Desktop) -->
                     <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                        <div class="col-span-4">Bot Info (Trigger)</div>
-                        <div class="col-span-2">Platform</div>
-                        <div class="col-span-2">Match Type</div>
-                        <div class="col-span-2">Status</div>
-                        <div class="col-span-2 text-right">Aksi</div>
+                        <div class="col-span-4">{{ __('rules.info_trigger') }}</div>
+                        <div class="col-span-2">{{ __('rules.platform') }}</div>
+                        <div class="col-span-2">{{ __('rules.match_type') }}</div>
+                        <div class="col-span-2">{{ __('rules.status') }}</div>
+                        <div class="col-span-2 text-right">{{ __('rules.actions') }}</div>
                     </div>
 
                     <!-- Container for Loop -->
@@ -124,9 +138,9 @@
                             <div id="rules-empty" class="py-12">
                                 <x-empty-state 
                                     icon="smart_toy" 
-                                    title="Belum Ada Aturan Bot" 
-                                    description="Buat aturan auto-reply untuk merespon pesan pelanggan secara otomatis berdasarkan kata kunci tertentu."
-                                    actionLabel="Buat Aturan Pertama"
+                                    title="{{ __('rules.empty_title') }}" 
+                                    description="{{ __('rules.empty_description') }}"
+                                    actionLabel="{{ __('rules.empty_action') }}"
                                     actionUrl="#" {{-- This will be handled by existing JS modal trigger --}}
                                 />
                             </div>
@@ -136,7 +150,7 @@
 
                 <!-- Pagination / Footer Info -->
                 <div class="flex items-center justify-between mt-4 text-text-secondary text-sm">
-                    <p>Menampilkan semua rules.</p>
+                    <p>{{ __('rules.show_all') }}</p>
                 </div>
             </div>
         </div>
@@ -153,8 +167,8 @@
              <!-- header -->
             <div class="flex items-center justify-between px-6 py-5 border-b border-[#232f48]">
                 <div>
-                    <h3 id="rule-modal-title" class="text-xl font-bold text-white">Tambah Bot Rule Baru</h3>
-                    <p class="text-sm text-text-secondary mt-1">Konfigurasi keyword dan balasan otomatis.</p>
+                    <h3 id="rule-modal-title" class="text-xl font-bold text-white">{{ __('rules.modal_create_title') }}</h3>
+                    <p class="text-sm text-text-secondary mt-1">{{ __('rules.modal_subtitle') }}</p>
                 </div>
                 <button type="button" data-modal-close="rule-modal" class="p-2 rounded-lg hover:bg-[#232f48] text-text-secondary hover:text-white transition-colors">
                     <span class="material-symbols-outlined">close</span>
@@ -164,15 +178,15 @@
             <form id="rule-form" class="px-6 py-5 space-y-5">
                 <input type="hidden" id="rule-id" value="">
                 <div>
-                     <label class="block text-sm font-medium text-gray-200 mb-2">Trigger Keyword</label>
-                     <input id="rule-trigger" type="text" placeholder="contoh: jadwal dokter, biaya, lokasi" class="w-full rounded-lg border border-[#232f48] bg-[#111722] px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-text-secondary/50">
-                     <p class="text-xs text-text-secondary mt-1.5">Pisahkan keyword dengan tanda | (pipe) untuk banyak trigger sekaligus.</p>
+                     <label class="block text-sm font-medium text-gray-200 mb-2">{{ __('rules.label_trigger') }}</label>
+                     <input id="rule-trigger" type="text" placeholder="{{ __('rules.placeholder_trigger') }}" class="w-full rounded-lg border border-[#232f48] bg-[#111722] px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-text-secondary/50">
+                     <p class="text-xs text-text-secondary mt-1.5">{{ __('rules.help_trigger') }}</p>
                      <p id="err-trigger" class="text-xs text-red-400 mt-1 hidden"></p>
                 </div>
                  
                  <div class="grid grid-cols-2 gap-4">
                      <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2">Match Type</label>
+                         <label class="block text-sm font-medium text-gray-200 mb-2">{{ __('rules.label_match_type') }}</label>
                         <select id="rule-match-type" class="w-full rounded-lg border border-[#232f48] bg-[#111722] px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary">
                             <option value="contains">Contains (Default)</option>
                             <option value="exact">Exact Match</option>
@@ -180,26 +194,26 @@
                         </select>
                      </div>
                      <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2">Priority</label>
+                         <label class="block text-sm font-medium text-gray-200 mb-2">{{ __('rules.label_priority') }}</label>
                         <input id="rule-priority" type="number" value="0" min="0" class="w-full rounded-lg border border-[#232f48] bg-[#111722] px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary">
                      </div>
                  </div>
 
                  <div>
-                      <label class="block text-sm font-medium text-gray-200 mb-2">Balasan Bot</label>
-                      <textarea id="rule-reply" rows="5" placeholder="Tulis pesan balasan di sini..." class="w-full rounded-lg border border-[#232f48] bg-[#111722] px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary placeholder-text-secondary/50"></textarea>
+                      <label class="block text-sm font-medium text-gray-200 mb-2">{{ __('rules.label_reply') }}</label>
+                      <textarea id="rule-reply" rows="5" placeholder="{{ __('rules.placeholder_reply') }}" class="w-full rounded-lg border border-[#232f48] bg-[#111722] px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary placeholder-text-secondary/50"></textarea>
                       <p id="err-reply" class="text-xs text-red-400 mt-1 hidden"></p>
                  </div>
 
                  <div class="flex items-center gap-2">
                      <input id="rule-active" type="checkbox" checked class="rounded bg-[#111722] border-[#232f48] text-primary focus:ring-primary">
-                     <label for="rule-active" class="text-sm text-gray-200">Aktifkan rule ini segera</label>
+                     <label for="rule-active" class="text-sm text-gray-200">{{ __('rules.label_active') }}</label>
                  </div>
             </form>
              <!-- footer -->
              <div class="flex items-center justify-end gap-3 px-6 py-5 border-t border-[#232f48] bg-[#111722]/30 rounded-b-2xl">
-                 <button type="button" data-modal-close="rule-modal" class="px-5 py-2.5 rounded-lg border border-[#232f48] text-gray-300 hover:text-white hover:bg-[#232f48] text-sm font-medium transition-colors">Batal</button>
-                 <button type="submit" form="rule-form" id="btn-save-rule" class="px-5 py-2.5 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-900/20 transition-all">Simpan Bot</button>
+                 <button type="button" data-modal-close="rule-modal" class="px-5 py-2.5 rounded-lg border border-[#232f48] text-gray-300 hover:text-white hover:bg-[#232f48] text-sm font-medium transition-colors">{{ __('rules.button_cancel') }}</button>
+                 <button type="submit" form="rule-form" id="btn-save-rule" class="px-5 py-2.5 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-900/20 transition-all">{{ __('rules.button_save') }}</button>
              </div>
         </div>
     </div>
@@ -213,12 +227,12 @@
             <div class="size-14 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span class="material-symbols-outlined text-3xl">delete_forever</span>
             </div>
-            <h3 class="text-xl font-bold text-white mb-2">Hapus Bot Rule?</h3>
-            <p class="text-sm text-text-secondary mb-6">Rule yang dihapus tidak dapat dikembalikan. Bot tidak akan membalas keyword ini lagi.</p>
+            <h3 class="text-xl font-bold text-white mb-2">{{ __('rules.delete_title') }}</h3>
+            <p class="text-sm text-text-secondary mb-6">{{ __('rules.delete_description') }}</p>
             <input type="hidden" id="delete-id" value="">
             <div class="flex gap-3 justify-center">
-                <button type="button" data-modal-close="delete-modal" class="px-5 py-2.5 rounded-lg border border-[#232f48] text-gray-300 hover:text-white hover:bg-[#232f48] text-sm font-medium transition-colors">Batal</button>
-                <button type="button" id="btn-confirm-delete" class="px-5 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-bold shadow-lg shadow-red-900/20 transition-all">Ya, Hapus</button>
+                <button type="button" data-modal-close="delete-modal" class="px-5 py-2.5 rounded-lg border border-[#232f48] text-gray-300 hover:text-white hover:bg-[#232f48] text-sm font-medium transition-colors">{{ __('rules.button_cancel') }}</button>
+                <button type="button" id="btn-confirm-delete" class="px-5 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-bold shadow-lg shadow-red-900/20 transition-all">{{ __('rules.delete_confirm') }}</button>
             </div>
         </div>
     </div>
@@ -230,6 +244,22 @@
 </div>
 
 <script>
+const LANG = {
+    modal_create_title: "{{ __('rules.modal_create_title') }}",
+    modal_edit_title: "{{ __('rules.modal_edit_title') }}",
+    button_save: "{{ __('rules.button_save') }}",
+    button_update: "{{ __('rules.button_update') }}",
+    button_saving: "{{ __('rules.button_saving') }}",
+    success_status: "{{ __('rules.success_status') }}",
+    success_created: "{{ __('rules.success_created') }}",
+    success_updated: "{{ __('rules.success_updated') }}",
+    success_deleted: "{{ __('rules.success_deleted') }}",
+    error_status: "{{ __('rules.error_status') }}",
+    error_generic: "{{ __('rules.error_generic') }}",
+    error_delete: "{{ __('rules.error_delete') }}",
+    deleting: "{{ __('rules.delete_cancelling') }}",
+};
+
 (function(){
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
   const container = document.getElementById('rules-container'); // Ganti tbody
@@ -295,8 +325,8 @@
       fActive.checked = true;
       if(fMatchType) fMatchType.value = 'contains';
       clearErrors();
-      document.getElementById('rule-modal-title').textContent = 'Tambah Bot Rule Baru';
-      btnSave.textContent = 'Simpan Bot';
+      document.getElementById('rule-modal-title').textContent = LANG.modal_create_title;
+      btnSave.textContent = LANG.button_save;
   }
 
   // SEARCH FILTER
@@ -327,8 +357,8 @@
       if(editBtn){
           const row = editBtn.closest('.group');
           resetForm();
-          document.getElementById('rule-modal-title').textContent = 'Edit Bot Rule';
-          btnSave.textContent = 'Update Bot';
+          document.getElementById('rule-modal-title').textContent = LANG.modal_edit_title;
+          btnSave.textContent = LANG.button_update;
           
           ruleId.value = row.dataset.id;
           fTrigger.value = row.dataset.trigger;
@@ -381,10 +411,10 @@
              temp.innerHTML = data.rowHtml.trim();
              const newRow = temp.firstElementChild;
              row.replaceWith(newRow);
-             toast('Status bot diupdate');
+             toast(LANG.success_status);
           } catch(err){
               console.error(err);
-              toast('Gagal update status');
+              toast(LANG.error_status);
               checkbox.checked = !checkbox.checked; // Revert
               checkbox.disabled = false;
           }
@@ -410,7 +440,7 @@
       };
 
       btnSave.disabled = true;
-      btnSave.textContent = 'Menyimpan...';
+      btnSave.textContent = LANG.button_saving;
 
       try {
           const res = await fetch(url, {
@@ -428,7 +458,7 @@
               const v = await res.json();
               if(v.errors?.trigger_keyword) setError(errTrigger, v.errors.trigger_keyword[0]);
               if(v.errors?.response_text) setError(errReply, v.errors.response_text[0]);
-              btnSave.textContent = 'Simpan Bot';
+              btnSave.textContent = isEdit ? LANG.button_update : LANG.button_save;
               return;
           }
 
@@ -441,22 +471,22 @@
 
           if(isEdit){
               document.getElementById(`rule-row-${id}`)?.replaceWith(newRow);
-              toast('Bot berhasil diupdate');
+              toast(LANG.success_updated);
           } else {
               if(emptyRow) emptyRow.remove();
               // Prepend to make it look like newest first (if controller sorts that way)
               container.insertBefore(newRow, container.firstChild);
-              toast('Bot baru berhasil dibuat');
+              toast(LANG.success_created);
               if(totalEl) totalEl.textContent = Number(totalEl.textContent) + 1;
           }
           closeModal('rule-modal');
 
       } catch(err){
           console.error(err);
-          toast('Terjadi kesalahan');
+          toast(LANG.error_generic);
       } finally {
           btnSave.disabled = false;
-          btnSave.textContent = 'Simpan Bot';
+          btnSave.textContent = isEdit ? LANG.button_update : LANG.button_save;
       }
   });
   
@@ -465,7 +495,7 @@
       const id = document.getElementById('delete-id').value;
       const btn = document.getElementById('btn-confirm-delete');
       btn.disabled = true;
-      btn.textContent = 'Menghapus...';
+      btn.textContent = LANG.deleting;
       
       try {
           const res = await fetch(`/rules/${id}`, {
@@ -480,15 +510,15 @@
           if(!data.ok) throw data;
           
           document.getElementById(`rule-row-${id}`)?.remove();
-          toast('Bot berhasil dihapus');
+          toast(LANG.success_deleted);
           if(totalEl) totalEl.textContent = Math.max(0, Number(totalEl.textContent) - 1);
           
       } catch(err){
           console.error(err);
-          toast('Gagal menghapus bot');
+          toast(LANG.error_delete);
       } finally {
           btn.disabled = false;
-          btn.textContent = 'Ya, Hapus';
+          btn.textContent = LANG.button_update; // fallback
           closeModal('delete-modal');
       }
   });

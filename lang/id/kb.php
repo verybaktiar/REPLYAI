@@ -1,0 +1,57 @@
+<?php
+
+return [
+    'title' => 'Info Produk',
+    'subtitle' => 'Sumber informasi untuk jawaban AI chatbot.',
+    'help_title' => 'Info Produk (Knowledge Base)',
+    'help_description' => 'Tempat menyimpan informasi yang akan digunakan bot untuk menjawab pertanyaan pelanggan.',
+    'tip_1' => 'Import dari URL website resmi Anda',
+    'tip_2' => 'Upload file PDF atau TXT berisi informasi produk',
+    'tip_3' => 'Semakin lengkap info, semakin pintar bot menjawab',
+    'tip_4' => 'Gunakan tombol "Test AI" untuk mencoba respons bot',
+    
+    'test_ai_button' => 'Test AI',
+    'tab_url' => 'Import URL',
+    'tab_file' => 'Upload Dokumen',
+    'placeholder_url' => 'https://web-resmi.com/jadwal',
+    'placeholder_title' => 'Judul (opsional)',
+    'button_import' => 'Import',
+    'help_url' => 'Gunakan URL resmi untuk akurasi data AI.',
+    'placeholder_file' => 'Klik atau drag file PDF / TXT ke sini',
+    'help_file' => 'Maksimal 5MB. PDF akan diparsing otomatis.',
+    'placeholder_tags' => 'Tags (koma dipisah, misal: ukm, panduan)',
+    'button_upload' => 'Upload & Process',
+    
+    'list_title' => 'Daftar Sumber Pengetahuan',
+    'all_profiles' => '📋 Semua Profile',
+    'button_detail' => 'Detail',
+    'status_active' => 'Active',
+    'status_inactive' => 'Inactive',
+    'button_delete' => 'Delete',
+    'empty_title' => 'Belum Ada Knowledge Base',
+    'empty_description' => 'AI memerlukan informasi untuk membalas chat. Gunakan form di atas untuk import URL website atau upload dokumen PDF/TXT.',
+    
+    // Modals
+    'modal_detail_title' => 'Detail KB',
+    'button_close' => 'Tutup',
+    'modal_test_title' => 'Test AI Simulator',
+    'modal_test_subtitle' => 'Uji respon AI berdasarkan data Knowledge Base.',
+    'label_question' => 'Pertanyaan User',
+    'placeholder_question' => 'Contoh: Apakah ada dokter mata hari ini?',
+    'button_test_response' => 'Test Response',
+    'label_confidence' => 'AI Confidence',
+    'label_sources' => 'Sumber Referensi:',
+    
+    // JS
+    'js_loading' => 'Loading...',
+    'js_import_success' => 'Import sukses. Refresh halaman.',
+    'js_import_error' => 'Gagal import URL',
+    'js_uploading' => 'Uploading & Parsing...',
+    'js_upload_success' => 'File berhasil diupload dan diparsing!',
+    'js_upload_error' => 'Gagal upload file',
+    'js_test_ai_error' => 'Gagal test AI',
+    'js_connection_error' => 'Error koneksi',
+    'js_no_answer' => 'AI tidak menemukan jawaban di KB.',
+    'js_min_chars' => 'Pertanyaan minimal 3 karakter',
+    'js_url_required' => 'URL wajib diisi',
+];

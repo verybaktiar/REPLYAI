@@ -25,17 +25,17 @@
 {{-- 1. BERANDA --}}
 <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}" href="{{ route('dashboard') }}">
     <span class="material-symbols-outlined text-[22px]">dashboard</span>
-    <span class="text-sm font-semibold">Beranda</span>
+    <span class="text-sm font-semibold">{{ __('sidebar.home') }}</span>
 </a>
 
 {{-- 2. PESAN --}}
 <div class="mt-6 mb-2 px-4 flex items-center justify-between">
-    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Pesan</p>
+    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest">{{ __('sidebar.inbox') }}</p>
 </div>
 
 <a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('inbox*') && !request()->routeIs('whatsapp.inbox*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('inbox') }}">
     <span class="material-symbols-outlined text-[20px]">inbox</span>
-    <span class="text-sm">Kotak Masuk</span>
+    <span class="text-sm">{{ __('sidebar.inbox') }}</span>
     @if($unreadInbox > 0)
         <span class="ml-auto bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">{{ $unreadInbox > 99 ? '99+' : $unreadInbox }}</span>
     @endif
@@ -43,7 +43,7 @@
 
 <a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.inbox*') ? 'bg-green-600/10 text-green-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('whatsapp.inbox') }}">
     <span class="material-symbols-outlined text-[20px]">chat</span>
-    <span class="text-sm font-semibold">WhatsApp</span>
+    <span class="text-sm font-semibold">{{ __('sidebar.whatsapp') }}</span>
     @if($unreadWhatsApp > 0)
         <span class="ml-auto bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">{{ $unreadWhatsApp > 99 ? '99+' : $unreadWhatsApp }}</span>
     @endif
@@ -51,7 +51,7 @@
 
 <a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('contacts*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('contacts.index') }}">
     <span class="material-symbols-outlined text-[20px]">group</span>
-    <span class="text-sm">Pelanggan</span>
+    <span class="text-sm">{{ __('sidebar.customers') }}</span>
 </a>
 
 {{-- 3. CHATBOT --}}
@@ -61,24 +61,24 @@
 
 <a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('rules*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('rules.index') }}">
     <span class="material-symbols-outlined text-[20px]">smart_toy</span>
-    <span class="text-sm">Aturan Bot</span>
+    <span class="text-sm">{{ __('sidebar.bot_rules') }}</span>
 </a>
 
 <a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('kb*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('kb.index') }}">
     <span class="material-symbols-outlined text-[20px]">neurology</span>
-    <span class="text-sm">Knowledge Base</span>
+    <span class="text-sm">{{ __('sidebar.knowledge_base') }}</span>
 </a>
 
 {{-- Sequences --}}
 @if($hasFeature('sequences'))
 <a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('sequences*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('sequences.index') }}">
     <span class="material-symbols-outlined text-[20px]">schedule_send</span>
-    <span class="text-sm">Pesan Terjadwal</span>
+    <span class="text-sm">{{ __('sidebar.scheduled_messages') }}</span>
 </a>
 @else
 <a class="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-600 opacity-60" href="{{ route('upgrade', ['feature' => 'sequences']) }}">
     <span class="material-symbols-outlined text-[20px]">lock</span>
-    <span class="text-sm">Pesan Terjadwal</span>
+    <span class="text-sm">{{ __('sidebar.scheduled_messages') }}</span>
     <span class="ml-auto text-[9px] font-bold bg-yellow-500/20 text-yellow-500 px-1 rounded">PRO</span>
 </a>
 @endif
@@ -92,18 +92,18 @@
 @if($hasFeature('broadcasts'))
 <a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('whatsapp.broadcast*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('whatsapp.broadcast.index') }}">
     <span class="material-symbols-outlined text-[20px]">campaign</span>
-    <span class="text-sm">Broadcast</span>
+    <span class="text-sm">{{ __('sidebar.broadcast') }}</span>
 </a>
 @else
 <a class="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-600 opacity-60" href="{{ route('upgrade', ['feature' => 'broadcasts']) }}">
     <span class="material-symbols-outlined text-[20px]">lock</span>
-    <span class="text-sm">Broadcast</span>
+    <span class="text-sm">{{ __('sidebar.broadcast') }}</span>
 </a>
 @endif
 
 <a class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all {{ request()->routeIs('analytics*') ? 'bg-blue-600/10 text-blue-400' : 'text-gray-400 hover:bg-gray-800' }}" href="{{ route('analytics.index') }}">
     <span class="material-symbols-outlined text-[20px]">analytics</span>
-    <span class="text-sm">Statistik</span>
+    <span class="text-sm">{{ __('sidebar.statistics') }}</span>
 </a>
 
 {{-- 5. PENGATURAN (Grouped) --}}
@@ -111,7 +111,7 @@
     <button @click="toggleSubmenu('settings')" 
             class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-gray-400 hover:bg-gray-800">
         <span class="material-symbols-outlined text-[20px]">settings</span>
-        <span class="text-sm font-medium">Pengaturan</span>
+        <span class="text-sm font-medium">{{ __('sidebar.settings') }}</span>
         <span class="material-symbols-outlined ml-auto text-sm transition-transform" :class="openSubmenu === 'settings' ? 'rotate-180' : ''">expand_more</span>
     </button>
     

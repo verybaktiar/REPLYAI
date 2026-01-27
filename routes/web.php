@@ -33,6 +33,9 @@ use App\Http\Controllers\DocumentationController;
 |--------------------------------------------------------------------------
 */
 
+// Language Switcher
+Route::get('lang/{locale}', [App\Http\Controllers\LanguageController::class, 'switch'])->name('lang.switch');
+
 // ============================
 // AUTHENTICATION (Laravel Breeze)
 // ============================

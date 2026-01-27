@@ -1,0 +1,57 @@
+<?php
+
+return [
+    'title' => 'Product Info',
+    'subtitle' => 'Information source for AI chatbot answers.',
+    'help_title' => 'Product Info (Knowledge Base)',
+    'help_description' => 'A place to store information that the bot will use to answer customer questions.',
+    'tip_1' => 'Import from your official website URL',
+    'tip_2' => 'Upload PDF or TXT files containing product information',
+    'tip_3' => 'The more complete the info, the smarter the bot will be',
+    'tip_4' => 'Use the "Test AI" button to try the bot\'s responses',
+    
+    'test_ai_button' => 'Test AI',
+    'tab_url' => 'Import URL',
+    'tab_file' => 'Upload Document',
+    'placeholder_url' => 'https://official-web.com/schedule',
+    'placeholder_title' => 'Title (optional)',
+    'button_import' => 'Import',
+    'help_url' => 'Use official URLs for AI data accuracy.',
+    'placeholder_file' => 'Click or drag PDF / TXT file here',
+    'help_file' => 'Maximum 5MB. PDFs will be parsed automatically.',
+    'placeholder_tags' => 'Tags (comma separated, e.g.: guide, pricing)',
+    'button_upload' => 'Upload & Process',
+    
+    'list_title' => 'Knowledge Source List',
+    'all_profiles' => '📋 All Profiles',
+    'button_detail' => 'Detail',
+    'status_active' => 'Active',
+    'status_inactive' => 'Inactive',
+    'button_delete' => 'Delete',
+    'empty_title' => 'No Knowledge Base Yet',
+    'empty_description' => 'AI requires information to reply to chats. Use the form above to import a website URL or upload PDF/TXT documents.',
+    
+    // Modals
+    'modal_detail_title' => 'KB Detail',
+    'button_close' => 'Close',
+    'modal_test_title' => 'Test AI Simulator',
+    'modal_test_subtitle' => 'Test AI responses based on Knowledge Base data.',
+    'label_question' => 'User Question',
+    'placeholder_question' => 'Example: Is there an eye doctor today?',
+    'button_test_response' => 'Test Response',
+    'label_confidence' => 'AI Confidence',
+    'label_sources' => 'Reference Sources:',
+    
+    // JS
+    'js_loading' => 'Loading...',
+    'js_import_success' => 'Import successful. Refreshing page.',
+    'js_import_error' => 'Failed to import URL',
+    'js_uploading' => 'Uploading & Parsing...',
+    'js_upload_success' => 'File uploaded and parsed successfully!',
+    'js_upload_error' => 'Failed to upload file',
+    'js_test_ai_error' => 'Failed to test AI',
+    'js_connection_error' => 'Connection error',
+    'js_no_answer' => 'AI could not find an answer in the KB.',
+    'js_min_chars' => 'Minimum 3 characters required',
+    'js_url_required' => 'URL is required',
+];

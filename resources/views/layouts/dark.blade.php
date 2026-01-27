@@ -113,6 +113,10 @@
                         <div class="size-2 bg-whatsapp rounded-full animate-pulse"></div>
                         <span class="text-[10px] font-bold text-whatsapp uppercase tracking-widest">System Online</span>
                     </div>
+
+                    <!-- Language Switcher -->
+                    @include('components.language-switcher')
+
                     <div class="size-9 rounded-full bg-surface-dark border border-border-dark flex items-center justify-center">
                         <span class="material-symbols-outlined text-text-secondary">person</span>
                     </div>

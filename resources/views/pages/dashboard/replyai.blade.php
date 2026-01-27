@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>ReplyAI - Admin Dashboard</title>
+    <title>ReplyAI - {{ __('dashboard.title') }}</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -86,10 +86,10 @@
         {{-- Content --}}
         <div class="text-center mb-8">
             <h2 class="text-2xl font-black text-white mb-2">
-                Selamat Datang, {{ $user->name ?? 'User' }}! 👋
+                {{ __('dashboard.welcome_back') }}, {{ $user->name ?? 'User' }}! 👋
             </h2>
             <p class="text-slate-400">
-                Akun Anda berhasil diverifikasi. Sekarang Anda siap menggunakan <span class="text-primary font-bold">REPLYAI</span> untuk mengotomatisasi percakapan Anda!
+                {{ __('dashboard.onboarding_subtitle') }}
             </p>
         </div>
         
@@ -97,20 +97,20 @@
         <div class="bg-slate-800/50 rounded-xl p-4 mb-6">
             <h4 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary text-lg">tips_and_updates</span>
-                Mulai dengan:
+                {{ __('dashboard.quick_actions') }}:
             </h4>
             <ul class="space-y-2 text-sm text-slate-300">
                 <li class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
-                    Hubungkan WhatsApp atau Instagram
+                    {{ __('dashboard.connect_wa') }}
                 </li>
                 <li class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
-                    Latih AI dengan Knowledge Base
+                    {{ __('dashboard.add_kb') }}
                 </li>
                 <li class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
-                    Buat Rules untuk balasan otomatis
+                    {{ __('dashboard.create_rules') }}
                 </li>
             </ul>
         </div>
@@ -118,7 +118,7 @@
         {{-- CTA Button --}}
         <button @click="open = false" 
                 class="w-full py-4 px-6 bg-gradient-to-r from-primary to-blue-500 hover:from-blue-600 hover:to-primary text-white font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg shadow-primary/30">
-            Mulai Sekarang 🚀
+            {{ __('dashboard.onboarding_title') }} 🚀
         </button>
     </div>
 </div>
@@ -147,8 +147,11 @@
                 {{-- Status Indicator --}}
                 <div class="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 rounded-full border border-green-500/20">
                     <div class="size-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span class="text-xs font-bold text-green-500">SYSTEM ONLINE</span>
+                    <span class="text-xs font-bold text-green-500">{{ __('sidebar.online') }}</span>
                 </div>
+
+                <!-- Language Switcher -->
+                @include('components.language-switcher')
             </div>
         </header>
 
@@ -159,7 +162,7 @@
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div class="flex flex-col gap-1">
                         <div class="flex items-center gap-3">
-                            <h2 class="text-2xl md:text-3xl font-black tracking-tight dark:text-white text-slate-900">Beranda</h2>
+                            <h2 class="text-2xl md:text-3xl font-black tracking-tight dark:text-white text-slate-900">{{ __('dashboard.title') }}</h2>
                             @include('components.page-help', [
                                 'title' => 'Halaman Beranda',
                                 'description' => 'Ini adalah halaman utama yang menampilkan ringkasan aktivitas chatbot Anda hari ini.',
@@ -171,7 +174,7 @@
                                 ]
                             ])
                         </div>
-                        <p class="text-slate-500 dark:text-slate-400">Ringkasan aktivitas chatbot Anda hari ini.</p>
+                        <p class="text-slate-500 dark:text-slate-400">{{ __('dashboard.subtitle') }}</p>
                     </div>
                 </div>
 
@@ -193,7 +196,7 @@
                             </span>
                         </div>
                         <div>
-                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Messages</p>
+                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ __('dashboard.total_messages') }}</p>
                             <p class="text-2xl font-bold dark:text-white text-slate-900 mt-1">{{ number_format($stats['total_messages']) }}</p>
                         </div>
                     </div>
@@ -209,7 +212,7 @@
                             </span>
                         </div>
                         <div>
-                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">AI Handled Rate</p>
+                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ __('dashboard.ai_handled_rate') }}</p>
                             <p class="text-2xl font-bold dark:text-white text-slate-900 mt-1">{{ $stats['ai_rate'] }}%</p>
                         </div>
                     </div>
@@ -222,7 +225,7 @@
                             </div>
                         </div>
                         <div>
-                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Pending Chats</p>
+                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ __('dashboard.pending_chats') }}</p>
                             <p class="text-2xl font-bold dark:text-white text-slate-900 mt-1">{{ $stats['pending_inbox'] }}</p>
                         </div>
                     </div>
@@ -235,7 +238,7 @@
                             </div>
                         </div>
                         <div>
-                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">KB Articles</p>
+                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ __('dashboard.kb_articles') }}</p>
                             <p class="text-2xl font-bold dark:text-white text-slate-900 mt-1">{{ $stats['kb_count'] }}</p>
                         </div>
                     </div>
@@ -245,12 +248,12 @@
                 <div class="flex flex-col gap-6 p-6 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
                     <div class="flex items-center justify-between flex-wrap gap-4">
                         <div>
-                            <h3 class="text-lg font-bold dark:text-white text-slate-900">Interaction Volume (7 Hari)</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">Data pesan masuk dan balasan bot.</p>
+                            <h3 class="text-lg font-bold dark:text-white text-slate-900">{{ __('dashboard.interaction_volume') }}</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('dashboard.interaction_volume_desc') }}</p>
                         </div>
                         <div class="flex items-center gap-4 text-xs">
-                            <span class="flex items-center gap-1"><span class="size-3 rounded-full bg-primary"></span> Pesan Masuk</span>
-                            <span class="flex items-center gap-1"><span class="size-3 rounded-full bg-purple-500"></span> Bot Reply</span>
+                            <span class="flex items-center gap-1"><span class="size-3 rounded-full bg-primary"></span> {{ __('dashboard.incoming_messages') }}</span>
+                            <span class="flex items-center gap-1"><span class="size-3 rounded-full bg-purple-500"></span> {{ __('dashboard.bot_reply') }}</span>
                         </div>
                     </div>
                     <div class="w-full h-[240px] relative">
@@ -262,8 +265,8 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="flex flex-col gap-4 p-6 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-bold dark:text-white text-slate-900">Top Pertanyaan</h3>
-                            <span class="text-xs text-slate-500">5 Terbanyak</span>
+                            <h3 class="text-lg font-bold dark:text-white text-slate-900">{{ __('dashboard.top_questions') }}</h3>
+                            <span class="text-xs text-slate-500">{{ __('dashboard.top_questions_desc') }}</span>
                         </div>
                         <div class="flex flex-col gap-2">
                             @forelse($topQuestions as $index => $q)
@@ -275,7 +278,7 @@
                                 <span class="px-2 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary">{{ $q->count }}x</span>
                             </div>
                             @empty
-                            <div class="text-center text-slate-500 py-4">Belum ada data pertanyaan</div>
+                            <div class="text-center text-slate-500 py-4">{{ __('dashboard.no_questions') }}</div>
                             @endforelse
                         </div>
                     </div>
@@ -283,33 +286,33 @@
                     {{-- Usage Widget in Column --}}
                     <div class="flex flex-col gap-4">
                         <div class="flex items-center justify-between px-1">
-                            <h3 class="text-lg font-bold dark:text-white text-slate-900">Limit Penggunaan</h3>
+                            <h3 class="text-lg font-bold dark:text-white text-slate-900">{{ __('dashboard.usage_limit') }}</h3>
                         </div>
                         @include('components.usage-widget', ['user' => $user, 'cols' => 1])
                     </div>
                     <!-- Response Time Card -->
                     <div class="flex flex-col gap-4 p-6 rounded-xl bg-surface-dark border border-slate-800 shadow-sm relative overflow-hidden group">
                         <div class="absolute -right-4 -top-4 size-20 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all"></div>
-                        <h3 class="text-lg font-bold dark:text-white text-slate-900 relative">AI Intelligence Insight</h3>
+                        <h3 class="text-lg font-bold dark:text-white text-slate-900 relative">{{ __('dashboard.ai_insight') }}</h3>
                         <div class="space-y-4 relative">
                             <div class="flex items-center gap-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
                                 <span class="material-symbols-outlined text-primary text-3xl">insights</span>
                                 <div>
-                                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Usage Forecast</p>
+                                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">{{ __('dashboard.usage_forecast') }}</p>
                                     <p class="text-lg font-bold text-white">
-                                        ± {{ $stats['forecast_days'] }} Hari Tersisa
+                                        ± {{ $stats['forecast_days'] }} {{ __('dashboard.days_left') }}
                                     </p>
-                                    <p class="text-[9px] text-slate-500 italic">Berdasarkan tren 7 hari terakhir.</p>
+                                    <p class="text-[9px] text-slate-500 italic">{{ __('dashboard.forecast_desc') }}</p>
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-2 gap-4">
                                 <div class="flex flex-col gap-1 p-3 rounded-lg bg-slate-800/50">
-                                    <span class="text-[10px] font-bold text-slate-500 uppercase">Avg Speed</span>
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase">{{ __('dashboard.avg_speed') }}</span>
                                     <p class="text-xl font-black text-emerald-500">{{ $stats['avg_response_time'] }}s</p>
                                 </div>
                                 <div class="flex flex-col gap-1 p-3 rounded-lg bg-slate-800/50">
-                                    <span class="text-[10px] font-bold text-slate-500 uppercase">Success Rate</span>
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase">{{ __('dashboard.success_rate') }}</span>
                                     <p class="text-xl font-black text-primary">{{ $stats['ai_rate'] }}%</p>
                                 </div>
                             </div>
@@ -321,7 +324,7 @@
                 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
                     <!-- Quick Actions -->
                     <div class="xl:col-span-1 flex flex-col gap-4">
-                        <h3 class="text-lg font-bold dark:text-white text-slate-900 px-1">Quick Actions</h3>
+                        <h3 class="text-lg font-bold dark:text-white text-slate-900 px-1">{{ __('dashboard.quick_actions') }}</h3>
                         <div class="grid grid-cols-2 gap-3">
                             <a href="{{ route('inbox') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-surface-dark border border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
                                 <div class="p-3 bg-blue-50 dark:bg-blue-900/20 text-primary rounded-full group-hover:scale-110 transition-transform">
@@ -333,7 +336,7 @@
                                 <div class="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-full group-hover:scale-110 transition-transform">
                                     <span class="material-symbols-outlined">school</span>
                                 </div>
-                                <span class="text-sm font-semibold dark:text-white text-slate-800">Train AI</span>
+                                <span class="text-sm font-semibold dark:text-white text-slate-800">{{ __('dashboard.train_ai') }}</span>
                             </a>
                             <a href="{{ route('rules.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-surface-dark border border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
                                 <div class="p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-full group-hover:scale-110 transition-transform">
@@ -353,7 +356,7 @@
                     <!-- Recent Activity / Notifications -->
                     <div class="xl:col-span-2 flex flex-col gap-4">
                         <div class="flex items-center justify-between px-1">
-                            <h3 class="text-lg font-bold dark:text-white text-slate-900">Recent Activity</h3>
+                            <h3 class="text-lg font-bold dark:text-white text-slate-900">{{ __('dashboard.recent_activity') }}</h3>
                         </div>
                         <div class="flex flex-col rounded-xl bg-surface-dark border border-slate-800 overflow-hidden">
                             
@@ -377,7 +380,7 @@
                             </div>
                             @empty
                             <div class="p-8 text-center text-slate-500">
-                                No recent activity found.
+                                {{ __('dashboard.no_activity') }}
                             </div>
                             @endforelse
                         </div>

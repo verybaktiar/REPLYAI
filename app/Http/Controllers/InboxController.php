@@ -108,11 +108,11 @@ class InboxController extends Controller
 
             return redirect()
                 ->route('inbox', ['conversation_id' => $conversationId])
-                ->with('success', 'Pesan terkirim.');
+                ->with('success', __('instagram.success_sent'));
         }
 
-        // Error handling dengan pesan spesifik
-        $errorMessage = $result['error_message'] ?? 'Gagal mengirim pesan. Cek log untuk detail.';
+        // Error handling with specific message
+        $errorMessage = $result['error_message'] ?? __('instagram.error_send_failed');
         
         return redirect()
             ->route('inbox', ['conversation_id' => $conversationId])
@@ -136,7 +136,7 @@ class InboxController extends Controller
             Log::error('❌ User tidak memiliki akun Instagram yang terhubung', ['user_id' => $user->id]);
             return [
                 'success' => false, 
-                'error_message' => 'Akun Instagram belum terhubung. Silakan hubungkan di Pengaturan Instagram.'
+                'error_message' => __('instagram.error_no_account')
             ];
         }
 
@@ -145,7 +145,7 @@ class InboxController extends Controller
             Log::error('❌ Token Instagram sudah expired', ['user_id' => $user->id]);
             return [
                 'success' => false, 
-                'error_message' => '🔑 Token Instagram sudah kadaluarsa. Silakan hubungkan ulang di Pengaturan Instagram.'
+                'error_message' => __('instagram.token_expired')
             ];
         }
 
@@ -187,7 +187,7 @@ class InboxController extends Controller
                 if ($errorSubcode === 2534022) {
                     return [
                         'success' => false, 
-                        'error_message' => '⏰ Jendela 24 jam sudah berakhir. User harus mengirim pesan baru terlebih dahulu agar Anda bisa membalas.'
+                        'error_message' => __('instagram.error_24h_window')
                     ];
                 }
 
@@ -195,7 +195,7 @@ class InboxController extends Controller
                 if ($response->status() === 401 || $errorSubcode === 463) {
                     return [
                         'success' => false, 
-                        'error_message' => '🔑 Access Token Instagram sudah kadaluarsa. Silakan perbarui di pengaturan.'
+                        'error_message' => __('instagram.token_expired')
                     ];
                 }
 
@@ -209,7 +209,7 @@ class InboxController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return ['success' => false, 'error_message' => 'Terjadi kesalahan sistem. Cek log untuk detail.'];
+            return ['success' => false, 'error_message' => __('instagram.error_system')];
         }
     }
 
@@ -283,6 +283,6 @@ class InboxController extends Controller
 
         return redirect()
             ->route('inbox', ['conversation_id' => $conversationId])
-            ->with('success', 'Percakapan dikembalikan ke Bot.');
+            ->with('success', __('instagram.success_handback'));
     }
 }

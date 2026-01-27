@@ -42,7 +42,7 @@
         <div class="flex items-center gap-2">
             <span class="flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">
                 <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                Online
+                {{ __('sidebar.online') }}
             </span>
         </div>
     </div>
@@ -78,7 +78,7 @@
                 <div class="bg-center bg-no-repeat bg-cover rounded-full size-10 shadow-lg" style='background-image: url("https://ui-avatars.com/api/?name=Reply+AI&background=0D8ABC&color=fff");'></div>
                 <div>
                     <h1 class="text-base font-bold leading-none text-white">ReplyAI Admin</h1>
-                    <p class="text-xs text-[#92a4c9] mt-1">Multi-Channel AI Platform</p>
+                    <p class="text-xs text-[#92a4c9] mt-1">{{ __('sidebar.multi_channel') }}</p>
                 </div>
             </div>
             <button @click="sidebarOpen = false" class="p-2 text-[#92a4c9] hover:text-white hover:bg-[#232f48] rounded-lg transition-colors">
@@ -123,7 +123,7 @@
                 </div>
                 <div>
                     <h1 class="text-base font-bold text-white">ReplyAI</h1>
-                    <p class="text-xs text-gray-500">Chatbot Platform</p>
+                    <p class="text-xs text-gray-500">{{ __('sidebar.chatbot_platform') }}</p>
                 </div>
             </div>
         </div>

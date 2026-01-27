@@ -42,13 +42,13 @@ class InstagramOAuthController extends Controller
         // Check if Instagram OAuth is configured
         if (!$this->oauthService->isConfigured()) {
             return redirect()->route('instagram.settings')
-                ->with('error', 'Instagram OAuth belum dikonfigurasi. Hubungi administrator.');
+                ->with('error', __('instagram.error_not_configured'));
         }
 
         $user = Auth::user();
         if (!$user) {
             return redirect()->route('login')
-                ->with('error', 'Silakan login terlebih dahulu.');
+                ->with('error', __('instagram.error_login_first'));
         }
 
         // Generate state token that includes user_id for CSRF protection
@@ -138,7 +138,7 @@ class InstagramOAuthController extends Controller
                 'returned_token' => $stateToken,
             ]);
             return redirect()->route('instagram.settings')
-                ->with('error', 'Invalid OAuth state. Please try again.');
+                ->with('error', __('instagram.error_invalid_state'));
         }
 
         // Check for errors
@@ -149,21 +149,21 @@ class InstagramOAuthController extends Controller
                 'description' => $request->input('error_description'),
             ]);
             return redirect()->route('instagram.settings')
-                ->with('error', 'Instagram authorization was denied: ' . $request->input('error_description'));
+                ->with('error', __('instagram.error_denied', ['description' => $request->input('error_description')]));
         }
 
         // Get authorization code
         $code = $request->input('code');
         if (!$code) {
             return redirect()->route('instagram.settings')
-                ->with('error', 'No authorization code received.');
+                ->with('error', __('instagram.error_no_code'));
         }
 
         // Exchange code for token
         $tokenData = $this->oauthService->exchangeCodeForToken($code);
         if (!$tokenData) {
             return redirect()->route('instagram.settings')
-                ->with('error', 'Failed to exchange authorization code for token.');
+                ->with('error', __('instagram.error_exchange_failed'));
         }
 
         // Get user profile
@@ -179,7 +179,7 @@ class InstagramOAuthController extends Controller
 
         if ($existingAccount) {
             return redirect()->route('instagram.settings')
-                ->with('error', 'This Instagram account is already connected to another user.');
+                ->with('error', __('instagram.error_already_connected'));
         }
 
         // ✅ Find existing account for this user (including inactive ones)
@@ -217,7 +217,7 @@ class InstagramOAuthController extends Controller
         session()->forget('instagram_oauth_state');
 
         return redirect()->route('instagram.settings')
-            ->with('success', 'Instagram account connected successfully!');
+            ->with('success', __('instagram.success_connected'));
     }
 
     /**
@@ -243,7 +243,7 @@ class InstagramOAuthController extends Controller
         }
 
         return redirect()->route('instagram.settings')
-            ->with('success', 'Instagram account disconnected.');
+            ->with('success', __('instagram.success_disconnected'));
     }
 
     /**
@@ -257,7 +257,7 @@ class InstagramOAuthController extends Controller
             ->first();
 
         if (!$account) {
-            return back()->with('error', 'No Instagram account connected.');
+            return back()->with('error', __('instagram.error_no_account'));
         }
 
         $refreshedToken = $this->oauthService->refreshToken($account->access_token);
@@ -268,9 +268,9 @@ class InstagramOAuthController extends Controller
                 'token_expires_at' => now()->addSeconds($refreshedToken['expires_in'] ?? 5184000),
             ]);
 
-            return back()->with('success', 'Token refreshed successfully.');
+            return back()->with('success', __('instagram.success_refreshed'));
         }
 
-        return back()->with('error', 'Failed to refresh token. Please reconnect your account.');
+        return back()->with('error', __('instagram.error_refresh_failed'));
     }
 }

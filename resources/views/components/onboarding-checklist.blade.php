@@ -11,31 +11,31 @@
     $checks = [
         'profile' => [
             'done' => $hasProfile,
-            'label' => 'Setup profil bisnis',
+            'label' => __('dashboard.setup_profile'),
             'url' => route('settings.business'),
             'icon' => 'business'
         ],
         'kb' => [
             'done' => $hasKb,
-            'label' => 'Tambahkan Knowledge Base',
+            'label' => __('dashboard.add_kb'),
             'url' => route('kb.index'),
             'icon' => 'menu_book'
         ],
         'rules' => [
             'done' => $hasRules,
-            'label' => 'Buat aturan auto reply',
+            'label' => __('dashboard.create_rules'),
             'url' => route('rules.index'),
             'icon' => 'rule'
         ],
         'wa' => [
             'done' => $hasWa,
-            'label' => 'Hubungkan WhatsApp',
+            'label' => __('dashboard.connect_wa'),
             'url' => route('whatsapp.settings'),
             'icon' => 'chat'
         ],
         'ig' => [
             'done' => $hasIg,
-            'label' => 'Hubungkan Instagram',
+            'label' => __('dashboard.connect_ig'),
             'url' => route('instagram.connect'),
             'icon' => 'photo_camera'
         ],
@@ -54,12 +54,12 @@
                 <span class="material-symbols-outlined text-[28px]">rocket_launch</span>
             </div>
             <div>
-                <h3 class="text-lg font-black text-white leading-tight">Mulai Bisnis Anda</h3>
-                <p class="text-xs text-slate-500 mt-1">Selesaikan langkah-langkah di bawah untuk hasil maksimal</p>
+                <h3 class="text-lg font-black text-white leading-tight">{{ __('dashboard.onboarding_title') }}</h3>
+                <p class="text-xs text-slate-500 mt-1">{{ __('dashboard.onboarding_subtitle') }}</p>
             </div>
         </div>
         <div class="text-right">
-            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">PROGRES</p>
+            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{{ __('dashboard.progress') }}</p>
             <div class="flex items-end gap-1 justify-end">
                 <span class="text-2xl font-black text-white leading-none">{{ $completed }}</span>
                 <span class="text-sm text-slate-500 font-bold mb-0.5">/ {{ $total }}</span>

@@ -57,7 +57,7 @@
             <label for="toggle-{{ $rule->id }}" class="toggle-label block overflow-hidden h-5 rounded-full bg-[#111722] cursor-pointer border border-[#232f48]"></label>
         </div>
         <span class="text-xs font-medium {{ $active ? 'text-white' : 'text-[#92a4c9]' }} ml-2">
-            {{ $active ? 'Aktif' : 'Nonaktif' }}
+            {{ $active ? __('rules.status_active', ['default' => 'Aktif']) : __('rules.status_inactive', ['default' => 'Nonaktif']) }}
         </span>
     </div>
 

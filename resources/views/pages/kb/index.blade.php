@@ -4,7 +4,7 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Knowledge Base - REPLYAI</title>
+    <title>{{ __('kb.title') }} - REPLYAI</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -43,7 +43,21 @@
 <!-- Sidebar Navigation -->
 @include('components.sidebar')
 
-<main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0">
+<main class="flex-1 flex flex-col h-full overflow-hidden relative">
+    <!-- Top Header for KB -->
+    <header class="h-14 border-b border-border-dark bg-background-dark/80 backdrop-blur-md flex items-center justify-between px-6 z-20 shrink-0">
+        <div class="flex items-center gap-2 text-text-secondary text-xs font-bold uppercase tracking-widest">
+            <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+            {{ now()->translatedFormat('l, d F Y') }}
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 px-3 py-1 bg-whatsapp/10 rounded-full border border-whatsapp/20">
+                <div class="size-1.5 bg-whatsapp rounded-full animate-pulse"></div>
+                <span class="text-[10px] font-bold text-whatsapp uppercase tracking-widest">{{ __('common.system_online', ['default' => 'System Online']) }}</span>
+            </div>
+            @include('components.language-switcher')
+        </div>
+    </header>
     <div class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-10 pb-20">
         <div class="max-w-[1200px] mx-auto flex flex-col gap-6">
             
@@ -51,19 +65,19 @@
            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div class="flex items-center gap-3">
-                <h1 class="text-3xl font-black text-white">Info Produk</h1>
+                <h1 class="text-3xl font-black text-white">{{ __('kb.title') }}</h1>
                 @include('components.page-help', [
-                    'title' => 'Info Produk (Knowledge Base)',
-                    'description' => 'Tempat menyimpan informasi yang akan digunakan bot untuk menjawab pertanyaan pelanggan.',
+                    'title' => __('kb.help_title'),
+                    'description' => __('kb.help_description'),
                     'tips' => [
-                        'Import dari URL website resmi Anda',
-                        'Upload file PDF atau TXT berisi informasi produk',
-                        'Semakin lengkap info, semakin pintar bot menjawab',
-                        'Gunakan tombol "Test AI" untuk mencoba respons bot'
+                        __('kb.tip_1'),
+                        __('kb.tip_2'),
+                        __('kb.tip_3'),
+                        __('kb.tip_4')
                     ]
                 ])
               </div>
-              <p class="text-text-secondary mt-1">Sumber informasi untuk jawaban AI chatbot.</p>
+              <p class="text-text-secondary mt-1">{{ __('kb.subtitle') }}</p>
             </div>
              <!-- Tombol Test AI -->
              <button
@@ -79,10 +93,10 @@
           <div class="rounded-xl border border-border-dark bg-surface-dark overflow-hidden">
               <div class="flex border-b border-border-dark">
                   <button id="tab-url" class="flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors">
-                      <span class="material-symbols-outlined align-middle mr-1 text-[18px]">link</span> Import URL
+                      <span class="material-symbols-outlined align-middle mr-1 text-[18px]">link</span> {{ __('kb.tab_url') }}
                   </button>
                   <button id="tab-file" class="flex-1 px-4 py-3 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors">
-                      <span class="material-symbols-outlined align-middle mr-1 text-[18px]">upload_file</span> Upload Dokumen
+                      <span class="material-symbols-outlined align-middle mr-1 text-[18px]">upload_file</span> {{ __('kb.tab_file') }}
                   </button>
               </div>
 
@@ -100,7 +114,7 @@
                   <div class="col-span-12 sm:col-span-2">
                     <button id="btn-import-url"
                       class="w-full px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition">
-                      Import
+                      {{ __('kb.button_import') }}
                     </button>
                   </div>
                 </div>
@@ -113,8 +127,8 @@
                       <input type="file" id="kb-file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".pdf,.txt">
                       <div class="flex flex-col items-center gap-2 pointer-events-none">
                           <span class="material-symbols-outlined text-[40px] text-text-secondary">cloud_upload</span>
-                          <p class="text-sm text-gray-300 font-medium">Klik atau drag file PDF / TXT ke sini</p>
-                          <p class="text-xs text-text-secondary">Maksimal 5MB. PDF akan diparsing otomatis.</p>
+                          <p class="text-sm text-gray-300 font-medium">{{ __('kb.placeholder_file') }}</p>
+                          <p class="text-xs text-text-secondary">{{ __('kb.help_file') }}</p>
                           <p id="file-name" class="text-sm text-primary font-bold mt-2 hidden"></p>
                       </div>
                   </div>
@@ -125,7 +139,7 @@
                       
                       <button id="btn-import-file" disabled
                         class="px-6 py-2.5 rounded-lg bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                        Upload & Process
+                        {{ __('kb.button_upload') }}
                       </button>
                   </div>
               </div>
@@ -134,7 +148,7 @@
           <!-- List KB -->
           <div class="rounded-xl border border-border-dark bg-surface-dark overflow-hidden">
             <div class="px-6 py-4 border-b border-border-dark flex items-center justify-between bg-[#1f2b40]/50">
-              <p class="font-bold text-white">Daftar Sumber Pengetahuan</p>
+              <p class="font-bold text-white">{{ __('kb.list_title') }}</p>
               <div class="text-xs text-text-secondary font-bold bg-[#111722] px-2 py-1 rounded">Total: {{ $articles->count() }}</div>
             </div>
 
@@ -180,13 +194,13 @@
                             data-tags="{{ e($a->tags ?? '-') }}"
                             data-content="{{ e($a->content) }}"
                             class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#111722] text-text-secondary hover:text-white border border-border-dark transition">
-                            Detail
+                            {{ __('kb.button_detail') }}
                           </button>
-
+L
                           <button data-action="toggle" data-id="{{ $a->id }}"
                             class="px-3 py-1.5 rounded-lg text-xs font-bold border border-transparent
                               {{ $a->is_active ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-gray-700/50 text-gray-400' }}">
-                            {{ $a->is_active ? 'Active' : 'Inactive' }}
+                            {{ $a->is_active ? __('kb.status_active') : __('kb.status_inactive') }}
                           </button>
 
                           <button data-action="delete" data-id="{{ $a->id }}"
@@ -205,8 +219,8 @@
                 <div class="py-12">
                     <x-empty-state 
                         icon="menu_book" 
-                        title="Belum Ada Knowledge Base" 
-                        description="AI memerlukan informasi untuk membalas chat. Gunakan form di atas untuk import URL website atau upload dokumen PDF/TXT."
+                        title="{{ __('kb.empty_title') }}" 
+                        description="{{ __('kb.empty_description') }}"
                     />
                 </div>
               @endforelse
@@ -225,7 +239,7 @@
     <div class="w-full max-w-3xl rounded-2xl bg-[#1e2634] border border-[#324467] shadow-2xl flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between px-6 py-4 border-b border-[#324467]">
         <div>
-          <h3 id="kb-detail-title" class="text-lg font-bold text-white">Detail KB</h3>
+          <h3 id="kb-detail-title" class="text-lg font-bold text-white">{{ __('kb.modal_detail_title') }}</h3>
           <p id="kb-detail-url" class="text-xs text-[#92a4c9] mt-1 break-all"></p>
         </div>
         <button type="button" data-modal-close="kb-detail-modal" class="text-[#92a4c9] hover:text-white">
@@ -236,7 +250,7 @@
         <pre id="kb-detail-content" class="whitespace-pre-wrap text-sm text-gray-300 font-mono bg-[#111722] p-4 rounded-lg border border-[#324467]"></pre>
       </div>
       <div class="flex items-center justify-end px-6 py-4 border-t border-[#324467]">
-        <button type="button" data-modal-close="kb-detail-modal" class="px-4 py-2 rounded-lg bg-[#324467] text-white text-sm font-semibold hover:bg-[#405580]">Tutup</button>
+        <button type="button" data-modal-close="kb-detail-modal" class="px-4 py-2 rounded-lg bg-[#324467] text-white text-sm font-semibold hover:bg-[#405580]">{{ __('kb.button_close') }}</button>
       </div>
     </div>
   </div>
@@ -249,8 +263,8 @@
     <div class="w-full max-w-2xl rounded-2xl bg-[#1e2634] border border-[#324467] shadow-2xl">
       <div class="flex items-center justify-between px-6 py-4 border-b border-[#324467]">
         <div>
-          <h3 class="text-lg font-bold text-white">Test AI Simulator</h3>
-          <p class="text-xs text-[#92a4c9]">Uji respon AI berdasarkan data Knowledge Base.</p>
+          <h3 class="text-lg font-bold text-white">{{ __('kb.modal_test_title') }}</h3>
+          <p class="text-xs text-[#92a4c9]">{{ __('kb.modal_test_subtitle') }}</p>
         </div>
         <button type="button" data-modal-close="ai-test-modal" class="text-[#92a4c9] hover:text-white">
             <span class="material-symbols-outlined">close</span>
@@ -259,21 +273,21 @@
 
       <div class="px-6 py-6 space-y-4">
         <div>
-            <label class="block text-sm font-medium text-white mb-2">Pertanyaan User</label>
-            <textarea id="ai-question" rows="3" placeholder="Contoh: Apakah ada dokter mata hari ini?"
+            <label class="block text-sm font-medium text-white mb-2">{{ __('kb.label_question') }}</label>
+            <textarea id="ai-question" rows="3" placeholder="{{ __('kb.placeholder_question') }}"
               class="w-full rounded-lg border border-[#324467] bg-[#111722] px-4 py-3 text-sm text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"></textarea>
         </div>
 
         <div class="flex justify-end">
           <button id="btn-ai-test" class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-blue-600 shadow-lg shadow-blue-900/20 flex items-center gap-2">
-            <span class="material-symbols-outlined text-[18px]">play_arrow</span> Test Response
+            <span class="material-symbols-outlined text-[18px]">play_arrow</span> {{ __('kb.button_test_response') }}
           </button>
         </div>
 
         <!-- Result Area -->
         <div id="ai-result-wrap" class="hidden mt-4 pt-4 border-t border-[#324467] space-y-4">
            <div class="flex items-center gap-2">
-               <span class="text-xs font-bold text-[#92a4c9] uppercase tracking-wider">AI Confidence</span>
+               <span class="text-xs font-bold text-[#92a4c9] uppercase tracking-wider">{{ __('kb.label_confidence') }}</span>
                <span id="ai-confidence" class="text-xs font-mono bg-[#111722] px-2 py-0.5 rounded text-white border border-[#324467]"></span>
            </div>
            
@@ -285,7 +299,7 @@
            </div>
 
            <div>
-              <p class="text-xs font-bold text-[#92a4c9] mb-2 uppercase tracking-wider">Sumber Referensi:</p>
+              <p class="text-xs font-bold text-[#92a4c9] mb-2 uppercase tracking-wider">{{ __('kb.label_sources') }}</p>
               <ul id="ai-sources" class="text-xs text-gray-400 list-disc pl-5 space-y-1"></ul>
            </div>
         </div>
@@ -295,6 +309,19 @@
 </div>
 
 <script>
+const LANG = {
+    loading: "{{ __('kb.js_loading') }}",
+    import_success: "{{ __('kb.js_import_success') }}",
+    import_error: "{{ __('kb.js_import_error') }}",
+    uploading: "{{ __('kb.js_uploading') }}",
+    upload_success: "{{ __('kb.js_upload_success') }}",
+    upload_error: "{{ __('kb.js_upload_error') }}",
+    test_ai_error: "{{ __('kb.js_test_ai_error') }}",
+    connection_error: "{{ __('kb.js_connection_error') }}",
+    no_answer: "{{ __('kb.js_no_answer') }}",
+    min_chars: "{{ __('kb.js_min_chars') }}",
+    url_required: "{{ __('kb.js_url_required') }}",
+};
 // Global function for profile update
 async function updateKbProfile(kbId, profileId) {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -315,7 +342,7 @@ async function updateKbProfile(kbId, profileId) {
         }
     } catch (e) {
         console.error('Error updating KB profile:', e);
-        alert('Gagal update profil KB');
+        alert(LANG.error_generic || 'Failed to update KB profile');
     }
 }
 
@@ -328,10 +355,10 @@ async function updateKbProfile(kbId, profileId) {
     const url = document.getElementById('kb-url')?.value?.trim();
     const title = document.getElementById('kb-title')?.value?.trim();
 
-    if(!url){ alert('URL wajib diisi'); return; }
+    if(!url){ alert(LANG.url_required); return; }
 
     btnImport.disabled = true;
-    btnImport.innerHTML = 'Loading...';
+    btnImport.innerHTML = LANG.loading;
 
     try{
       const res = await fetch('/kb/import-url', {
@@ -348,11 +375,11 @@ async function updateKbProfile(kbId, profileId) {
       const data = await res.json();
       if(!data.ok) throw data;
 
-      alert('Import sukses. Refresh halaman.');
+      alert(LANG.import_success);
       window.location.reload();
 
     }catch(err){
-      alert(err.message || 'Gagal import URL');
+      alert(err.message || LANG.js_import_error);
       console.error(err);
     }finally{
       btnImport.disabled = false;
@@ -410,7 +437,7 @@ async function updateKbProfile(kbId, profileId) {
       if(tags) formData.append('tags', tags);
 
       btnUpload.disabled = true;
-      btnUpload.innerHTML = 'Uploading & Parsing...';
+      btnUpload.innerHTML = LANG.uploading;
 
       try {
           const res = await fetch('/kb/import-file', {
@@ -425,10 +452,10 @@ async function updateKbProfile(kbId, profileId) {
           const data = await res.json();
           if(!res.ok) throw new Error(data.message || 'Gagal upload file');
 
-          alert('File berhasil diupload dan diparsing!');
+          alert(LANG.upload_success);
           window.location.reload();
       } catch (e) {
-          alert('Error: ' + e.message);
+          alert('Error: ' + (e.message || LANG.upload_error));
           console.error(e);
       } finally {
           btnUpload.disabled = false;
@@ -515,7 +542,7 @@ async function updateKbProfile(kbId, profileId) {
   btnTest?.addEventListener('click', async () => {
     const q = (qEl.value || '').trim();
     if(q.length < 3){
-      alert('Pertanyaan minimal 3 karakter');
+      alert(LANG.min_chars);
       return;
     }
 
@@ -546,7 +573,7 @@ async function updateKbProfile(kbId, profileId) {
       if(!r){
         confEl.textContent = '0.00';
         confEl.className = 'text-xs font-mono bg-red-900/50 px-2 py-0.5 rounded text-red-200 border border-red-800';
-        ansEl.textContent = 'AI tidak menemukan jawaban di KB.';
+        ansEl.textContent = LANG.no_answer;
         srcEl.innerHTML = '';
         wrap.classList.remove('hidden');
         return;
@@ -572,7 +599,7 @@ async function updateKbProfile(kbId, profileId) {
 
     }catch(err){
       console.error(err);
-      alert('Error koneksi');
+      alert(LANG.connection_error);
     }finally{
       btnTest.disabled = false;
       btnTest.innerHTML = '<span class="material-symbols-outlined text-[18px]">play_arrow</span> Test Response';
