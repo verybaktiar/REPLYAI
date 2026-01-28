@@ -98,13 +98,23 @@
 
                     <!-- Price -->
                     <div class="mb-8">
-                        @if($hasOriginal)
-                        <div class="text-slate-500 text-sm line-through mb-1">
-                            Rp {{ number_format($plan->price_monthly_original, 0, ',', '.') }}
-                        </div>
+                        @if($plan->price_monthly_original_display)
+                            <div class="text-slate-500 text-sm line-through mb-1">
+                                {{ $plan->price_monthly_original_display }}
+                            </div>
+                        @elseif($hasOriginal)
+                            <div class="text-slate-500 text-sm line-through mb-1">
+                                Rp {{ number_format($plan->price_monthly_original, 0, ',', '.') }}
+                            </div>
                         @endif
+
                         <div class="flex items-baseline gap-2">
-                            <span class="text-4xl font-black text-white">Rp {{ $plan->price_monthly > 0 ? number_format($plan->price_monthly, 0, ',', '.') : $plan->name }}</span>
+                            @if($plan->price_monthly_display)
+                                <span class="text-4xl font-black text-white">{{ $plan->price_monthly_display }}</span>
+                            @else
+                                <span class="text-4xl font-black text-white">Rp {{ $plan->price_monthly > 0 ? number_format($plan->price_monthly, 0, ',', '.') : $plan->name }}</span>
+                            @endif
+                            
                             @if($plan->price_monthly > 0)
                                 <span class="text-slate-500 text-xs font-bold">/bulan</span>
                             @endif

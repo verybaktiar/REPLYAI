@@ -543,11 +543,19 @@
                                 <p class="pricing-desc">{{ $plan->description }}</p>
                             </div>
                             <div class="pricing-price">
-                                @if($plan->price_monthly_original > $plan->price_monthly)
+                                @if($plan->price_monthly_original_display)
+                                    <span class="original-price">{{ $plan->price_monthly_original_display }}</span>
+                                @elseif($plan->price_monthly_original > $plan->price_monthly)
                                     <span class="original-price">Rp {{ number_format($plan->price_monthly_original, 0, ',', '.') }}</span>
                                 @endif
-                                <span class="currency">Rp</span>
-                                <span class="amount">{{ $plan->price_monthly > 0 ? number_format($plan->price_monthly, 0, ',', '.') : $plan->name }}</span>
+                                
+                                @if($plan->price_monthly_display)
+                                    <span class="amount">{{ $plan->price_monthly_display }}</span>
+                                @else
+                                    <span class="currency">Rp</span>
+                                    <span class="amount">{{ $plan->price_monthly > 0 ? number_format($plan->price_monthly, 0, ',', '.') : $plan->name }}</span>
+                                @endif
+
                                 @if($plan->price_monthly > 0)
                                     <span class="period">/bulan</span>
                                 @endif

@@ -38,8 +38,12 @@ class AdminPlanController extends Controller
             'description' => 'nullable|string|max:500',
             'price_monthly' => 'required|numeric|min:0',
             'price_monthly_original' => 'nullable|numeric|min:0',
+            'price_monthly_display' => 'nullable|string|max:50',
+            'price_monthly_original_display' => 'nullable|string|max:50',
             'price_yearly' => 'nullable|numeric|min:0',
             'price_yearly_original' => 'nullable|numeric|min:0',
+            'price_yearly_display' => 'nullable|string|max:50',
+            'price_yearly_original_display' => 'nullable|string|max:50',
             'is_active' => 'boolean',
             
             // Limits
@@ -120,8 +124,12 @@ class AdminPlanController extends Controller
             'description' => $validated['description'],
             'price_monthly' => $validated['price_monthly'],
             'price_monthly_original' => $validated['price_monthly_original'] ?? null,
+            'price_monthly_display' => $validated['price_monthly_display'] ?? null,
+            'price_monthly_original_display' => $validated['price_monthly_original_display'] ?? null,
             'price_yearly' => $validated['price_yearly'] ?? null,
             'price_yearly_original' => $validated['price_yearly_original'] ?? null,
+            'price_yearly_display' => $validated['price_yearly_display'] ?? null,
+            'price_yearly_original_display' => $validated['price_yearly_original_display'] ?? null,
             'is_active' => $request->boolean('is_active'),
             'features' => $features,
         ]);

@@ -28,8 +28,12 @@ class Plan extends Model
         'description',    // Deskripsi
         'price_monthly',           // Harga bulanan
         'price_monthly_original',  // Harga bulanan asli (sebelum diskon)
+        'price_monthly_display',   // Tampilan harga bulanan (misal: 500rb)
+        'price_monthly_original_display', // Tampilan harga asli bulanan (misal: 2jt)
         'price_yearly',            // Harga tahunan
         'price_yearly_original',   // Harga tahunan asli (sebelum diskon)
+        'price_yearly_display',    // Tampilan harga tahunan (misal: 5jt)
+        'price_yearly_original_display', // Tampilan harga asli tahunan (misal: 20jt)
         'features',       // Batasan fitur (JSON)
         'features_list',  // Daftar fitur deskriptif (JSON)
         'is_active',      // Aktif atau tidak

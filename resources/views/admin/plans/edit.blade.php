@@ -49,29 +49,60 @@
                 <label class="block text-sm font-medium mb-2">Monthly Price (Rp) <span class="text-red-500">*</span></label>
                 <input type="number" name="price_monthly" value="{{ old('price_monthly', $plan->price_monthly) }}" required min="0"
                        class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary">
-                <p class="text-[10px] text-slate-500 mt-1">Harga yang dibayar user saat ini.</p>
+                <p class="text-[10px] text-slate-500 mt-1">Harga numerik untuk sistem/checkout.</p>
             </div>
 
             <div>
-                <label class="block text-sm font-medium mb-2">Monthly Original Price (Rp) - Coret</label>
-                <input type="number" name="price_monthly_original" value="{{ old('price_monthly_original', $plan->price_monthly_original) }}" min="0"
+                <label class="block text-sm font-medium mb-2">Monthly Price Display (Teks)</label>
+                <input type="text" name="price_monthly_display" value="{{ old('price_monthly_display', $plan->price_monthly_display) }}"
                        class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary"
-                       placeholder="Misal: 4000000">
-                <p class="text-[10px] text-slate-500 mt-1">Harga asli sebelum diskon (akan dicoret).</p>
+                       placeholder="Misal: 500rb">
+                <p class="text-[10px] text-slate-500 mt-1">Teks yang tampil di landing page. Jika kosong, pakai format Rp.</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Monthly Original Price (Rp)</label>
+                <input type="number" name="price_monthly_original" value="{{ old('price_monthly_original', $plan->price_monthly_original) }}" min="0"
+                       class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary">
+                <p class="text-[10px] text-slate-500 mt-1">Harga numerik asli (akan dicoret).</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Monthly Original Display (Teks)</label>
+                <input type="text" name="price_monthly_original_display" value="{{ old('price_monthly_original_display', $plan->price_monthly_original_display) }}"
+                       class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary"
+                       placeholder="Misal: 1.1jt">
+                <p class="text-[10px] text-slate-500 mt-1">Teks harga asli yang dicoret.</p>
+            </div>
+
+            <div class="md:col-span-2 pt-4 border-t border-slate-800">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Yearly Pricing</h3>
             </div>
 
             <div>
                 <label class="block text-sm font-medium mb-2">Yearly Price (Rp)</label>
                 <input type="number" name="price_yearly" value="{{ old('price_yearly', $plan->price_yearly) }}" min="0"
-                       class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary"
-                       placeholder="Kosongkan jika tidak ada">
+                       class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary">
             </div>
 
             <div>
-                <label class="block text-sm font-medium mb-2">Yearly Original Price (Rp) - Coret</label>
-                <input type="number" name="price_yearly_original" value="{{ old('price_yearly_original', $plan->price_yearly_original) }}" min="0"
+                <label class="block text-sm font-medium mb-2">Yearly Price Display (Teks)</label>
+                <input type="text" name="price_yearly_display" value="{{ old('price_yearly_display', $plan->price_yearly_display) }}"
                        class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary"
-                       placeholder="Misal: 40000000">
+                       placeholder="Misal: 5jt">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Yearly Original Price (Rp)</label>
+                <input type="number" name="price_yearly_original" value="{{ old('price_yearly_original', $plan->price_yearly_original) }}" min="0"
+                       class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Yearly Original Display (Teks)</label>
+                <input type="text" name="price_yearly_original_display" value="{{ old('price_yearly_original_display', $plan->price_yearly_original_display) }}"
+                       class="w-full px-4 py-3 rounded-xl bg-surface-light border border-slate-700 text-white focus:border-primary focus:ring-primary"
+                       placeholder="Misal: 11jt">
             </div>
         </div>
     </div>
