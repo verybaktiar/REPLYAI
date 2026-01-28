@@ -78,7 +78,6 @@
                         $isWa = $account instanceof \App\Models\WhatsAppDevice;
                         $user = $isWa ? ($account->businessProfile?->user) : $account->user;
                     @endphp
-                    @if($user)
                     <div class="px-6 py-4 flex items-center justify-between hover:bg-surface-light/20 transition">
                         <div class="flex items-center gap-4">
                             <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl {{ $isWa ? 'bg-green-500/10 text-green-500' : 'bg-pink-500/10 text-pink-500' }}">
@@ -86,17 +85,22 @@
                             </div>
                             <div>
                                 <div class="font-bold text-white">{{ $isWa ? ($account->phone_number ?? $account->session_id) : $account->username }}</div>
-                                <div class="text-xs text-slate-400">Owner: {{ $user->name }} ({{ $user->email }})</div>
+                                @if($user)
+                                    <div class="text-xs text-slate-400">Owner: {{ $user->name }} ({{ $user->email }})</div>
+                                @else
+                                    <div class="text-xs text-red-500 italic">⚠️ Data owner tidak ditemukan (Orphaned Account)</div>
+                                @endif
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="px-2 py-1 rounded bg-red-500/10 text-red-400 text-[10px] font-bold uppercase border border-red-500/20">Disconnected</span>
-                            <a href="{{ route('admin.users.show', $user->id) }}" class="p-2 text-slate-400 hover:text-white transition" title="Contact / Manage User">
-                                <span class="material-symbols-outlined text-lg">person_search</span>
-                            </a>
+                            @if($user)
+                                <a href="{{ route('admin.users.show', $user->id) }}" class="p-2 text-slate-400 hover:text-white transition" title="Contact / Manage User">
+                                    <span class="material-symbols-outlined text-lg">person_search</span>
+                                </a>
+                            @endif
                         </div>
                     </div>
-                    @endif
                 @empty
                     <div class="px-6 py-12 text-center text-slate-500">
                         <span class="material-symbols-outlined text-4xl mb-2 opacity-20">verified_user</span>
