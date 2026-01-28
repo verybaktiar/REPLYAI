@@ -167,26 +167,40 @@ function createPricingCard(plan) {
     card.className = `pricing-card animate-on-scroll ${plan.is_popular ? 'popular' : ''}`;
 
     // Format price
-    const priceFormatted = formatPrice(plan.price_monthly);
+    let priceFormatted = plan.price_monthly_display;
+    if (!priceFormatted) {
+        priceFormatted = formatPrice(plan.price_monthly);
+    }
+
+    // Original Price (Slashed)
+    let originalPriceHtml = '';
+    if (plan.price_monthly_original_display) {
+        originalPriceHtml = `<span class="original-price" style="text-decoration: line-through; color: var(--text-muted); font-size: 14px; display: block; margin-bottom: 4px;">${plan.price_monthly_original_display}</span>`;
+    } else if (plan.price_monthly_original > plan.price_monthly) {
+        originalPriceHtml = `<span class="original-price" style="text-decoration: line-through; color: var(--text-muted); font-size: 14px; display: block; margin-bottom: 4px;">Rp ${plan.price_monthly_original.toLocaleString('id-ID')}</span>`;
+    }
 
     // Build features list
-    const features = buildFeaturesList(plan.features);
+    const features = buildFeaturesList(plan.features, plan.features_list);
 
     card.innerHTML = `
-        ${plan.is_popular ? '<div class="popular-badge">🔥 Paling Populer</div>' : ''}
+        ${plan.is_popular ? '<div class="popular-badge">🔥 Paling Laris</div>' : ''}
         <div class="pricing-header">
             <h3>${plan.name}</h3>
             <p class="pricing-desc">${plan.description}</p>
         </div>
         <div class="pricing-price">
-            <span class="currency">Rp</span>
-            <span class="amount">${priceFormatted}</span>
-            <span class="period">/bulan</span>
+            ${originalPriceHtml}
+            <div style="display: flex; align-items: baseline; gap: 4px;">
+                ${plan.price_monthly_display ? '' : '<span class="currency">Rp</span>'}
+                <span class="amount">${priceFormatted}</span>
+                <span class="period">/bulan</span>
+            </div>
         </div>
         <ul class="pricing-features">
             ${features}
         </ul>
-        <a href="/pricing?plan=${plan.slug}" class="btn ${plan.is_popular ? 'btn-primary' : 'btn-secondary'} btn-block">Mulai ${plan.name}</a>
+        <a href="/pricing?plan=${plan.slug}" class="btn ${plan.is_popular ? 'btn-primary' : 'btn-secondary'} btn-block">Mulai Paket ${plan.name}</a>
     `;
 
     return card;
@@ -194,14 +208,20 @@ function createPricingCard(plan) {
 
 function formatPrice(price) {
     if (price >= 1000000) {
-        return (price / 1000000).toFixed(0) + 'jt';
+        let val = price / 1000000;
+        return (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)).replace('.', ',') + 'jt';
     } else if (price >= 1000) {
         return Math.round(price / 1000) + 'rb';
     }
-    return price.toString();
+    return price.toLocaleString('id-ID');
 }
 
-function buildFeaturesList(features) {
+function buildFeaturesList(features, features_list) {
+    // Priority 1: Use the descriptive features_list from DB
+    if (features_list && Array.isArray(features_list) && features_list.length > 0) {
+        return features_list.map(item => `<li><i data-lucide="check"></i> ${item}</li>`).join('');
+    }
+
     if (!features) return '';
 
     const featureItems = [];

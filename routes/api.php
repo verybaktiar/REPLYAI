@@ -44,8 +44,13 @@ Route::get('/plans', function () {
                 'slug' => $plan->slug,
                 'description' => $plan->description,
                 'price_monthly' => $plan->price_monthly,
+                'price_monthly_original' => $plan->price_monthly_original,
+                'price_monthly_display' => $plan->price_monthly_display,
+                'price_monthly_original_display' => $plan->price_monthly_original_display,
                 'price_yearly' => $plan->price_yearly,
+                'price_yearly_display' => $plan->price_yearly_display,
                 'features' => $plan->features,
+                'features_list' => $plan->features_list,
                 'is_popular' => $plan->slug === 'pro', // Mark Pro as popular
             ];
         });
