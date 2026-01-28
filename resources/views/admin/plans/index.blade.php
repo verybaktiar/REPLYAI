@@ -21,8 +21,20 @@
         </div>
 
         <div class="mb-4">
-            <span class="text-3xl font-black text-primary">Rp {{ number_format($plan->price, 0, ',', '.') }}</span>
-            <span class="text-slate-400">/bulan</span>
+            @if($plan->price_monthly_original_display)
+                <div class="text-xs text-slate-500 line-through mb-1">{{ $plan->price_monthly_original_display }}</div>
+            @elseif($plan->price_monthly_original > $plan->price_monthly)
+                <div class="text-xs text-slate-500 line-through mb-1">Rp {{ number_format($plan->price_monthly_original, 0, ',', '.') }}</div>
+            @endif
+
+            <div class="flex items-baseline gap-1">
+                @if($plan->price_monthly_display)
+                    <span class="text-3xl font-black text-primary">{{ $plan->price_monthly_display }}</span>
+                @else
+                    <span class="text-3xl font-black text-primary">Rp {{ number_format($plan->price_monthly, 0, ',', '.') }}</span>
+                @endif
+                <span class="text-slate-400">/bulan</span>
+            </div>
         </div>
 
         <!-- Limits -->
