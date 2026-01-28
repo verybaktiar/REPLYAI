@@ -164,6 +164,7 @@ class AutoReplyEngine
                 'status' => 'sent_menu',
                 'response_source' => 'menu',
                 'ai_used' => false,
+                'user_id' => $conversation->user_id,
             ]);
 
             return [
@@ -190,6 +191,7 @@ class AutoReplyEngine
                 'status' => 'sent',
                 'response_source' => 'manual',
                 'ai_used' => false,
+                'user_id' => $conversation->user_id,
             ]);
 
             return [
@@ -251,6 +253,7 @@ class AutoReplyEngine
                 'status' => 'sent_ai_cooldown',
                 'response_source' => 'ai',
                 'ai_used' => true,
+                'user_id' => $conversation->user_id,
             ]);
 
             return [
@@ -277,6 +280,7 @@ class AutoReplyEngine
                     'response_source' => 'ai',
                     'ai_used' => true,
                     'ai_confidence' => $aiResult['confidence'] ?? 0,
+                    'user_id' => $conversation->user_id,
                 ]);
 
                 return $this->fallbackToCS($conversation, $message, $aiText);
@@ -297,6 +301,7 @@ class AutoReplyEngine
                 'response_source' => 'ai',
                 'ai_used' => true,
                 'ai_confidence' => (float)($aiResult['confidence'] ?? 0),
+                'user_id' => $conversation->user_id,
             ]);
 
             return [
@@ -319,6 +324,7 @@ class AutoReplyEngine
                 'response_source' => 'ai',
                 'ai_used' => true,
                 'error_message' => $e->getMessage(),
+                'user_id' => $conversation->user_id,
             ]);
 
             return $this->fallbackToCS($conversation, $message, $aiText);
@@ -353,6 +359,7 @@ class AutoReplyEngine
             'status' => 'sent_fallback',
             'response_source' => 'fallback',
             'ai_used' => false,
+            'user_id' => $conversation->user_id,
         ]);
 
         return [

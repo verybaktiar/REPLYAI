@@ -9,6 +9,9 @@ use App\Models\User;
 use App\Services\HealthService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use App\Models\WebWidget;
+use App\Models\WebConversation;
+use App\Models\WebMessage;
 
 class SystemHealthController extends Controller
 {
@@ -61,6 +64,7 @@ class SystemHealthController extends Controller
             'dbStatus',
             'cacheStatus',
             'diskUsedPercent',
+            'activeUsers24h',
         ));
     }
 

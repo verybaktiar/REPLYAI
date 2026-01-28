@@ -4,8 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\BelongsToUser;
+
 class AutoReplyLog extends Model
 {
+    use BelongsToUser;
+
     protected $fillable = [
         'conversation_id',
         'message_id',
@@ -17,6 +21,7 @@ class AutoReplyLog extends Model
         'response_source',
         'ai_confidence',
         'ai_sources',
+        'user_id',
     ];
     protected $casts = [
         'ai_confidence' => 'float',
