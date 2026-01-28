@@ -98,6 +98,7 @@ class WebChatController extends Controller
                     'visitor_user_agent' => $request->userAgent(),
                     'page_url' => $validated['page_url'] ?? null,
                     'status' => 'bot',
+                    'user_id' => $widget->user_id,
                 ]
             );
 
@@ -117,6 +118,7 @@ class WebChatController extends Controller
                 'web_conversation_id' => $conversation->id,
                 'sender_type' => 'visitor',
                 'content' => $validated['message'],
+                'user_id' => $widget->user_id,
             ]);
 
             // Generate AI response if handled by bot
@@ -132,6 +134,7 @@ class WebChatController extends Controller
                         'web_conversation_id' => $conversation->id,
                         'sender_type' => 'bot',
                         'content' => $botResponse,
+                        'user_id' => $widget->user_id,
                     ]);
 
                     // Update last message

@@ -50,7 +50,7 @@ class WhatsAppWebhookController extends Controller
 
         // Get or create conversation and track user reply time
         $waConversation = WaConversation::firstOrCreate(
-            ['phone_number' => $message->phone_number],
+            ['phone_number' => $message->phone_number, 'user_id' => $message->user_id],
             ['display_name' => $message->push_name, 'session_status' => WaConversation::SESSION_ACTIVE]
         );
         

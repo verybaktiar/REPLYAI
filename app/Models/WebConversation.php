@@ -6,8 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use App\Traits\BelongsToUser;
+
 class WebConversation extends Model
 {
+    use BelongsToUser;
+
     protected $fillable = [
         'widget_id',
         'visitor_id',
@@ -20,6 +24,7 @@ class WebConversation extends Model
         'status',
         'last_activity_at',
         'tags',
+        'user_id',
     ];
 
     protected $casts = [

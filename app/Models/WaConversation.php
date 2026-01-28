@@ -20,6 +20,7 @@ class WaConversation extends Model
         'last_cs_reply_at',
         'last_user_reply_at',
         'followup_sent_at',
+        'user_id',
     ];
 
     protected $casts = [

@@ -98,6 +98,14 @@
                                 <a href="{{ route('admin.users.show', $user->id) }}" class="p-2 text-slate-400 hover:text-white transition" title="Contact / Manage User">
                                     <span class="material-symbols-outlined text-lg">person_search</span>
                                 </a>
+                            @else
+                                <form method="POST" action="{{ $isWa ? route('whatsapp.destroy', $account->session_id) : route('instagram.disconnect') }}" onsubmit="return confirm('Hapus data yatim ini?')">
+                                    @csrf
+                                    @if(!$isWa) @method('POST') @else @method('DELETE') @endif
+                                    <button type="submit" class="p-2 text-red-500 hover:text-red-400 transition" title="Hapus Data Yatim">
+                                        <span class="material-symbols-outlined text-lg">delete_forever</span>
+                                    </button>
+                                </form>
                             @endif
                         </div>
                     </div>
@@ -154,6 +162,13 @@
                     <button class="w-full text-left px-4 py-2 rounded-lg bg-surface-light hover:bg-slate-700 transition text-sm flex items-center gap-3">
                         <span class="material-symbols-outlined text-purple-400 text-lg">sync_lock</span>
                         Refresh IG Tokens
+                    </button>
+                </form>
+                <form method="POST" action="{{ route('admin.system-health.cleanup-orphans') }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus semua akun WA/IG yang tidak memiliki pemilik?')">
+                    @csrf
+                    <button class="w-full text-left px-4 py-2 rounded-lg bg-surface-light hover:bg-red-500/20 transition text-sm flex items-center gap-3 text-red-400">
+                        <span class="material-symbols-outlined text-red-400 text-lg">delete_sweep</span>
+                        Bersihkan Data Yatim
                     </button>
                 </form>
                 <a href="{{ route('admin.failed-jobs.index') }}" class="w-full text-left px-4 py-2 rounded-lg bg-surface-light hover:bg-slate-700 transition text-sm flex items-center gap-3 text-red-400">

@@ -61,7 +61,20 @@ class SystemHealthController extends Controller
             'dbStatus',
             'cacheStatus',
             'diskUsedPercent',
-            'activeUsers24h'
         ));
+    }
+
+    public function cleanupOrphans()
+    {
+        $waDeleted = WhatsAppDevice::whereNull('user_id')->delete();
+        $igDeleted = InstagramAccount::whereNull('user_id')->delete();
+        
+        $widgetsDeleted = WebWidget::whereNull('user_id')->delete();
+        $webConvDeleted = WebConversation::whereNull('user_id')->delete();
+        $webMsgDeleted = WebMessage::whereNull('user_id')->delete();
+
+        $totalDeleted = $waDeleted + $igDeleted + $widgetsDeleted + $webConvDeleted + $webMsgDeleted;
+
+        return back()->with('success', "Pembersihan selesai! Total {$totalDeleted} data yatim (WA: {$waDeleted}, IG: {$igDeleted}, Web Chat: {$widgetsDeleted}) berhasil dihapus bersih.");
     }
 }

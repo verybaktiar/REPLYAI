@@ -405,15 +405,33 @@ class AdminUserController extends Controller
             ['user_id' => $userId, 'email' => $user->email]
         );
 
-        // Hapus subscription terkait
+        // 1. Hapus Subscription
         if ($user->subscription) {
             $user->subscription->delete();
         }
 
+        // 2. Hapus WhatsApp Devices terkait
+        \App\Models\WhatsAppDevice::where('user_id', $userId)->delete();
+
+        // 3. Hapus Business Profiles terkait
+        \App\Models\BusinessProfile::where('user_id', $userId)->delete();
+
+        // 4. Hapus data pendukung lainnya (KB Articles, Rules, etc)
+        \App\Models\KbArticle::where('user_id', $userId)->delete();
+        \App\Models\AutoReplyRule::where('user_id', $userId)->delete();
+        \App\Models\WaConversation::where('user_id', $userId)->delete();
+        \App\Models\WaMessage::where('user_id', $userId)->delete();
+
+        // 5. Hapus Web Widget
+        \App\Models\WebWidget::where('user_id', $userId)->delete();
+        \App\Models\WebConversation::where('user_id', $userId)->delete();
+        \App\Models\WebMessage::where('user_id', $userId)->delete();
+
+        // 6. Akhirnya hapus User
         $user->delete();
 
         return redirect()->route('admin.users.index')
-            ->with('success', "User {$userName} berhasil dihapus!");
+            ->with('success', "User {$userName} dan semua datanya berhasil dihapus bersih!");
     }
 
     /**

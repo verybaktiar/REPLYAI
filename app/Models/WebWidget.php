@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
+use App\Traits\BelongsToUser;
 
 class WebWidget extends Model
 {
+    use BelongsToUser;
+
     protected $fillable = [
         'name',
         'api_key',
@@ -19,6 +21,7 @@ class WebWidget extends Model
         'position',
         'is_active',
         'settings',
+        'user_id',
     ];
 
     protected $casts = [

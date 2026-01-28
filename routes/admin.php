@@ -95,6 +95,7 @@ Route::middleware(['admin'])->group(function () {
 
     // System Health
     Route::get('/system-health', [App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('admin.system-health');
+    Route::post('/system-health/cleanup-orphans', [App\Http\Controllers\Admin\SystemHealthController::class, 'cleanupOrphans'])->name('admin.system-health.cleanup-orphans');
 
     // Backups
     Route::prefix('backups')->name('admin.backups.')->group(function () {

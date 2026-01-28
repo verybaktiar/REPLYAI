@@ -5,13 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use App\Traits\BelongsToUser;
+
 class WebMessage extends Model
 {
+    use BelongsToUser;
+
     protected $fillable = [
         'web_conversation_id',
         'sender_type',
         'content',
         'metadata',
+        'user_id',
     ];
 
     protected $casts = [

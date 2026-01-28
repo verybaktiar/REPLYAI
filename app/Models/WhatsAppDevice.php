@@ -6,8 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use App\Traits\BelongsToUser;
+
 class WhatsAppDevice extends Model
 {
+    use BelongsToUser;
+
     protected $table = 'whatsapp_devices';
 
     protected $fillable = [
@@ -20,6 +24,7 @@ class WhatsAppDevice extends Model
         'last_connected_at',
         'is_active',
         'business_profile_id',
+        'user_id',
     ];
 
     protected $casts = [

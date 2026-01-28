@@ -46,10 +46,13 @@ class WhatsAppController extends Controller
         $sessionId = Str::slug($deviceName) . '-' . Str::random(6);
 
         // Create DB record
+        $businessProfile = BusinessProfile::first(); // filtered by global scope to current user
+        
         $device = WhatsAppDevice::create([
             'session_id' => $sessionId,
             'device_name' => $deviceName,
             'status' => 'scanning', // Initial status
+            'business_profile_id' => $businessProfile?->id,
         ]);
 
         // Init session in Node.js

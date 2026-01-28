@@ -153,15 +153,20 @@ class WhatsAppService
         $remoteJid = $isJid ? $phoneOrJid : $this->formatPhoneToJid($phoneOrJid);
         $phoneNumber = $isJid ? $this->extractPhoneFromJid($phoneOrJid) : $this->cleanPhoneNumber($phoneOrJid);
 
+        // Find device owner
+        $device = WhatsAppDevice::withoutGlobalScopes()->where('session_id', $sessionId)->first();
+        $userId = $device?->user_id;
+
         WaMessage::create([
             'wa_message_id' => 'out_' . uniqid(),
+            'session_id' => $sessionId,
             'remote_jid' => $remoteJid,
             'phone_number' => $phoneNumber,
             'direction' => 'outgoing',
             'message' => $message,
             'message_type' => $mediaType ?? 'text',
             'status' => $status,
-            // 'device_id' => ... (Optional: find device by sessionId if needed)
+            'user_id' => $userId,
         ]);
     }
 
@@ -170,9 +175,15 @@ class WhatsAppService
      */
     public function handleIncomingMessage(array $data): WaMessage
     {
+        // Find device owner from session ID
+        $sessionId = $data['sessionId'] ?? 'default';
+        $device = WhatsAppDevice::withoutGlobalScopes()->where('session_id', $sessionId)->first();
+        $userId = $device?->user_id;
+
         $message = WaMessage::updateOrCreate(
             ['wa_message_id' => $data['messageId']],
             [
+                'session_id' => $sessionId,
                 'remote_jid' => $data['fromJid'],
                 'phone_number' => $data['from'],
                 'push_name' => $data['pushName'] ?? null,
@@ -180,6 +191,7 @@ class WhatsAppService
                 'message' => $data['message'],
                 'message_type' => $data['messageType'] ?? 'text',
                 'status' => 'read',
+                'user_id' => $userId,
                 'wa_timestamp' => isset($data['timestamp']) 
                     ? \Carbon\Carbon::createFromTimestamp($data['timestamp']) 
                     : now(),
