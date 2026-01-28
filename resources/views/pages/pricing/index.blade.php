@@ -98,25 +98,43 @@
 
                     <!-- Price -->
                     <div class="mb-8">
-                        @if($plan->price_monthly_original_display)
-                            <div class="text-slate-500 text-sm line-through mb-1">
-                                {{ $plan->price_monthly_original_display }}
-                            </div>
-                        @elseif($hasOriginal)
-                            <div class="text-slate-500 text-sm line-through mb-1">
-                                Rp {{ number_format($plan->price_monthly_original, 0, ',', '.') }}
-                            </div>
-                        @endif
+                        @php
+                            $discountPercent = 0;
+                            if ($plan->price_monthly_original > $plan->price_monthly && $plan->price_monthly_original > 0) {
+                                $discountPercent = round((($plan->price_monthly_original - $plan->price_monthly) / $plan->price_monthly_original) * 100);
+                            }
+                        @endphp
+
+                        <div class="flex items-center gap-2 mb-2 min-h-[24px]">
+                            @if($plan->price_monthly_original_display)
+                                <div class="text-red-400/80 text-sm line-through font-medium">
+                                    {{ $plan->price_monthly_original_display }}
+                                </div>
+                            @elseif($hasOriginal)
+                                <div class="text-red-400/80 text-sm line-through font-medium">
+                                    Rp {{ number_format($plan->price_monthly_original, 0, ',', '.') }}
+                                </div>
+                            @endif
+
+                            @if($discountPercent > 0)
+                                <span class="bg-green-500/10 text-green-400 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border border-green-500/20">
+                                    Hemat {{ $discountPercent }}%
+                                </span>
+                            @endif
+                        </div>
 
                         <div class="flex items-baseline gap-2">
                             @if($plan->price_monthly_display)
-                                <span class="text-4xl font-black text-white">{{ $plan->price_monthly_display }}</span>
+                                <span class="text-5xl font-black text-white tracking-tight">{{ $plan->price_monthly_display }}</span>
                             @else
-                                <span class="text-4xl font-black text-white">Rp {{ $plan->price_monthly > 0 ? number_format($plan->price_monthly, 0, ',', '.') : $plan->name }}</span>
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-xl font-bold text-white">Rp</span>
+                                    <span class="text-5xl font-black text-white tracking-tight">{{ $plan->price_monthly > 0 ? number_format($plan->price_monthly, 0, ',', '.') : $plan->name }}</span>
+                                </div>
                             @endif
                             
                             @if($plan->price_monthly > 0)
-                                <span class="text-slate-500 text-xs font-bold">/bulan</span>
+                                <span class="text-slate-500 text-sm font-bold">/bulan</span>
                             @endif
                         </div>
                     </div>

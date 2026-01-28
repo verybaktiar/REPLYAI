@@ -1088,31 +1088,67 @@ h6 {
     margin-bottom: 32px;
     padding-bottom: 32px;
     border-bottom: 1px solid var(--border);
+    position: relative;
+}
+
+.price-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.original-price-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    min-height: 24px;
 }
 
 .original-price {
     font-size: 14px;
-    color: var(--text-muted);
+    color: #ef4444; /* Soft red for discount context */
+    opacity: 0.8;
     text-decoration: line-through;
-    margin-bottom: 4px;
-    display: block;
+    font-weight: 500;
+}
+
+.save-badge {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.price-main {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
 }
 
 .currency {
     font-size: 20px;
-    font-weight: 600;
-    vertical-align: top;
+    font-weight: 700;
+    color: var(--text-primary);
 }
 
 .amount {
-    font-size: 44px;
-    font-weight: 800;
+    font-size: 52px;
+    font-weight: 900;
     line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--text-primary);
 }
 
 .period {
     font-size: 14px;
     color: var(--text-muted);
+    font-weight: 500;
 }
 
 .btn-pro {

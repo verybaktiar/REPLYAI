@@ -172,12 +172,23 @@ function createPricingCard(plan) {
         priceFormatted = formatPrice(plan.price_monthly);
     }
 
-    // Original Price (Slashed)
+    // Original Price & Discount Calculation
     let originalPriceHtml = '';
-    if (plan.price_monthly_original_display) {
-        originalPriceHtml = `<span class="original-price" style="text-decoration: line-through; color: var(--text-muted); font-size: 14px; display: block; margin-bottom: 4px;">${plan.price_monthly_original_display}</span>`;
-    } else if (plan.price_monthly_original > plan.price_monthly) {
-        originalPriceHtml = `<span class="original-price" style="text-decoration: line-through; color: var(--text-muted); font-size: 14px; display: block; margin-bottom: 4px;">Rp ${plan.price_monthly_original.toLocaleString('id-ID')}</span>`;
+    let discountPercent = 0;
+    
+    if (plan.price_monthly_original > plan.price_monthly && plan.price_monthly_original > 0) {
+        discountPercent = Math.round(((plan.price_monthly_original - plan.price_monthly) / plan.price_monthly_original) * 100);
+    }
+
+    if (plan.price_monthly_original_display || plan.price_monthly_original > plan.price_monthly) {
+        const displayOrig = plan.price_monthly_original_display || `Rp ${plan.price_monthly_original.toLocaleString('id-ID')}`;
+        originalPriceHtml = `
+            <div class="original-price-row">
+                <span class="original-price">${displayOrig}</span>
+                ${discountPercent > 0 ? `<span class="save-badge">Hemat ${discountPercent}%</span>` : ''}
+            </div>`;
+    } else {
+        originalPriceHtml = `<div class="original-price-row"></div>`;
     }
 
     // Build features list
@@ -190,11 +201,13 @@ function createPricingCard(plan) {
             <p class="pricing-desc">${plan.description}</p>
         </div>
         <div class="pricing-price">
-            ${originalPriceHtml}
-            <div style="display: flex; align-items: baseline; gap: 4px;">
-                ${plan.price_monthly_display ? '' : '<span class="currency">Rp</span>'}
-                <span class="amount">${priceFormatted}</span>
-                <span class="period">/bulan</span>
+            <div class="price-container">
+                ${originalPriceHtml}
+                <div class="price-main">
+                    ${plan.price_monthly_display ? '' : '<span class="currency">Rp</span>'}
+                    <span class="amount">${priceFormatted}</span>
+                    <span class="period">/bulan</span>
+                </div>
             </div>
         </div>
         <ul class="pricing-features">
