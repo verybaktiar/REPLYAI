@@ -51,7 +51,7 @@ Route::get('/plans', function () {
                 'price_yearly_display' => $plan->price_yearly_display,
                 'features' => $plan->features,
                 'features_list' => $plan->features_list,
-                'is_popular' => $plan->slug === 'pro', // Mark Pro as popular
+                'is_popular' => (bool) $plan->is_popular,
             ];
         });
     

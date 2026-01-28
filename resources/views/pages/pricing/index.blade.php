@@ -77,7 +77,7 @@
                 @foreach($plans as $plan)
                 @if(!$plan->is_trial && $plan->slug !== 'gratis')
                 @php 
-                    $isPro = $plan->slug === 'pro';
+                    $isPro = (bool) $plan->is_popular;
                     $hasOriginal = $plan->price_monthly_original > 0;
                     $features = $plan->features ?? [];
                 @endphp

@@ -533,7 +533,7 @@
                 </div>
                 <div class="pricing-grid">
                     @foreach($plans as $plan)
-                        @php $isPro = $plan->slug === 'pro'; @endphp
+                        @php $isPro = (bool) $plan->is_popular; @endphp
                         <div class="pricing-card {{ $isPro ? 'popular' : '' }} animate-on-scroll">
                             @if($isPro)
                                 <div class="popular-badge">Paling Laris</div>

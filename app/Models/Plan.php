@@ -38,18 +38,20 @@ class Plan extends Model
         'features_list',  // Daftar fitur deskriptif (JSON)
         'is_active',      // Aktif atau tidak
         'sort_order',     // Urutan tampilan
+        'is_popular',     // Apakah ini paket yang paling laris
         'is_free',        // Apakah ini paket gratis
         'is_trial',       // Apakah ini paket trial
         'trial_days',     // Durasi trial
     ];
 
     /**
-     * Kolom yang harus di-cast ke tipe tertentu
+     * Konversi tipe data otomatis
      */
     protected $casts = [
         'features' => 'array',    // JSON jadi array PHP
         'features_list' => 'array',
         'is_active' => 'boolean',
+        'is_popular' => 'boolean',
         'is_free' => 'boolean',
         'is_trial' => 'boolean',
     ];

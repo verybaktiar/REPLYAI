@@ -32,10 +32,13 @@
                        placeholder="Untuk bisnis kecil yang baru mulai">
             </div>
 
-            <div class="flex items-center gap-2">
-                <input type="checkbox" name="is_active" value="1" {{ $plan->is_active ? 'checked' : '' }}
-                       class="rounded bg-surface-light border-slate-700 text-primary focus:ring-primary">
-                <label class="text-sm font-medium">Active (tampil di pricing page)</label>
+            <div class="flex items-center">
+                <input type="checkbox" name="is_popular" id="is_popular" value="1" {{ $plan->is_popular ? 'checked' : '' }} class="w-4 h-4 text-primary bg-slate-700 border-slate-600 rounded focus:ring-primary focus:ring-2">
+                <label for="is_popular" class="ml-2 text-sm font-medium text-slate-300">Tandai sebagai Paling Laris (Best Seller)</label>
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" name="is_active" id="is_active" value="1" {{ $plan->is_active ? 'checked' : '' }} class="w-4 h-4 text-primary bg-slate-700 border-slate-600 rounded focus:ring-primary focus:ring-2">
+                <label for="is_active" class="ml-2 text-sm font-medium text-slate-300">Paket Aktif</label>
             </div>
         </div>
     </div>
