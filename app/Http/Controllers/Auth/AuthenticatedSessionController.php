@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Services\ActivityLogService;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -27,6 +28,8 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        ActivityLogService::logLogin();
 
         $user = auth()->user();
 
@@ -79,6 +82,8 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        ActivityLogService::logLogout();
+        
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

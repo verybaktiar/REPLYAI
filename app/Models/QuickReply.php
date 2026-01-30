@@ -11,6 +11,7 @@ class QuickReply extends Model
     use HasFactory, BelongsToUser;
 
     protected $fillable = [
+        'user_id',
         'shortcut',
         'message',
         'is_active',

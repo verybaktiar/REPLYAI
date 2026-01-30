@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Services\AiAnswerService;
+use App\Services\ActivityLogService;
 
 class KbArticleController extends Controller
 {
@@ -27,13 +28,15 @@ class KbArticleController extends Controller
             'business_profile_id' => ['nullable','exists:business_profiles,id'],
         ]);
 
-        KbArticle::create([
+        $article = KbArticle::create([
             'title'     => $validated['title'] ?? null,
             'content'   => $validated['content'],
             'tags'      => $validated['tags'] ?? null,
             'is_active' => true,
             'business_profile_id' => $validated['business_profile_id'] ?? null,
         ]);
+
+        ActivityLogService::logCreated($article, "Membuat artikel KB: " . ($article->title ?? 'Tanpa Judul'));
 
         return back()->with('ok', 'KB article dibuat');
     }
@@ -107,6 +110,8 @@ class KbArticleController extends Controller
             'is_active'  => true,
         ]);
 
+        ActivityLogService::logCreated($article, "Import KB dari URL: {$url}");
+
         return response()->json([
             'ok' => true,
             'article' => $article,
@@ -144,6 +149,8 @@ class KbArticleController extends Controller
                 'is_active'  => true,
             ]);
 
+            ActivityLogService::logCreated($article, "Import KB dari File: " . $file->getClientOriginalName());
+
             return response()->json([
                 'ok' => true,
                 'article' => $article,
@@ -162,11 +169,14 @@ class KbArticleController extends Controller
         $kb->is_active = !$kb->is_active;
         $kb->save();
 
+        ActivityLogService::logUpdated($kb, ($kb->is_active ? 'Mengaktifkan' : 'Menonaktifkan') . " artikel KB: " . ($kb->title ?? 'Tanpa Judul'));
+
         return response()->json(['ok' => true, 'is_active' => $kb->is_active]);
     }
 
     public function destroy(KbArticle $kb)
     {
+        ActivityLogService::logDeleted($kb, "Menghapus artikel KB: " . ($kb->title ?? 'Tanpa Judul'));
         $kb->delete();
         return response()->json(['ok' => true]);
     }

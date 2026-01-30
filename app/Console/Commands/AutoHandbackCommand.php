@@ -69,7 +69,8 @@ class AutoHandbackCommand extends Command
                 TakeoverLog::PLATFORM_WHATSAPP,
                 $conv->phone_number,
                 $conv->display_name,
-                $idleMinutes
+                $idleMinutes,
+                $conv->user_id
             );
 
             $conv->handback();
@@ -100,7 +101,8 @@ class AutoHandbackCommand extends Command
                 TakeoverLog::PLATFORM_INSTAGRAM,
                 (string) $conv->id,
                 $conv->display_name,
-                $idleMinutes
+                $idleMinutes,
+                $conv->user_id
             );
 
             $conv->update([

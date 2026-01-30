@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\BelongsToUser;
 
 /**
  * Model: Tiket Support
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class SupportTicket extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToUser;
 
     protected $fillable = [
         'ticket_number',

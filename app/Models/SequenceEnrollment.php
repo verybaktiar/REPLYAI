@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Carbon\Carbon;
+use App\Traits\BelongsToUser;
 
 /**
  * Model SequenceEnrollment
@@ -15,9 +16,10 @@ use Carbon\Carbon;
  */
 class SequenceEnrollment extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToUser;
 
     protected $fillable = [
+        'user_id',
         'sequence_id',
         'contact_identifier',
         'contact_name',

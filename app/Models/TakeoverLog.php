@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToUser;
 
 class TakeoverLog extends Model
 {
+    use BelongsToUser;
+
     protected $fillable = [
+        'user_id',
         'platform',
         'conversation_id',
         'customer_name',
@@ -37,9 +41,10 @@ class TakeoverLog extends Model
     /**
      * Log a takeover action
      */
-    public static function logTakeover(string $platform, string $conversationId, ?string $customerName, string $actor = 'Admin'): self
+    public static function logTakeover(string $platform, string $conversationId, ?string $customerName, string $actor = 'Admin', ?int $userId = null): self
     {
         return self::create([
+            'user_id' => $userId,
             'platform' => $platform,
             'conversation_id' => $conversationId,
             'customer_name' => $customerName,
@@ -51,9 +56,10 @@ class TakeoverLog extends Model
     /**
      * Log a handback action
      */
-    public static function logHandback(string $platform, string $conversationId, ?string $customerName, string $actor = 'Admin', ?int $idleMinutes = null): self
+    public static function logHandback(string $platform, string $conversationId, ?string $customerName, string $actor = 'Admin', ?int $idleMinutes = null, ?int $userId = null): self
     {
         return self::create([
+            'user_id' => $userId,
             'platform' => $platform,
             'conversation_id' => $conversationId,
             'customer_name' => $customerName,
@@ -66,9 +72,10 @@ class TakeoverLog extends Model
     /**
      * Log an auto-handback action
      */
-    public static function logAutoHandback(string $platform, string $conversationId, ?string $customerName, int $idleMinutes): self
+    public static function logAutoHandback(string $platform, string $conversationId, ?string $customerName, int $idleMinutes, ?int $userId = null): self
     {
         return self::create([
+            'user_id' => $userId,
             'platform' => $platform,
             'conversation_id' => $conversationId,
             'customer_name' => $customerName,
@@ -81,9 +88,10 @@ class TakeoverLog extends Model
     /**
      * Log a CS reply action
      */
-    public static function logCsReply(string $platform, string $conversationId, ?string $customerName, string $actor = 'Admin'): self
+    public static function logCsReply(string $platform, string $conversationId, ?string $customerName, string $actor = 'Admin', ?int $userId = null): self
     {
         return self::create([
+            'user_id' => $userId,
             'platform' => $platform,
             'conversation_id' => $conversationId,
             'customer_name' => $customerName,

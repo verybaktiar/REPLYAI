@@ -18,9 +18,20 @@ class UserTenantScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        // Hanya apply jika user sudah login dan bukan dari console/queue
-        if (Auth::check() && !app()->runningInConsole()) {
-            $builder->where($model->getTable() . '.user_id', Auth::id());
+        // Jangan filter jika dijalankan dari console atau queue
+        if (app()->runningInConsole()) {
+            return;
+        }
+
+        // Jangan filter jika Super Admin (guard admin) sedang login
+        // Ini memastikan Admin Panel bisa melihat semua data
+        if (Auth::guard('admin')->check()) {
+            return;
+        }
+
+        // Filter berdasarkan user_id jika user biasa (guard web) sedang login
+        if (Auth::guard('web')->check()) {
+            $builder->where($model->getTable() . '.user_id', Auth::guard('web')->id());
         }
     }
 }

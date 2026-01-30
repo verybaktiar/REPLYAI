@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\BelongsToUser;
 
 /**
  * Model SequenceStep
@@ -14,9 +15,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class SequenceStep extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToUser;
 
     protected $fillable = [
+        'user_id',
         'sequence_id',
         'order',
         'delay_type',

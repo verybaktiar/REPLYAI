@@ -37,7 +37,8 @@ class TakeoverController extends Controller
             TakeoverLog::PLATFORM_WHATSAPP,
             $phone,
             $conversation->display_name,
-            'Admin'
+            'Admin',
+            $conversation->user_id
         );
 
         return response()->json([
@@ -79,7 +80,8 @@ class TakeoverController extends Controller
             $phone,
             $customerName,
             'Admin',
-            $idleMinutes
+            $idleMinutes,
+            $conversation->user_id
         );
 
         return response()->json([
@@ -151,7 +153,8 @@ class TakeoverController extends Controller
             TakeoverLog::PLATFORM_INSTAGRAM,
             (string) $id,
             $conversation->display_name,
-            'Admin'
+            'Admin',
+            $conversation->user_id
         );
 
         return response()->json([
@@ -193,7 +196,8 @@ class TakeoverController extends Controller
             (string) $id,
             $customerName,
             'Admin',
-            $idleMinutes
+            $idleMinutes,
+            $conversation->user_id
         );
 
         return response()->json([

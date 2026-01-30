@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\BelongsToUser;
 use Carbon\Carbon;
 
 /**
@@ -19,7 +20,7 @@ use Carbon\Carbon;
  */
 class Subscription extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToUser;
 
     /**
      * Kolom yang bisa diisi secara massal

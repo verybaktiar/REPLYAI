@@ -8,7 +8,8 @@ use App\Models\WhatsAppDevice;
 use App\Models\BusinessProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Str; // Added for \Str::slug and \Str::random
+use Illuminate\Support\Str;
+use App\Services\ActivityLogService;
 
 class WhatsAppController extends Controller
 {
@@ -58,6 +59,9 @@ class WhatsAppController extends Controller
         // Init session in Node.js
         try {
             $result = $this->waService->createSession($sessionId);
+            
+            ActivityLogService::logCreated($device, "Menambah perangkat WhatsApp baru: {$deviceName}");
+            
             return response()->json(['success' => true, 'device' => $device, 'result' => $result]);
         } catch (\Exception $e) {
             $device->delete();
@@ -143,8 +147,9 @@ class WhatsAppController extends Controller
         try {
             $this->waService->disconnect($sessionId);
             
-            $device = WhatsAppDevice::where('session_id', $sessionId)->first();
             if ($device) {
+                ActivityLogService::logDeleted($device, "Menghapus perangkat WhatsApp: {$device->device_name}");
+                
                 // We can either delete the record or just mark as disconnected
                 // For now, let's delete to allow re-adding freshly
                 $device->delete();

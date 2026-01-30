@@ -16,17 +16,25 @@ class ActivityLogController extends Controller
      */
     public function index(Request $request)
     {
-        $query = AdminActivityLog::with('admin')
-            ->orderBy('created_at', 'desc');
+        $type = $request->get('type', 'admin'); // Default ke admin
+        
+        if ($type === 'user') {
+            $query = \App\Models\ActivityLog::with('user')
+                ->orderBy('created_at', 'desc');
+            
+            // Unique actions for User Activity
+            $actions = \App\Models\ActivityLog::distinct()->pluck('action');
+        } else {
+            $query = AdminActivityLog::with('admin')
+                ->orderBy('created_at', 'desc');
+            
+            // Unique actions for Admin Activity
+            $actions = AdminActivityLog::distinct()->pluck('action');
+        }
 
         // Filter by action type
         if ($request->filled('action')) {
             $query->where('action', $request->action);
-        }
-
-        // Filter by admin
-        if ($request->filled('admin_id')) {
-            $query->where('admin_id', $request->admin_id);
         }
 
         // Search
@@ -40,9 +48,6 @@ class ActivityLogController extends Controller
 
         $logs = $query->paginate(50);
 
-        // Get unique actions for filter
-        $actions = AdminActivityLog::distinct()->pluck('action');
-
-        return view('admin.activity-logs.index', compact('logs', 'actions'));
+        return view('admin.activity-logs.index', compact('logs', 'actions', 'type'));
     }
 }

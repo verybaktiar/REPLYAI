@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class Payment extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToUser;
 
     /**
      * Kolom yang bisa diisi secara massal
