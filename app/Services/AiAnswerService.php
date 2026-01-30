@@ -193,6 +193,16 @@ class AiAnswerService
         $profileId = $profile?->id;
         $articles = $this->searchRelevantArticles($question, 4, $profileId);
         
+        $imagePath = null;
+        if (!$articles->isEmpty()) {
+            // Cek apakah artikel paling relevan punya gambar
+            $topArticle = $articles->first();
+            if ($topArticle->image_path) {
+                // Gunakan URL absolut yang bisa diakses publik
+                $imagePath = config('app.url') . '/storage/' . $topArticle->image_path;
+            }
+        }
+
         // 5) Jika KB tidak kosong, gunakan context dari KB
         $context = '';
         if (!$articles->isEmpty()) {
@@ -212,6 +222,7 @@ class AiAnswerService
                 'answer' => $fallbackMsg,
                 'confidence' => 0.5,
                 'source' => 'fallback',
+                'image_url' => $imagePath,
             ];
         }
 
@@ -233,6 +244,8 @@ class AiAnswerService
             'answer' => (string)($res['answer'] ?? ''),
             'confidence' => (float)($res['confidence'] ?? 0.8),
             'source' => !$articles->isEmpty() ? 'kb' : 'ai',
+            'sentiment' => $sentiment['sentiment'] ?? 'neutral',
+            'image_url' => $imagePath,
         ];
     }
 
@@ -670,5 +683,84 @@ SYS;
         if (json_last_error() !== JSON_ERROR_NONE) return null;
 
         return $json;
+    }
+
+    /**
+     * Generate a brief summary of the conversation
+     */
+    public function generateSummary(array $history): ?string
+    {
+        if (empty($history)) return null;
+
+        $apiKey = config('services.perplexity.key');
+        if (!$apiKey) return null;
+
+        $historyText = "";
+        foreach (array_slice($history, -10) as $msg) {
+            $role = $msg['role'] === 'assistant' ? 'Bot' : 'User';
+            $historyText .= "{$role}: {$msg['content']}\n";
+        }
+
+        $payload = [
+            "model" => config('services.perplexity.model', 'sonar-pro'),
+            "messages" => [
+                ["role" => "system", "content" => "Berikan ringkasan 1 kalimat singkat (maksimal 15 kata) tentang inti pembicaraan/masalah user ini dalam Bahasa Indonesia. Langsung berikan ringkasannya saja tanpa kata pengantar."],
+                ["role" => "user", "content" => "RIWAYAT CHAT:\n" . $historyText],
+            ],
+            "temperature" => 0.1
+        ];
+
+        try {
+            $http = Http::timeout(20)->withToken($apiKey)->post(rtrim((string)config('services.perplexity.url', 'https://api.perplexity.ai'), '/') . '/chat/completions', $payload);
+            if ($http->ok()) {
+                return trim((string)$http->json('choices.0.message.content'));
+            }
+        } catch (\Exception $e) {
+            Log::error('❌ AI Summary Error: ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate smart quick reply suggestions for agent
+     */
+    public function generateSuggestions(array $history, ?BusinessProfile $profile = null): array
+    {
+        if (empty($history)) return [];
+
+        $apiKey = config('services.perplexity.key');
+        if (!$apiKey) return [];
+
+        $profile = $profile ?? BusinessProfile::getActive();
+        $businessContext = $profile ? "Nama Bisnis: {$profile->business_name}. " : "";
+        
+        $historyText = "";
+        foreach (array_slice($history, -6) as $msg) {
+            $role = $msg['role'] === 'assistant' ? 'Bot' : 'User';
+            $historyText .= "{$role}: {$msg['content']}\n";
+        }
+
+        $payload = [
+            "model" => config('services.perplexity.model', 'sonar-pro'),
+            "messages" => [
+                ["role" => "system", "content" => "Kamu adalah asisten ahli untuk Customer Service. {$businessContext}Berdasarkan riwayat chat, berikan 3 pilihan balasan singkat (Quick Replies) yang paling relevan untuk dikirim Admin ke User. Gunakan Bahasa Indonesia yang sopan dan ramah. Output HARUS JSON format: {\"suggestions\": [\"Opsi 1\", \"Opsi 2\", \"Opsi 3\"]}"],
+                ["role" => "user", "content" => "RIWAYAT CHAT:\n" . $historyText],
+            ],
+            "temperature" => 0.5
+        ];
+
+        try {
+            $http = Http::timeout(20)->withToken($apiKey)->post(rtrim((string)config('services.perplexity.url', 'https://api.perplexity.ai'), '/') . '/chat/completions', $payload);
+            if ($http->ok()) {
+                $content = $http->json('choices.0.message.content');
+                $json = $this->safeJsonDecode($content);
+                return $json['suggestions'] ?? [];
+            }
+        } catch (\Exception $e) {
+            Log::error('❌ AI Suggestions Error: ' . $e->getMessage());
+        }
+
+        return [];
     }
 }

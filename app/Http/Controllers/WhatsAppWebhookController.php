@@ -188,12 +188,15 @@ class WhatsAppWebhookController extends Controller
             
             if ($aiResult && !empty($aiResult['answer'])) {
                 $reply = $aiResult['answer'];
+                $imageUrl = $aiResult['image_url'] ?? null;
                 
-                // Send the reply via WhatsApp using correct session ID
+                // Send the reply via WhatsApp (with image if available)
                 $sendResult = $this->waService->sendMessage(
                     $sessionId,
                     $message->remote_jid,
-                    $reply
+                    $reply,
+                    $imageUrl,
+                    $imageUrl ? 'image' : null
                 );
 
                 if ($sendResult['success']) {
@@ -207,6 +210,26 @@ class WhatsAppWebhookController extends Controller
                         'source' => $aiResult['source'] ?? 'ai',
                         'confidence' => $aiResult['confidence'] ?? 0,
                     ]);
+
+                    // ALERT SYSTEM: Notify Admin if sentiment is frustrated
+                    $notifSettings = $businessProfile->notification_settings;
+                    if (($aiResult['sentiment'] ?? '') === 'frustrated' && 
+                        $businessProfile->admin_phone && 
+                        ($notifSettings['notify_frustrated'] ?? false)) {
+                        
+                        $alertMsg = "⚠️ *PERINGATAN SENTIMEN NEGATIF*\n\n" .
+                                    "Customer: *{$message->push_name}* (+{$message->phone_number})\n" .
+                                    "Pesan: _\"{$message->message}\"_\n\n" .
+                                    "Mohon segera cek dashboard untuk bantuan manual.";
+                                    
+                        $this->waService->sendMessage(
+                            $sessionId,
+                            $businessProfile->admin_phone . '@s.whatsapp.net',
+                            $alertMsg
+                        );
+
+                        Log::info('WhatsApp Admin Alert Sent', ['to' => $businessProfile->admin_phone]);
+                    }
 
                     // Track AI Message Usage
                     $tracker = app(\App\Services\UsageTrackingService::class);

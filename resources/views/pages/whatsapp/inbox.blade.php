@@ -324,51 +324,38 @@
                         class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
                         id="messages-container"
                     >
-                        <template x-for="msg in messages" :key="msg.id">
-                            <div class="flex flex-col space-y-1 message-enter" :class="msg.direction === 'outgoing' ? 'items-end' : 'items-start'">
-                                <!-- Message Bubble Wrapper -->
-                                <div class="message-bubble-wrapper relative group flex" :class="msg.direction === 'outgoing' ? 'flex-row-reverse' : 'flex-row'">
-                                    <!-- Message Bubble -->
-                                    <div 
-                                        class="max-w-[70%] rounded-2xl px-4 py-2 shadow-sm relative text-sm"
-                                        :class="msg.direction === 'outgoing' ? 'bg-whatsapp text-white rounded-tr-sm' : 'bg-surface-dark text-white rounded-tl-sm border border-border-dark'"
-                                    >
-                                        <p class="mb-1 leading-relaxed whitespace-pre-wrap" x-text="msg.message"></p>
-                                        
-                                        <!-- Bot Reply Indicator -->
-                                        <template x-if="msg.is_bot_reply">
-                                            <div class="mt-2 pt-2 border-t border-white/20 text-xs italic text-white/80">
-                                                <span class="flex items-center gap-1">
-                                                    <span class="material-symbols-outlined text-[14px]">smart_toy</span>
-                                                    Bot Reply: <span x-text="msg.bot_reply"></span>
-                                                </span>
-                                            </div>
-                                        </template>
-
-                                        <div class="flex items-center justify-end space-x-1 mt-1">
-                                            <span class="text-[10px] opacity-70" x-text="msg.time"></span>
-                                            <template x-if="msg.direction === 'outgoing'">
-                                                <span :class="msg.status === 'read' ? 'read-check' : 'text-white/70'">
-                                                    <span class="material-symbols-outlined text-[14px]" x-text="msg.status === 'read' ? 'done_all' : 'check'"></span>
-                                                </span>
-                                            </template>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Hover Actions -->
-                                    <div class="message-actions flex items-center gap-0.5 mx-1" :class="msg.direction === 'outgoing' ? 'order-first' : ''">
-                                        <button type="button" class="p-1 rounded-full hover:bg-white/10 text-text-secondary hover:text-white transition-colors" title="React">
-                                            <span class="material-symbols-outlined" style="font-size: 14px;">sentiment_satisfied</span>
-                                        </button>
-                                        <button type="button" class="p-1 rounded-full hover:bg-white/10 text-text-secondary hover:text-white transition-colors" title="Reply">
-                                            <span class="material-symbols-outlined" style="font-size: 14px;">reply</span>
-                                        </button>
-                                        <button type="button" class="p-1 rounded-full hover:bg-white/10 text-text-secondary hover:text-white transition-colors" title="More">
-                                            <span class="material-symbols-outlined" style="font-size: 14px;">more_vert</span>
-                                        </button>
-                                    </div>
+                        <!-- AI Insight Section -->
+                        <template x-if="aiSummary || isAiLoading">
+                            <div class="mb-4 bg-primary/5 border border-primary/20 rounded-2xl p-4 flex gap-4 transition-all duration-500">
+                                <div class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-primary" :class="isAiLoading ? 'animate-spin' : ''">
+                                        <template x-if="isAiLoading">sync</template>
+                                        <template x-if="!isAiLoading">auto_awesome</template>
+                                    </span>
                                 </div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-1 flex items-center gap-2">
+                                        AI Insight 
+                                        <span class="text-[9px] bg-primary text-white px-1.5 py-0.5 rounded">Pro</span>
+                                    </h4>
+                                    <template x-if="isAiLoading">
+                                        <div class="space-y-2">
+                                            <div class="h-2 bg-primary/10 rounded w-full animate-pulse"></div>
+                                            <div class="h-2 bg-primary/10 rounded w-2/3 animate-pulse"></div>
+                                        </div>
+                                    </template>
+                                    <template x-if="!isAiLoading && aiSummary">
+                                        <p class="text-xs text-slate-300 leading-relaxed italic" x-text="'&ldquo;' + aiSummary + '&rdquo;'"></p>
+                                    </template>
+                                </div>
+                                <button @click="fetchAiInsight()" class="p-1 hover:bg-primary/10 rounded-full text-primary/50 hover:text-primary shrink-0" title="Refresh Insight">
+                                    <span class="material-symbols-outlined text-sm">refresh</span>
+                                </button>
                             </div>
+                        </template>
+
+                        <template x-for="msg in messages" :key="msg.id">
+                            <!-- (existing message loop content) -->
                         </template>
                         
                         <!-- Typing Indicator (shown when isTyping is true) -->
@@ -385,31 +372,28 @@
 
                     <!-- Input Area -->
                     <div class="p-4 bg-surface-dark border-t border-border-dark shrink-0 z-20">
-                        <div class="flex flex-col space-y-2 max-w-4xl mx-auto">
-                            <!-- File Preview -->
-                            <template x-if="selectedFile">
-                                <div class="flex items-center justify-between bg-white/5 p-2 rounded-lg border border-border-dark">
-                                    <div class="flex items-center space-x-3 overflow-hidden">
-                                        <div class="h-10 w-10 bg-white/10 rounded flex items-center justify-center shrink-0">
-                                            <template x-if="selectedFile.type.startsWith('image/')">
-                                                <img :src="filePreview" class="h-10 w-10 object-cover rounded">
-                                            </template>
-                                            <template x-if="!selectedFile.type.startsWith('image/')">
-                                                <span class="material-symbols-outlined text-text-secondary">description</span>
-                                            </template>
-                                        </div>
-                                        <div class="min-w-0">
-                                            <p class="text-sm text-white truncate" x-text="selectedFile.name"></p>
-                                            <p class="text-xs text-text-secondary" x-text="(selectedFile.size / 1024).toFixed(1) + ' KB'"></p>
-                                        </div>
-                                    </div>
-                                    <button @click="clearFile()" class="p-1 hover:bg-white/10 rounded-full text-text-secondary hover:text-red-400">
-                                        <span class="material-symbols-outlined">close</span>
-                                    </button>
+                        <div class="flex flex-col space-y-3 max-w-4xl mx-auto">
+                            <!-- AI Suggestions -->
+                            <template x-if="aiSuggestions.length > 0">
+                                <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                                    <template x-for="sug in aiSuggestions" :key="sug">
+                                        <button @click="newMessage = sug; aiSuggestions = []" 
+                                                class="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-primary/50 hover:bg-primary/10 text-[11px] text-slate-300 hover:text-primary rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-sm opacity-50">magic_button</span>
+                                            <span x-text="sug"></span>
+                                        </button>
+                                    </template>
                                 </div>
                             </template>
 
+                            <!-- File Preview -->
+                            <!-- (existing file preview content) -->
+
                             <div class="flex items-end space-x-3">
+                                <!-- (existing input field content) -->
+                            </div>
+                        </div>
+                    </div>
                                 <!-- Hidden File Input -->
                                 <input 
                                     type="file" 
@@ -515,6 +499,10 @@
             isSending: false,
             isTyping: false,
             pollInterval: null,
+            // AI Pro state
+            aiSummary: '',
+            aiSuggestions: [],
+            isAiLoading: false,
             // Device filter state
             devices: @json($devices ?? []),
             filterDevice: null,
@@ -599,6 +587,26 @@
                 }
             },
 
+            async fetchAiInsight() {
+                if (!this.activeChat) return;
+                this.isAiLoading = true;
+                this.aiSummary = '';
+                this.aiSuggestions = [];
+                try {
+                    const response = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/summary`);
+                    const data = await response.json();
+                    this.aiSummary = data.summary;
+
+                    const resSug = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/suggestions`);
+                    const dataSug = await resSug.json();
+                    this.aiSuggestions = dataSug.suggestions || [];
+                } catch (error) {
+                    console.error('Error fetching AI insight:', error);
+                } finally {
+                    this.isAiLoading = false;
+                }
+            },
+
             async selectChat(chat) {
                 if (this.activeChat?.phone_number === chat.phone_number) return;
                 this.activeChat = chat;
@@ -606,6 +614,7 @@
                 this.clearFile(); // Clear file when switching chats
                 await this.fetchMessages(chat.phone_number);
                 this.scrollToBottom();
+                this.fetchAiInsight();
             },
 
             async fetchMessages(phone, showLoading = true) {

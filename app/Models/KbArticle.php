@@ -19,6 +19,7 @@ class KbArticle extends Model
         'tags',
         'is_active',
         'business_profile_id',
+        'image_path',
     ];
 
     protected $casts = [

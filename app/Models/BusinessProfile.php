@@ -19,11 +19,14 @@ class BusinessProfile extends Model
         'faq_examples',
         'escalation_keywords',
         'is_active',
+        'admin_phone',
+        'notification_settings',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'terminology' => 'array',
+        'notification_settings' => 'array',
     ];
 
     /**

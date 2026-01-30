@@ -156,5 +156,59 @@ class WhatsAppInboxController extends Controller
 
         return response()->json($messages);
     }
+
+    /**
+     * AI Pro: Get summary of the conversation
+     */
+    public function getSummary(string $phone): JsonResponse
+    {
+        $messages = WaMessage::where('phone_number', $phone)
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get()
+            ->reverse()
+            ->map(function($msg) {
+                return [
+                    'role' => $msg->direction === 'incoming' ? 'user' : 'assistant',
+                    'content' => $msg->message
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        $aiService = app(\App\Services\AiAnswerService::class);
+        $summary = $aiService->generateSummary($messages);
+
+        return response()->json([
+            'summary' => $summary ?: 'Gagal merangkum percakapan.'
+        ]);
+    }
+
+    /**
+     * AI Pro: Get smart quick reply suggestions
+     */
+    public function getSuggestions(string $phone): JsonResponse
+    {
+        $messages = WaMessage::where('phone_number', $phone)
+            ->orderBy('created_at', 'desc')
+            ->take(6)
+            ->get()
+            ->reverse()
+            ->map(function($msg) {
+                return [
+                    'role' => $msg->direction === 'incoming' ? 'user' : 'assistant',
+                    'content' => $msg->message
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        $aiService = app(\App\Services\AiAnswerService::class);
+        $suggestions = $aiService->generateSuggestions($messages);
+
+        return response()->json([
+            'suggestions' => $suggestions
+        ]);
+    }
 }
 

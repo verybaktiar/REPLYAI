@@ -45,6 +45,8 @@ class BusinessProfileController extends Controller
             'business_type' => $request->business_type,
             'system_prompt_template' => $request->system_prompt_template,
             'kb_fallback_message' => $request->kb_fallback_message ?? $this->getDefaultFallbackMessage($request->business_type),
+            'admin_phone' => $request->admin_phone,
+            'notification_settings' => $request->notification_settings,
             'is_active' => BusinessProfile::count() === 0, // First profile is active by default
         ]);
 
@@ -75,14 +77,17 @@ class BusinessProfileController extends Controller
             'business_type' => ['required', Rule::in(array_keys(BusinessProfile::INDUSTRIES))],
             'system_prompt_template' => 'required|string',
             'kb_fallback_message' => 'nullable|string',
+            'admin_phone' => 'nullable|string',
         ]);
 
-        $profile->update($request->only([
-            'business_name',
-            'business_type',
-            'system_prompt_template',
-            'kb_fallback_message',
-        ]));
+        $profile->update([
+            'business_name' => $request->business_name,
+            'business_type' => $request->business_type,
+            'system_prompt_template' => $request->system_prompt_template,
+            'kb_fallback_message' => $request->kb_fallback_message,
+            'admin_phone' => $request->admin_phone,
+            'notification_settings' => $request->notification_settings,
+        ]);
 
         // Handle redirect for legacy form submit
         if (!$request->wantsJson() && !$request->ajax()) {

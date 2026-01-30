@@ -167,6 +167,33 @@
                           placeholder="Pesan jika AI error..."></textarea>
             </div>
 
+            <!-- Admin Phone & Alerts (Pro) -->
+            <div class="space-y-4 border-t border-border-dark pt-5">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="material-symbols-outlined text-primary text-xl">notifications_active</span>
+                    <h4 class="text-xs font-black text-primary uppercase tracking-widest">Notifikasi & Alerts (Pro)</h4>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-white mb-2">📱 Nomor WhatsApp Notifikasi Admin</label>
+                    <input type="text" id="admin_phone" name="admin_phone"
+                           class="w-full px-4 py-3 bg-background-dark border border-border-dark rounded-lg text-white placeholder-text-secondary focus:outline-none focus:border-primary transition-colors"
+                           placeholder="Contoh: 628123456789">
+                    <p class="mt-1 text-[10px] text-text-secondary italic">*Masukkan format internasional tanpa + atau 0 di depan (Misal: 628xxx)</p>
+                </div>
+
+                <div class="flex items-center gap-3 bg-primary/5 p-3 rounded-lg border border-primary/10">
+                    <div class="flex items-center h-5">
+                        <input type="checkbox" id="notify_frustrated" name="notify_frustrated" 
+                               class="w-4 h-4 rounded border-border-dark bg-background-dark text-primary focus:ring-primary focus:ring-offset-background-dark">
+                    </div>
+                    <label for="notify_frustrated" class="text-xs text-slate-300">
+                        <span class="font-bold text-white block mb-0.5">Alert Sentimen Negatif</span>
+                        Kirim WhatsApp ke Admin jika AI mendeteksi user marah atau frustasi.
+                    </label>
+                </div>
+            </div>
+
             <!-- Buttons -->
             <div class="flex gap-3 pt-4 border-t border-border-dark">
                 <button type="button" onclick="closeModal()" class="flex-1 px-6 py-3 bg-background-dark border border-border-dark text-white rounded-lg font-medium hover:bg-surface-dark transition-colors">
@@ -202,9 +229,13 @@ function openModal(profile = null) {
         document.getElementById('business_type').value = profile.business_type;
         document.getElementById('system_prompt_template').value = profile.system_prompt_template;
         document.getElementById('kb_fallback_message').value = profile.kb_fallback_message || '';
+        document.getElementById('admin_phone').value = profile.admin_phone || '';
+        document.getElementById('notify_frustrated').checked = !!(profile.notification_settings && profile.notification_settings.notify_frustrated);
     } else {
         title.textContent = 'Tambah Profil Bisnis';
         submitBtn.textContent = 'Simpan';
+        document.getElementById('admin_phone').value = '';
+        document.getElementById('notify_frustrated').checked = false;
         loadTemplate(); // Auto-load template for new profile
     }
     
@@ -256,6 +287,10 @@ document.getElementById('profileForm').addEventListener('submit', async function
         business_type: document.getElementById('business_type').value,
         system_prompt_template: document.getElementById('system_prompt_template').value,
         kb_fallback_message: document.getElementById('kb_fallback_message').value,
+        admin_phone: document.getElementById('admin_phone').value,
+        notification_settings: {
+            notify_frustrated: document.getElementById('notify_frustrated').checked
+        }
     };
     
     try {

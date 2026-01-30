@@ -98,6 +98,9 @@
                   <button id="tab-file" class="flex-1 px-4 py-3 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors">
                       <span class="material-symbols-outlined align-middle mr-1 text-[18px]">upload_file</span> {{ __('kb.tab_file') }}
                   </button>
+                  <button id="tab-manual" class="flex-1 px-4 py-3 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors">
+                      <span class="material-symbols-outlined align-middle mr-1 text-[18px]">edit_note</span> Input Manual
+                  </button>
               </div>
 
               <!-- Content URL -->
@@ -143,6 +146,46 @@
                       </button>
                   </div>
               </div>
+
+              <!-- Content Manual -->
+              <div id="panel-manual" class="hidden p-6 space-y-4">
+                  <form action="{{ route('kb.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                      @csrf
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                              <label class="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">Judul Artikel</label>
+                              <input name="title" type="text" placeholder="Contoh: Daftar Harga Kamar" required
+                                     class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+                          </div>
+                          <div>
+                              <label class="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">Pilih Profil Bisnis</label>
+                              <select name="business_profile_id" class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+                                  <option value="">📋 Semua Profile (Umum)</option>
+                                  @foreach($businessProfiles as $bp)
+                                      <option value="{{ $bp->id }}">{{ $bp->getIndustryIcon() }} {{ $bp->business_name }}</option>
+                                  @endforeach
+                              </select>
+                          </div>
+                      </div>
+                      <div>
+                          <label class="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">Isi Artikel / Jawaban</label>
+                          <textarea name="content" rows="5" placeholder="Tulis informasi detail yang akan digunakan AI untuk menjawab..." required
+                                    class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary"></textarea>
+                      </div>
+                      
+                      <div class="flex flex-col md:flex-row md:items-center gap-4 pt-2">
+                          <div class="flex-1">
+                              <label class="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">📸 Media Lampiran (Opsional)</label>
+                              <input name="image" type="file" accept="image/*"
+                                     class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/20 file:text-primary hover:file:bg-primary/30 cursor-pointer">
+                              <p class="mt-1 text-[10px] text-text-secondary italic">Gambar akan dikirim bot jika user tanya hal terkait.</p>
+                          </div>
+                          <button type="submit" class="px-8 py-3 rounded-lg bg-primary text-white text-sm font-bold hover:bg-blue-600 transition shadow-lg shadow-primary/20">
+                              Simpan ke Knowledge Base
+                          </button>
+                      </div>
+                  </form>
+              </div>
           </div>
 
           <!-- List KB -->
@@ -186,8 +229,7 @@
                                   </option>
                               @endforeach
                           </select>
-
-                          <button
+                            <button
                             data-action="detail"
                             data-title="{{ e($a->title ?? 'Untitled') }}"
                             data-url="{{ e($a->source_url ?? '-') }}"
@@ -196,7 +238,7 @@
                             class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#111722] text-text-secondary hover:text-white border border-border-dark transition">
                             {{ __('kb.button_detail') }}
                           </button>
-L
+
                           <button data-action="toggle" data-id="{{ $a->id }}"
                             class="px-3 py-1.5 rounded-lg text-xs font-bold border border-transparent
                               {{ $a->is_active ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-gray-700/50 text-gray-400' }}">
@@ -210,6 +252,12 @@ L
                         </div>
                     </div>
                     
+                    @if($a->image_path)
+                      <div class="mt-3">
+                        <img src="{{ asset('storage/' . $a->image_path) }}" class="w-48 h-32 object-cover rounded-lg border border-border-dark" alt="Media preview">
+                      </div>
+                    @endif
+
                     <p class="text-sm text-gray-400 line-clamp-2 mt-2 font-mono bg-[#111722]/50 p-2 rounded border border-border-dark/50">
                         {{ \Illuminate\Support\Str::limit($a->content, 220) }}
                     </p>
@@ -390,25 +438,34 @@ async function updateKbProfile(kbId, profileId) {
   // ===== TAB SWITCHING
   const tabUrl = document.getElementById('tab-url');
   const tabFile = document.getElementById('tab-file');
+  const tabManual = document.getElementById('tab-manual');
   const panelUrl = document.getElementById('panel-url');
   const panelFile = document.getElementById('panel-file');
+  const panelManual = document.getElementById('panel-manual');
 
   function switchTab(mode){
+      const tabs = [tabUrl, tabFile, tabManual];
+      const panels = [panelUrl, panelFile, panelManual];
+      
+      tabs.forEach(t => t?.classList.remove('text-white', 'bg-[#1f2b40]', 'border-primary'));
+      tabs.forEach(t => t?.classList.add('text-gray-400', 'border-transparent'));
+      panels.forEach(p => p?.classList.add('hidden'));
+
       if(mode === 'url'){
           tabUrl.className = "flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors";
-          tabFile.className = "flex-1 px-4 py-3 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors";
           panelUrl.classList.remove('hidden');
-          panelFile.classList.add('hidden');
-      } else {
+      } else if(mode === 'file') {
           tabFile.className = "flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors";
-          tabUrl.className = "flex-1 px-4 py-3 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors";
           panelFile.classList.remove('hidden');
-          panelUrl.classList.add('hidden');
+      } else {
+          tabManual.className = "flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors";
+          panelManual.classList.remove('hidden');
       }
   }
 
   tabUrl?.addEventListener('click', () => switchTab('url'));
   tabFile?.addEventListener('click', () => switchTab('file'));
+  tabManual?.addEventListener('click', () => switchTab('manual'));
 
   // ===== FILE UPLOAD LOGIC
   const fileInput = document.getElementById('kb-file');

@@ -314,6 +314,8 @@ Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
         Route::get('/inbox', [WhatsAppInboxController::class, 'index'])->name('inbox');
         Route::get('/api/conversations', [WhatsAppInboxController::class, 'getConversations'])->name('api.conversations');
         Route::get('/api/messages/{phone}', [WhatsAppInboxController::class, 'getMessages'])->name('api.messages');
+        Route::get('/api/conversations/{phone}/summary', [WhatsAppInboxController::class, 'getSummary'])->name('api.conversations.summary');
+        Route::get('/api/conversations/{phone}/suggestions', [WhatsAppInboxController::class, 'getSuggestions'])->name('api.conversations.suggestions');
         Route::get('/settings', [WhatsAppController::class, 'settings'])->name('settings');
         Route::post('/store', [WhatsAppController::class, 'store'])->name('store');
         Route::delete('/device/{sessionId}', [WhatsAppController::class, 'destroy'])->name('destroy');
