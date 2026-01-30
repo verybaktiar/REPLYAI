@@ -67,6 +67,7 @@ class WhatsAppBroadcastController extends Controller
 
         // Create Broadcast Campaign
         $broadcast = WaBroadcast::create([
+            'user_id' => auth()->id(),
             'title' => $request->title,
             'message' => $request->message,
             'media_path' => $mediaPath,
@@ -103,10 +104,11 @@ class WhatsAppBroadcastController extends Controller
             }
             $targets = array_unique($targets);
         }
-
+        
         // Create Targets & Dispatch Jobs
         foreach ($targets as $phone) {
             $target = WaBroadcastTarget::create([
+                'user_id' => auth()->id(),
                 'wa_broadcast_id' => $broadcast->id,
                 'phone_number' => $phone,
                 'status' => 'pending'
@@ -115,6 +117,10 @@ class WhatsAppBroadcastController extends Controller
             // Dispatch Job
             SendBroadcastJob::dispatch($target);
         }
+
+        // Track usage for broadcasts (track by total targets)
+        $tracker = app(\App\Services\UsageTrackingService::class);
+        $tracker->track(auth()->id(), \App\Models\UsageRecord::FEATURE_BROADCASTS, count($targets));
 
         return redirect()->route('whatsapp.broadcast.index')
             ->with('success', 'Broadcast created and processing started for ' . count($targets) . ' targets.');

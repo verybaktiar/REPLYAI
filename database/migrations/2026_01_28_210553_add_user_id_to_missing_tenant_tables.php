@@ -45,6 +45,20 @@ return new class extends Migration
                 $table->foreignId('user_id')->after('id')->nullable()->constrained()->onDelete('cascade');
             });
         }
+
+        // 6. WhatsApp Broadcasts
+        if (!Schema::hasColumn('wa_broadcasts', 'user_id')) {
+            Schema::table('wa_broadcasts', function (Blueprint $table) {
+                $table->foreignId('user_id')->after('id')->nullable()->constrained()->onDelete('cascade');
+            });
+        }
+
+        // 7. WhatsApp Broadcast Targets
+        if (!Schema::hasColumn('wa_broadcast_targets', 'user_id')) {
+            Schema::table('wa_broadcast_targets', function (Blueprint $table) {
+                $table->foreignId('user_id')->after('id')->nullable()->constrained()->onDelete('cascade');
+            });
+        }
     }
 
     /**

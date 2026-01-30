@@ -7,98 +7,80 @@ use App\Models\Conversation;
 use App\Models\WaMessage;
 use App\Models\WaConversation;
 use App\Models\AutoReplyLog;
+use App\Models\UsageRecord; // Added this line
 use Carbon\Carbon;
 
 class AnalyticsController extends Controller
 {
     public function index(Request $request)
     {
+        $user = auth()->user();
+        if (!$user) return redirect()->route('login');
+
         // Get filter parameters
         $platform = $request->get('platform', 'all');
-        $bot = $request->get('bot', 'all');
         $dateRange = $request->get('range', '30'); // days
-        
         $startDate = Carbon::now()->subDays((int)$dateRange)->startOfDay();
         
-        // === WhatsApp Statistics ===
-        $waQuery = WaMessage::where('created_at', '>=', $startDate);
+        // === 1. Usage Metric from UsageRecord ===
+        // AI Messages
+        $aiMessagesUsed = UsageRecord::getUsage($user->id, UsageRecord::FEATURE_AI_MESSAGES);
+        $plan = $user->getPlan();
+        $aiMessagesLimit = $plan?->limits['ai_messages_monthly'] ?? 500;
         
-        // Unique conversations (distinct phone numbers)
-        $waConversations = (clone $waQuery)->distinct('phone_number')->count('phone_number');
+        // Broadcasts
+        $broadcastsUsed = UsageRecord::getUsage($user->id, UsageRecord::FEATURE_BROADCASTS);
+        $broadcastsLimit = $plan?->limits['broadcasts_monthly'] ?? 5;
         
-        // Total messages
-        $waTotalMessages = (clone $waQuery)->count();
-        $waIncoming = (clone $waQuery)->where('direction', 'incoming')->count();
-        $waOutgoing = (clone $waQuery)->where('direction', 'outgoing')->count();
-        
-        // Bot resolution rate - messages that got bot replies
-        $waWithBotReply = (clone $waQuery)->where('direction', 'incoming')->whereNotNull('bot_reply')->where('bot_reply', '!=', '')->count();
-        $waBotResolutionRate = $waIncoming > 0 ? round(($waWithBotReply / $waIncoming) * 100, 1) : 0;
-        
-        // Human handoff (CS takeover)
-        $waHandoff = WaConversation::where('status', 'agent_handling')->count();
-        $waHandoffRate = $waConversations > 0 ? round(($waHandoff / $waConversations) * 100, 1) : 0;
-        
-        // Average response time (estimate based on consecutive messages)
-        $avgResponseTime = $this->calculateAvgResponseTime('whatsapp', $startDate);
-        
-        // === Instagram Statistics ===
-        $igConversations = Conversation::where('created_at', '>=', $startDate)->count();
-        $igTotalMessages = 0; // TODO: Add Instagram message count if available
-        
-        // Instagram logs for resolution
-        $igLogs = AutoReplyLog::where('created_at', '>=', $startDate)->whereNotNull('conversation_id');
-        $igTotalLogs = (clone $igLogs)->count();
-        $igResolved = (clone $igLogs)->whereIn('status', ['sent', 'sent_ai', 'success'])->count();
-        $igResolutionRate = $igTotalLogs > 0 ? round(($igResolved / $igTotalLogs) * 100, 1) : 0;
-        
-        // === Combined or Filtered Stats ===
-        if ($platform === 'whatsapp') {
-            $totalConversations = $waConversations;
-            $totalMessages = $waTotalMessages;
-            $resolutionRate = $waBotResolutionRate;
-            $handoffRate = $waHandoffRate;
-        } elseif ($platform === 'instagram') {
-            $totalConversations = $igConversations;
-            $totalMessages = $igTotalMessages;
-            $resolutionRate = $igResolutionRate;
-            $handoffRate = 0;
-        } else {
-            $totalConversations = $waConversations + $igConversations;
-            $totalMessages = $waTotalMessages + $igTotalMessages;
-            // Weighted average for resolution
-            $totalIncoming = $waIncoming + $igTotalLogs;
-            $totalResolved = $waWithBotReply + $igResolved;
-            $resolutionRate = $totalIncoming > 0 ? round(($totalResolved / $totalIncoming) * 100, 1) : 0;
-            $handoffRate = $waHandoffRate;
-        }
-        
-        // Platform split for chart
-        $totalSources = $waConversations + $igConversations;
-        $waPercentage = $totalSources > 0 ? round(($waConversations / $totalSources) * 100) : 50;
-        $igPercentage = $totalSources > 0 ? round(($igConversations / $totalSources) * 100) : 50;
+        // Contacts
+        $totalContacts = WaConversation::count(); // Automatically scoped by user_id
+        $contactsLimit = $plan?->limits['contacts'] ?? 1000;
 
-        // Daily conversation volume (last 7 days)
+        // === 2. Message Statistics ===
+        $waQuery = WaMessage::where('created_at', '>=', $startDate);
+        $totalMessages = (clone $waQuery)->count();
+        $incomingCount = (clone $waQuery)->where('direction', 'incoming')->count();
+        $outgoingCount = (clone $waQuery)->where('direction', 'outgoing')->count();
+        
+        // Bot resolution rate
+        $resolvedByBot = (clone $waQuery)->where('direction', 'incoming')
+            ->whereNotNull('bot_reply')
+            ->where('bot_reply', '!=', '')
+            ->count();
+        $resolutionRate = $incomingCount > 0 ? round(($resolvedByBot / $incomingCount) * 100, 1) : 0;
+        
+        // Human handoff
+        $handoffCount = WaConversation::where('status', WaConversation::STATUS_AGENT_HANDLING)->count();
+        $handoffRate = $totalContacts > 0 ? round(($handoffCount / $totalContacts) * 100, 1) : 0;
+        
+        // Average response time
+        $avgResponseTime = $this->calculateAvgResponseTime('whatsapp', $startDate);
+
+        // === 3. Chart Data ===
         $dailyVolume = $this->getDailyVolume($platform, 7);
         
-        // Recent activity logs
+        // Recent activity
         $recentLogs = $this->getRecentActivity($platform, 10);
 
         return view('pages.analytics.index', [
-            'totalConversations' => $totalConversations,
+            // Summary Cards
+            'aiMessagesUsed' => $aiMessagesUsed,
+            'aiMessagesLimit' => $aiMessagesLimit,
+            'totalContacts' => $totalContacts,
+            'contactsLimit' => $contactsLimit,
+            'broadcastsUsed' => $broadcastsUsed,
+            'broadcastsLimit' => $broadcastsLimit,
+            
+            // Detailed Stats
             'totalMessages' => $totalMessages,
+            'incomingCount' => $incomingCount,
+            'outgoingCount' => $outgoingCount,
             'resolutionRate' => $resolutionRate,
             'handoffRate' => $handoffRate,
             'avgResponseTime' => $avgResponseTime,
-            'waPercentage' => $waPercentage,
-            'igPercentage' => $igPercentage,
-            'whatsappCount' => $waConversations,
-            'instagramCount' => $igConversations,
-            'waMessages' => $waTotalMessages,
-            'waIncoming' => $waIncoming,
-            'waOutgoing' => $waOutgoing,
+            
+            // Filters & Extras
             'currentPlatform' => $platform,
-            'currentBot' => $bot,
             'dateRange' => $dateRange,
             'recentLogs' => $recentLogs,
             'dailyVolume' => $dailyVolume,

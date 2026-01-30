@@ -13,6 +13,9 @@ class WhatsAppAnalyticsController extends Controller
 {
     public function index()
     {
+        // Models used (WaMessage, WaBroadcast, WaBroadcastTarget) 
+        // already have BelongsToUser or are handled here.
+
         // 1. Summary Cards
         $totalMessages = WaMessage::count();
         $totalContacts = WaMessage::distinct('phone_number')->count('phone_number');
@@ -44,8 +47,8 @@ class WhatsAppAnalyticsController extends Controller
             $stat = $dailyStats->firstWhere('date', $date);
             
             $chartData['dates'][] = Carbon::parse($date)->format('d M');
-            $chartData['incoming'][] = $stat ? $stat->incoming : 0;
-            $chartData['outgoing'][] = $stat ? $stat->outgoing : 0;
+            $chartData['incoming'][] = $stat ? (int)$stat->incoming : 0;
+            $chartData['outgoing'][] = $stat ? (int)$stat->outgoing : 0;
         }
 
         // 3. Top Active Contacts
@@ -54,7 +57,7 @@ class WhatsAppAnalyticsController extends Controller
             ->where('remote_jid', 'not like', '%@broadcast')
             ->groupBy('phone_number', 'push_name')
             ->orderByDesc('total')
-            ->limit(5)
+            ->limit(10)
             ->get();
 
         // 4. Message Distribution (For Pie Chart)

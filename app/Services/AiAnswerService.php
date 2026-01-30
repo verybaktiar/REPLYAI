@@ -17,6 +17,78 @@ class AiAnswerService
         $this->minConfidence = (float) config('ai.min_confidence', env('AI_MIN_CONFIDENCE', 0.55));
     }
 
+    /**
+     * Deteksi sentimen user berdasarkan kata-kata
+     * @return array ['sentiment' => 'positive|negative|frustrated|confused|neutral', 'keywords' => [...]]
+     */
+    protected function detectSentiment(string $text): array
+    {
+        $lower = Str::lower($text);
+        
+        // Kata-kata negatif/frustasi
+        $negativeWords = ['lambat', 'lama', 'kecewa', 'buruk', 'parah', 'jelek', 'gak bisa', 
+                          'tidak bisa', 'gagal', 'error', 'rusak', 'mahal', 'ribet', 'susah',
+                          'kesal', 'bete', 'capek', 'males', 'bohong', 'tipu', 'penipuan'];
+        
+        // Kata-kata bingung
+        $confusedWords = ['bingung', 'gimana', 'bagaimana', 'ga ngerti', 'gak paham', 
+                          'kurang jelas', 'maksudnya', 'artinya', 'apa itu', 'apa maksud'];
+        
+        // Kata-kata positif
+        $positiveWords = ['bagus', 'keren', 'mantap', 'sip', 'oke', 'ok', 'baik', 'terima kasih',
+                          'thanks', 'makasih', 'helpful', 'membantu', 'senang', 'puas', 'wow'];
+        
+        // Kata-kata persetujuan
+        $agreementWords = ['boleh', 'iya', 'ya', 'mau', 'oke', 'ok', 'sip', 'baik', 'setuju', 
+                           'lanjut', 'gas', 'yuk', 'ayok', 'deal', 'jadi'];
+        
+        $foundKeywords = [];
+        $sentiment = 'neutral';
+        
+        // Check negative/frustrated first (highest priority)
+        foreach ($negativeWords as $word) {
+            if (Str::contains($lower, $word)) {
+                $foundKeywords[] = $word;
+                $sentiment = 'frustrated';
+            }
+        }
+        
+        // Check confused
+        if ($sentiment === 'neutral') {
+            foreach ($confusedWords as $word) {
+                if (Str::contains($lower, $word)) {
+                    $foundKeywords[] = $word;
+                    $sentiment = 'confused';
+                }
+            }
+        }
+        
+        // Check positive
+        if ($sentiment === 'neutral') {
+            foreach ($positiveWords as $word) {
+                if (Str::contains($lower, $word)) {
+                    $foundKeywords[] = $word;
+                    $sentiment = 'positive';
+                }
+            }
+        }
+        
+        // Check agreement (untuk konteks handling)
+        $isAgreement = false;
+        foreach ($agreementWords as $word) {
+            if (Str::contains($lower, $word) && mb_strlen($text) < 20) {
+                $isAgreement = true;
+                break;
+            }
+        }
+        
+        return [
+            'sentiment' => $sentiment,
+            'keywords' => $foundKeywords,
+            'is_agreement' => $isAgreement,
+        ];
+    }
+
     public function answerFromKb(string $question): ?array
     {
         $question = trim($question);
@@ -143,7 +215,10 @@ class AiAnswerService
             ];
         }
 
-        $res = $this->callWhatsAppAI($question, $context, $conversationHistory, $profile);
+        // 7) Deteksi sentimen user
+        $sentiment = $this->detectSentiment($question);
+        
+        $res = $this->callWhatsAppAI($question, $context, $conversationHistory, $profile, $sentiment);
         
         if (!$res || empty($res['answer'])) {
             // Jika AI tidak bisa jawab, berikan respons yang lebih natural
@@ -165,8 +240,9 @@ class AiAnswerService
      * Call Perplexity dengan prompt khusus WhatsApp yang lebih conversational
      * 
      * @param BusinessProfile|null $profile Optional profile to use (overrides default)
+     * @param array $sentiment Hasil deteksi sentimen dari detectSentiment()
      */
-    protected function callWhatsAppAI(string $question, string $context, array $history = [], ?BusinessProfile $profile = null): ?array
+    protected function callWhatsAppAI(string $question, string $context, array $history = [], ?BusinessProfile $profile = null, array $sentiment = []): ?array
     {
         $apiKey = config('services.perplexity.key');
         $baseUrl = rtrim((string) config('services.perplexity.url', 'https://api.perplexity.ai'), '/');
@@ -190,6 +266,33 @@ class AiAnswerService
                 [$profile->business_name, $now, $now, $tomorrow], 
                 $profile->system_prompt_template
             );
+        }
+
+        // Tambahkan instruksi konteks percakapan
+        $systemPrompt .= "\n\nPENTING - KONTEKS PERCAKAPAN:
+- SELALU perhatikan history chat sebelumnya
+- Jika user hanya bilang 'boleh', 'oke', 'iya', 'mau' dll, itu berarti SETUJU dengan tawaranmu sebelumnya
+- JANGAN tanya ulang 'ada apa?' jika user sudah setuju - langsung lanjutkan ke aksi berikutnya
+- Contoh: Jika kamu tawarkan demo dan user bilang 'boleh', LANGSUNG arahkan ke cara daftar demo";
+
+        // Tambahkan instruksi berdasarkan sentimen
+        $sentimentType = $sentiment['sentiment'] ?? 'neutral';
+        if ($sentimentType === 'frustrated') {
+            $systemPrompt .= "\n\n⚠️ SENTIMEN NEGATIF TERDETEKSI:
+- User terlihat frustasi/kecewa
+- Tunjukkan empati terlebih dahulu ('Mohon maaf atas ketidaknyamanannya')
+- Tawarkan solusi dengan cepat
+- Jika tidak bisa bantu, tawarkan escalate ke CS manusia";
+        } elseif ($sentimentType === 'confused') {
+            $systemPrompt .= "\n\n❓ USER TERLIHAT BINGUNG:
+- Jelaskan dengan bahasa yang lebih sederhana
+- Gunakan contoh konkrit jika perlu
+- Tanyakan bagian mana yang kurang jelas";
+        } elseif ($sentimentType === 'positive') {
+            $systemPrompt .= "\n\n😊 SENTIMEN POSITIF TERDETEKSI:
+- User terlihat senang/puas
+- Respons dengan antusias tapi tetap profesional
+- Bisa tawarkan produk/layanan tambahan jika relevan";
         }
 
         $messages = [

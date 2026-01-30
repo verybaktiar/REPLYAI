@@ -5,9 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use App\Traits\BelongsToUser;
+
 class WaBroadcastTarget extends Model
 {
+    use BelongsToUser;
+
     protected $fillable = [
+        'user_id',
         'wa_broadcast_id',
         'phone_number',
         'status',

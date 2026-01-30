@@ -154,9 +154,37 @@ class WhatsAppWebhookController extends Controller
             
             $businessProfile = $device?->businessProfile;
             
+            // Ambil history percakapan dari database (6 pesan terakhir)
+            $recentMessages = WaMessage::where('remote_jid', $message->remote_jid)
+                ->where('id', '!=', $message->id) // Exclude pesan saat ini
+                ->orderBy('created_at', 'desc')
+                ->take(6)
+                ->get()
+                ->reverse() // Urutkan dari lama ke baru
+                ->values();
+            
+            // Format history untuk AI
+            $conversationHistory = [];
+            foreach ($recentMessages as $msg) {
+                $role = $msg->is_from_me ? 'assistant' : 'user';
+                $content = $msg->is_from_me ? ($msg->bot_reply ?? $msg->message) : $msg->message;
+                
+                if (!empty($content)) {
+                    $conversationHistory[] = [
+                        'role' => $role,
+                        'content' => $content,
+                    ];
+                }
+            }
+            
+            Log::info('WhatsApp Conversation History', [
+                'remote_jid' => $message->remote_jid,
+                'history_count' => count($conversationHistory),
+            ]);
+            
             // Use WhatsApp-specific AI method for smarter, more conversational responses
             $aiService = app(\App\Services\AiAnswerService::class);
-            $aiResult = $aiService->answerWhatsApp($message->message, [], $businessProfile);
+            $aiResult = $aiService->answerWhatsApp($message->message, $conversationHistory, $businessProfile);
             
             if ($aiResult && !empty($aiResult['answer'])) {
                 $reply = $aiResult['answer'];
@@ -179,6 +207,10 @@ class WhatsAppWebhookController extends Controller
                         'source' => $aiResult['source'] ?? 'ai',
                         'confidence' => $aiResult['confidence'] ?? 0,
                     ]);
+
+                    // Track AI Message Usage
+                    $tracker = app(\App\Services\UsageTrackingService::class);
+                    $tracker->track($businessProfile->user_id, \App\Models\UsageRecord::FEATURE_AI_MESSAGES);
                 } else {
                     Log::error('WhatsApp Auto-Reply Send Failed', [
                         'to' => $message->remote_jid,
