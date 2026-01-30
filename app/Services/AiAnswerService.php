@@ -104,9 +104,10 @@ class AiAnswerService
         // 3) Jika sapaan sederhana, balas ramah tanpa perlu KB
         if ($isSimpleGreeting) {
             $greetingResponses = [
-                "Halo kak! 👋 Selamat datang. Ada yang bisa saya bantu? 😊",
-                "Hai kak! 😊 Saya asisten virtual siap membantu 24 jam!",
-                "Halo! Selamat datang 👋 Silakan sampaikan pertanyaan Anda, saya akan bantu jawab ya 😊",
+                "Halo! Ada yang bisa saya bantu?",
+                "Halo kak, ada yang bisa dibantu?",
+                "Hai, silakan mau tanya apa?",
+                "Halo, ada yang perlu saya bantu? 😊",
             ];
             
             return [
@@ -147,7 +148,7 @@ class AiAnswerService
         if (!$res || empty($res['answer'])) {
             // Jika AI tidak bisa jawab, berikan respons yang lebih natural
             return [
-                'answer' => "Hmm, saya kurang paham dengan pertanyaan kakak 🤔 Bisa dijelaskan lebih detail?",
+                'answer' => "Hmm, bisa dijelaskan lebih detail kak?",
                 'confidence' => 0.4,
                 'source' => 'clarification',
             ];
