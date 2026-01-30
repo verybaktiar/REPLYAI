@@ -26,19 +26,27 @@ class KbArticleController extends Controller
             'content' => ['required','string'],
             'tags'    => ['nullable','string','max:255'],
             'business_profile_id' => ['nullable','exists:business_profiles,id'],
+            'image'   => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
 
-        $article = KbArticle::create([
+        $articleData = [
             'title'     => $validated['title'] ?? null,
             'content'   => $validated['content'],
             'tags'      => $validated['tags'] ?? null,
             'is_active' => true,
             'business_profile_id' => $validated['business_profile_id'] ?? null,
-        ]);
+        ];
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('kb_images', 'public');
+            $articleData['image_path'] = $path;
+        }
+
+        $article = KbArticle::create($articleData);
 
         ActivityLogService::logCreated($article, "Membuat artikel KB: " . ($article->title ?? 'Tanpa Judul'));
 
-        return back()->with('ok', 'KB article dibuat');
+        return back()->with('ok', 'KB article berhasil dibuat' . ($request->hasFile('image') ? ' dengan lampiran' : ''));
     }
 
     /**
