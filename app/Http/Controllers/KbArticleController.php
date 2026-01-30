@@ -55,11 +55,31 @@ class KbArticleController extends Controller
 
         $url = $validated['url'];
 
-        $res = Http::timeout(15)->get($url);
+        // Coba fetch dengan SSL verification, jika gagal coba tanpa SSL verification
+        try {
+            $res = Http::timeout(15)->get($url);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // SSL error - coba tanpa verifikasi SSL (untuk self-signed cert atau self-referential URL)
+            try {
+                $res = Http::timeout(15)->withoutVerifying()->get($url);
+            } catch (\Illuminate\Http\Client\ConnectionException $e2) {
+                // Jika masih gagal, coba dengan HTTP (bukan HTTPS)
+                $httpUrl = str_replace('https://', 'http://', $url);
+                try {
+                    $res = Http::timeout(15)->get($httpUrl);
+                } catch (\Exception $e3) {
+                    return response()->json([
+                        'ok' => false,
+                        'message' => 'Gagal fetch URL: ' . $e->getMessage(),
+                    ], 422);
+                }
+            }
+        }
+        
         if (!$res->ok()) {
             return response()->json([
                 'ok' => false,
-                'message' => 'Gagal fetch URL',
+                'message' => 'Gagal fetch URL (HTTP ' . $res->status() . ')',
             ], 422);
         }
 
