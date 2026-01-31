@@ -6,6 +6,7 @@ use App\Models\WaMessage;
 use App\Models\WaSession;
 use App\Models\WaConversation;
 use App\Models\WhatsAppDevice;
+use App\Models\AiTrainingExample;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
@@ -74,6 +75,11 @@ class WhatsAppInboxController extends Controller
                     ->whereRaw('LENGTH(phone_number) <= 15')
                     ->whereRaw("phone_number REGEXP '^[0-9]+$'");
                 
+                // MANUALLY apply user_id filter in subquery because it's a raw table query
+                if (auth()->guard('web')->check()) {
+                    $subQuery->where('user_id', auth()->guard('web')->id());
+                }
+                
                 if ($deviceFilter) {
                     $subQuery->where('session_id', $deviceFilter);
                 }
@@ -125,6 +131,7 @@ class WhatsAppInboxController extends Controller
                     'session_id' => $msg->session_id,
                     'device_name' => $device?->device_name ?? 'Unknown Device',
                     'device_color' => $device?->color ?? '#888888',
+                    'stop_autofollowup' => (bool)($waConversation?->stop_autofollowup ?? false),
                 ];
             });
 
@@ -151,6 +158,7 @@ class WhatsAppInboxController extends Controller
                     'is_bot_reply' => !empty($msg->bot_reply),
                     'bot_reply' => $msg->bot_reply,
                     'session_id' => $msg->session_id,
+                    'rated' => AiTrainingExample::where('message_id', $msg->id)->value('rating'),
                 ];
             });
 
@@ -208,6 +216,69 @@ class WhatsAppInboxController extends Controller
 
         return response()->json([
             'suggestions' => $suggestions
+        ]);
+    }
+    /**
+     * AI Pro: Rate a message for style training
+     */
+    public function rateMessage(Request $request): JsonResponse
+    {
+        $request->validate([
+            'message_id' => 'required|exists:wa_messages,id',
+            'rating' => 'required|in:good,bad',
+        ]);
+
+        $msg = WaMessage::findOrFail($request->message_id);
+        
+        // SAFETY CHECK: Only train from chats with > 7 days history to prevent poisoning
+        $firstMsg = WaMessage::where('phone_number', $msg->phone_number)->oldest()->first();
+        if (!$firstMsg || $firstMsg->created_at->gt(now()->subDays(7))) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Latihan AI hanya diizinkan untuk customer dengan riwayat > 7 hari (Anti-Poisoning).'
+            ], 403);
+        }
+
+        // Find previous user message for context
+        $previousUserMsg = WaMessage::where('phone_number', $msg->phone_number)
+            ->where('id', '<', $msg->id)
+            ->where('direction', 'incoming')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $aiService = app(\App\Services\AiAnswerService::class);
+        $userQuery = $previousUserMsg?->message ?? '(Unknown)';
+        $assistantResponse = $msg->bot_reply ?: $msg->message;
+
+        // Create or update training example with PII scrubbing
+        AiTrainingExample::updateOrCreate(
+            ['message_id' => $msg->id],
+            [
+                'user_id' => auth()->id(),
+                'business_profile_id' => WhatsAppDevice::where('session_id', $msg->session_id)->first()?->business_profile_id,
+                'user_query' => $aiService->scrubPII($userQuery),
+                'assistant_response' => $aiService->scrubPII($assistantResponse),
+                'rating' => $request->rating,
+                'is_approved' => false, // Always requires admin approval
+            ]
+        );
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Toggle auto-follow up for a specific conversation
+     */
+    public function toggleFollowup(string $phone): JsonResponse
+    {
+        $conv = WaConversation::where('phone_number', $phone)->firstOrFail();
+        $conv->stop_autofollowup = !$conv->stop_autofollowup;
+        $conv->save();
+
+        return response()->json([
+            'success' => true,
+            'stop_autofollowup' => $conv->stop_autofollowup,
+            'message' => $conv->stop_autofollowup ? 'Auto-Follow Up dinonaktifkan untuk chat ini.' : 'Auto-Follow Up diaktifkan kembali.'
         ]);
     }
 }

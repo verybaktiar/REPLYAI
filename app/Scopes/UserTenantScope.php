@@ -24,8 +24,9 @@ class UserTenantScope implements Scope
         }
 
         // Jangan filter jika Super Admin (guard admin) sedang login
-        // Ini memastikan Admin Panel bisa melihat semua data
-        if (Auth::guard('admin')->check()) {
+        // DAN sedang mengakses halaman admin panel (/admin/*)
+        // Ini memastikan Admin Panel bisa melihat semua data, tapi dashboard klien tetap terisolasi
+        if (Auth::guard('admin')->check() && request()->is('admin', 'admin/*')) {
             return;
         }
 

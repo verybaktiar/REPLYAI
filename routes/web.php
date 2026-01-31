@@ -317,6 +317,10 @@ Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
         Route::get('/api/messages/{phone}', [WhatsAppInboxController::class, 'getMessages'])->name('api.messages');
         Route::get('/api/conversations/{phone}/summary', [WhatsAppInboxController::class, 'getSummary'])->name('api.conversations.summary');
         Route::get('/api/conversations/{phone}/suggestions', [WhatsAppInboxController::class, 'getSuggestions'])->name('api.conversations.suggestions');
+        Route::post('/api/messages/rate', [WhatsAppInboxController::class, 'rateMessage'])->name('api.messages.rate');
+        Route::post('/api/conversations/{phone}/toggle-followup', [WhatsAppInboxController::class, 'toggleFollowup'])->name('api.conversations.toggle-followup');
+        Route::get('/api/training/export/csv', [\App\Http\Controllers\AiTrainingExportController::class, 'exportCSV'])->name('api.training.export.csv');
+        Route::get('/api/training/export/json', [\App\Http\Controllers\AiTrainingExportController::class, 'exportJSON'])->name('api.training.export.json');
         Route::get('/settings', [WhatsAppController::class, 'settings'])->name('settings');
         Route::post('/store', [WhatsAppController::class, 'store'])->name('store');
         Route::delete('/device/{sessionId}', [WhatsAppController::class, 'destroy'])->name('destroy');

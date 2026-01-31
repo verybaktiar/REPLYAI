@@ -54,6 +54,7 @@ class WhatsAppController extends Controller
             'device_name' => $deviceName,
             'status' => 'scanning', // Initial status
             'business_profile_id' => $businessProfile?->id,
+            'user_id' => auth()->id(), // Explicitly set user_id
         ]);
 
         // Init session in Node.js

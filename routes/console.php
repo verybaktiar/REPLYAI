@@ -88,4 +88,20 @@ app()->booted(function () {
         ->withoutOverlapping()
         ->appendOutputTo(storage_path('logs/instagram-token-refresh.log'));
 
+    // ==========================================
+    // AI AUTOMATION JOBS
+    // ==========================================
+
+    // Auto-Follow Up (24h Inactivity) - Check every hour
+    $schedule->job(new \App\Jobs\SendAutoFollowupJob)
+        ->hourly()
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/ai-followup.log'));
+
+    // Daily Admin Summary - Every day at 22:00
+    $schedule->job(new \App\Jobs\SendDailyAdminSummaryJob)
+        ->dailyAt('22:00')
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/ai-daily-summary.log'));
+
 });

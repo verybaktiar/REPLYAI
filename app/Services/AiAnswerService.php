@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\KbArticle;
 use App\Models\BusinessProfile;
+use App\Models\AiTrainingExample;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -284,6 +285,22 @@ class AiAnswerService
                 [$profile->business_name, $now, $now, $tomorrow], 
                 $profile->system_prompt_template
             );
+        }
+
+        // 8) ADD AI TRAINING EXAMPLES (STYLE LEARNING)
+        // Only use approved examples for safety
+        $trainingExamples = AiTrainingExample::where('business_profile_id', $profile?->id)
+            ->where('is_approved', true)
+            ->latest()
+            ->take(5)
+            ->get();
+        
+        if ($trainingExamples->isNotEmpty()) {
+            $systemPrompt .= "\n\nGAYA BAHASA YANG DISUKAI (Pelajari contoh di bawah ini):";
+            foreach ($trainingExamples as $ex) {
+                $systemPrompt .= "\nUser: {$ex->user_query}\nCS: {$ex->assistant_response}";
+            }
+            $systemPrompt .= "\n\nGunakan gaya bahasa, nada, dan keramahan yang sama seperti contoh CS di atas.";
         }
 
         // Tambahkan instruksi konteks percakapan
@@ -767,5 +784,76 @@ SYS;
         }
 
         return [];
+    }
+    /**
+     * Generate a comprehensive daily summary for the admin
+     */
+    public function generateDailySummary($messages, ?BusinessProfile $profile = null): ?string
+    {
+        if ($messages->isEmpty()) return "Tidak ada aktivitas chat hari ini.";
+
+        $apiKey = config('services.perplexity.key');
+        if (!$apiKey) return null;
+
+        $businessName = $profile?->business_name ?? 'Bisnis';
+        
+        // Prepare message data for AI (limit to avoid token overflow)
+        $messageDump = "";
+        foreach ($messages->take(100) as $msg) {
+            $sender = $msg->is_from_me ? 'Bot/CS' : 'User';
+            $text = $msg->message ?: $msg->bot_reply;
+            $messageDump .= "[{$msg->created_at->format('H:i')}] {$sender}: {$text}\n";
+        }
+
+        $payload = [
+            "model" => config('services.perplexity.model', 'sonar-pro'),
+            "messages" => [
+                ["role" => "system", "content" => "Berikan ringkasan aktivitas chat hari ini dalam Bahasa Indonesia dengan gaya visual yang menarik (Gunakan emoji).
+                
+ATURAN KETAT:
+- Maksimal 5 poin (baris).
+- Poin 1: 📊 Statistik (Chat total, % AI vs % CS).
+- Poin 2: 📝 Topik Utama.
+- Poin 3: 🔥 Hot Leads (Sebutkan nomor HP disensor: 0812xxxx45).
+- Poin 4: ⚠️ Komplain/Urgent (Jika ada).
+- Poin 5: 💡 Rekomendasi singkat.
+- Gunakan emoji bintang (⭐) untuk memberikan rating performa CS hari ini (1-5 bintang).
+- JANGAN pakai kata pengantar. Langsung ke poin."],
+                ["role" => "user", "content" => "LOG PESAN HARI INI:\n" . $messageDump],
+            ],
+            "temperature" => 0.2
+        ];
+
+        try {
+            $http = Http::timeout(60)->withToken($apiKey)->post(rtrim((string)config('services.perplexity.url', 'https://api.perplexity.ai'), '/') . '/chat/completions', $payload);
+            if ($http->ok()) {
+                return trim((string)$http->json('choices.0.message.content'));
+            }
+        } catch (\Exception $e) {
+            Log::error('❌ Daily Summary Error: ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Scrub Personal Identifiable Information (PII) from text
+     */
+    public function scrubPII(string $text): string
+    {
+        // Mask Emails
+        $text = preg_replace('/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i', '[EMAIL]', $text);
+        
+        // Mask Phone Numbers (matches various formats like 0812-3456-7890, +62..., etc.)
+        // We look for sequences of 10-15 digits with common separators
+        $text = preg_replace('/(\+?62|08)[0-9 \-]{8,15}/', '[NOMOR_HP]', $text);
+        
+        // Mask specific sensitive keywords (optional, can be expanded)
+        $sensitiveKeywords = ['KTP', 'rekening', 'password', 'sandi', 'alamat'];
+        foreach ($sensitiveKeywords as $kw) {
+            $text = preg_replace('/' . preg_quote($kw, '/') . '\s*[:=]\s*\S+/i', $kw . ': [SENSITIF]', $text);
+        }
+
+        return $text;
     }
 }

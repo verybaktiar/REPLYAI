@@ -130,7 +130,15 @@
                         ])
                     </div>
                     <div class="flex space-x-2">
-                         <button @click="fetchConversations()" class="p-2 hover:bg-white/5 rounded-full text-text-secondary" title="Refresh">
+                        <div class="flex gap-1" title="Backup Data Training AI">
+                            <a :href="'{{ route('whatsapp.api.training.export.csv') }}'" class="p-2 hover:bg-white/5 rounded-full text-text-secondary transition-colors" title="Export CSV">
+                                <span class="material-symbols-outlined text-sm">csv</span>
+                            </a>
+                            <a :href="'{{ route('whatsapp.api.training.export.json') }}'" class="p-2 hover:bg-white/5 rounded-full text-text-secondary transition-colors" title="Export JSON">
+                                <span class="material-symbols-outlined text-sm">backup</span>
+                            </a>
+                        </div>
+                        <button @click="fetchConversations()" class="p-2 hover:bg-white/5 rounded-full text-text-secondary" title="Refresh">
                             <span class="material-symbols-outlined">refresh</span>
                         </button>
                     </div>
@@ -278,7 +286,12 @@
                             </div>
                             <div>
                                 <h3 class="font-bold text-white text-sm" x-text="activeChat.name"></h3>
-                                <p class="text-xs text-text-secondary" x-text="activeChat.formatted_phone"></p>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-xs text-text-secondary" x-text="activeChat.formatted_phone"></p>
+                                    <template x-if="activeChat.stop_autofollowup">
+                                        <span class="text-[9px] bg-red-500/10 text-red-500 px-1 rounded border border-red-500/20">Follow-up Off</span>
+                                    </template>
+                                </div>
                             </div>
                         </div>
                         <div class="flex items-center space-x-1 md:space-x-2">
@@ -293,6 +306,15 @@
                                     class="flex items-center gap-1 px-2 md:px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs md:text-sm font-medium transition-colors">
                                 <span class="material-symbols-outlined text-base">replay</span>
                                 <span class="hidden sm:inline">Aktifkan Bot</span>
+                            </button>
+
+                            <!-- Toggle Auto Follow-up Button -->
+                            <button @click="toggleFollowup()"
+                                    class="flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-colors border"
+                                    :class="activeChat?.stop_autofollowup ? 'bg-red-500/10 border-red-500/50 text-red-500 hover:bg-red-500/20' : 'bg-white/5 border-white/10 text-text-secondary hover:bg-white/10'"
+                                    :title="activeChat?.stop_autofollowup ? 'Aktifkan Auto Follow-up' : 'Matikan Auto Follow-up untuk chat ini'">
+                                <span class="material-symbols-outlined text-base" :class="activeChat?.stop_autofollowup ? '' : 'filled'">notifications_off</span>
+                                <span class="hidden lg:inline text-[11px]" x-text="activeChat?.stop_autofollowup ? 'Follow-up Off' : 'Follow-up On'"></span>
                             </button>
                             <button class="p-2 hover:bg-white/5 rounded-full text-text-secondary">
                                 <span class="material-symbols-outlined">more_vert</span>
@@ -355,7 +377,75 @@
                         </template>
 
                         <template x-for="msg in messages" :key="msg.id">
-                            <!-- (existing message loop content) -->
+                            <div class="flex flex-col" :class="msg.direction === 'outgoing' ? 'items-end' : 'items-start'">
+                                <!-- Date Separator if needed (simplified for now) -->
+                                
+                                <div class="message-bubble-wrapper flex gap-3 max-w-[85%] group" :class="msg.direction === 'outgoing' ? 'flex-row-reverse' : ''">
+                                    <!-- Avatar -->
+                                    <div class="h-8 w-8 rounded-full flex items-center justify-center shrink-0 border"
+                                         :class="msg.direction === 'outgoing' ? 
+                                                (msg.is_bot_reply ? 'bg-primary/20 text-primary border-primary/30' : 'bg-slate-700 text-slate-300 border-white/10') : 
+                                                'bg-[#212b3d] text-slate-400 border-white/5'">
+                                        <template x-if="msg.is_bot_reply">
+                                            <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+                                        </template>
+                                        <template x-if="!msg.is_bot_reply">
+                                            <span class="material-symbols-outlined text-[16px]" x-text="msg.direction === 'outgoing' ? 'person' : 'account_circle'"></span>
+                                        </template>
+                                    </div>
+
+                                    <div class="flex flex-col gap-1" :class="msg.direction === 'outgoing' ? 'items-end' : 'items-start'">
+                                        <!-- Time & Name -->
+                                        <div class="flex items-center gap-2" :class="msg.direction === 'outgoing' ? 'flex-row-reverse' : ''">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-text-secondary" 
+                                                  x-text="msg.is_bot_reply ? 'AiPro Bot' : (msg.direction === 'outgoing' ? 'Admin' : 'Customer')"></span>
+                                            <span class="text-[9px] text-text-secondary/60" x-text="msg.time"></span>
+                                        </div>
+
+                                        <!-- Bubble -->
+                                        <div class="relative">
+                                            <div class="p-3 rounded-2xl text-sm shadow-sm break-words relative"
+                                                 :class="msg.direction === 'outgoing' ? 
+                                                        'bg-primary text-white rounded-tr-sm' : 
+                                                        'bg-surface-dark text-slate-200 rounded-tl-sm border border-border-dark'">
+                                                <div x-text="msg.message" class="whitespace-pre-wrap"></div>
+                                                
+                                                <!-- AI Pro Badge if bot reply -->
+                                                <template x-if="msg.is_bot_reply">
+                                                    <div class="mt-2 pt-2 border-t border-white/10 flex items-center justify-between gap-4">
+                                                        <span class="text-[9px] font-black uppercase bg-white/20 px-1 rounded">AI Pro</span>
+                                                        
+                                                        <!-- Rating Button (AI STYLE TRAINING) -->
+                                                        <div class="flex gap-1">
+                                                            <button @click="rateMessage(msg.id, 'good')" 
+                                                                    class="p-1 rounded hover:bg-white/20 transition-colors flex items-center gap-1"
+                                                                    :class="msg.rated === 'good' ? 'text-green-300' : 'text-white/60'"
+                                                                    title="Sukai gaya bahasa ini (AI akan belajar)">
+                                                                <span class="material-symbols-outlined text-sm" :class="msg.rated === 'good' ? 'filled' : ''">thumb_up</span>
+                                                                <span x-show="msg.rated === 'good'" class="text-[9px]">Telah dipelajari</span>
+                                                            </button>
+                                                            <button @click="rateMessage(msg.id, 'bad')" 
+                                                                    class="p-1 rounded hover:bg-white/20 transition-colors flex items-center gap-1"
+                                                                    :class="msg.rated === 'bad' ? 'text-red-300' : 'text-white/60'"
+                                                                    title="Gaya bahasa ini kurang tepat">
+                                                                <span class="material-symbols-outlined text-sm" :class="msg.rated === 'bad' ? 'filled' : ''">thumb_down</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+
+                                            <!-- Message Actions on Hover -->
+                                            <div class="message-actions absolute top-1/2 -translate-y-1/2 flex gap-1 px-2"
+                                                 :class="msg.direction === 'outgoing' ? 'right-full' : 'left-full'">
+                                                <button class="p-1.5 rounded-full hover:bg-white/5 text-text-secondary hover:text-white transition-colors">
+                                                    <span class="material-symbols-outlined text-base">reply</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </template>
                         
                         <!-- Typing Indicator (shown when isTyping is true) -->
@@ -778,6 +868,56 @@
             dismissIdleWarning() {
                 this.showIdleWarning = false;
                 this.idleChat = null;
+            },
+
+            // AI Style Training
+            async rateMessage(messageId, rating) {
+                try {
+                    const response = await fetch('{{ route("whatsapp.api.messages.rate") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({ message_id: messageId, rating: rating })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        // Update UI locally
+                        const msg = this.messages.find(m => m.id === messageId);
+                        if (msg) msg.rated = rating;
+                        
+                        // Show simple toast or feedback? Logic below
+                        console.log('AI Training Example Saved:', rating);
+                    }
+                } catch (error) {
+                    console.error('Error rating message:', error);
+                }
+            },
+
+            async toggleFollowup() {
+                if (!this.activeChat) return;
+                try {
+                    const phone = this.activeChat.phone_number;
+                    const response = await fetch(`/whatsapp/api/conversations/${phone}/toggle-followup`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        }
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        this.activeChat.stop_autofollowup = result.stop_autofollowup;
+                        // Update in conversations list too
+                        const conv = this.conversations.find(c => c.phone_number === phone);
+                        if (conv) conv.stop_autofollowup = result.stop_autofollowup;
+                        
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    console.error('Error toggling follow-up:', error);
+                }
             }
         }
     }

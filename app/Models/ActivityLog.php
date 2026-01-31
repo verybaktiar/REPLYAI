@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use App\Traits\BelongsToUser;
 
 class ActivityLog extends Model
 {
+    use BelongsToUser;
     protected $fillable = [
         'user_id',
         'admin_id',

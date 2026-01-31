@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class TicketReply extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\BelongsToUser;
 
     protected $fillable = [
         'ticket_id',
