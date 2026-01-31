@@ -278,6 +278,9 @@ Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
     // Inbox
     Route::middleware(['global_feature:enable_instagram'])->group(function () {
         Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
+        Route::get('/inbox/enterprise', function () {
+            return view('pages.inbox.enterprise');
+        })->name('inbox.enterprise');
         Route::post('/inbox/send', [InboxController::class, 'send'])->name('inbox.send');
         Route::get('/inbox/poll-messages', [InboxController::class, 'pollMessages'])->name('inbox.poll.messages');
         Route::get('/inbox/poll-conversations', [InboxController::class, 'pollConversations'])->name('inbox.poll.conversations');
