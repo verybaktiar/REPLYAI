@@ -1,100 +1,82 @@
 @props(['user'])
 
 @php
-    // User-scoped queries
     $hasKb = \App\Models\KbArticle::where('user_id', $user->id)->exists();
     $hasRules = \App\Models\AutoReplyRule::where('user_id', $user->id)->exists();
     $hasWa = \App\Models\WaSession::where('user_id', $user->id)->where('status', 'connected')->exists();
     $hasIg = \App\Models\InstagramAccount::where('user_id', $user->id)->where('is_active', true)->exists();
     $hasProfile = \App\Models\BusinessProfile::where('user_id', $user->id)->exists();
     
-    $checks = [
-        'profile' => [
-            'done' => $hasProfile,
-            'label' => __('dashboard.setup_profile'),
-            'url' => route('settings.business'),
-            'icon' => 'business'
-        ],
-        'kb' => [
-            'done' => $hasKb,
-            'label' => __('dashboard.add_kb'),
-            'url' => route('kb.index'),
-            'icon' => 'menu_book'
-        ],
-        'rules' => [
-            'done' => $hasRules,
-            'label' => __('dashboard.create_rules'),
-            'url' => route('rules.index'),
-            'icon' => 'rule'
-        ],
-        'wa' => [
-            'done' => $hasWa,
-            'label' => __('dashboard.connect_wa'),
-            'url' => route('whatsapp.settings'),
-            'icon' => 'chat'
-        ],
-        'ig' => [
-            'done' => $hasIg,
-            'label' => __('dashboard.connect_ig'),
-            'url' => route('instagram.connect'),
-            'icon' => 'photo_camera'
-        ],
+    $steps = [
+        ['done' => $hasProfile, 'label' => 'Lengkapi Profil', 'url' => route('settings.business')],
+        ['done' => $hasWa, 'label' => 'Hubungkan WA', 'url' => route('whatsapp.settings')],
+        ['done' => $hasKb, 'label' => 'Tambah Pengetahuan', 'url' => route('kb.index')],
+        ['done' => $hasRules, 'label' => 'Atur Balasan', 'url' => route('rules.index')],
+        ['done' => $hasIg, 'label' => 'Hubungkan IG', 'url' => route('instagram.connect')],
     ];
     
-    $completed = collect($checks)->filter(fn($c) => $c['done'])->count();
-    $total = count($checks);
-    $progress = $total > 0 ? round(($completed / $total) * 100) : 0;
+    $completed = collect($steps)->filter(fn($s) => $s['done'])->count();
+    $total = count($steps);
 @endphp
 
 @if($completed < $total)
-<div class="bg-gradient-to-br from-[#1a2230] to-[#111722] rounded-2xl border border-slate-800 p-6 mb-8 shadow-xl">
-    <div class="flex items-center justify-between mb-5">
+<div x-data="{ collapsed: false }" 
+     class="bg-[#111722] border border-gray-800 rounded-xl overflow-hidden transition-all duration-300">
+    
+    <!-- Compact Header -->
+    <div class="px-5 py-3 flex items-center justify-between border-b border-gray-800/50">
         <div class="flex items-center gap-4">
-            <div class="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined text-[28px]">rocket_launch</span>
+            <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-white tracking-tight">Langkah Awal ({{ $completed }}/{{ $total }})</span>
             </div>
-            <div>
-                <h3 class="text-lg font-black text-white leading-tight">{{ __('dashboard.onboarding_title') }}</h3>
-                <p class="text-xs text-slate-500 mt-1">{{ __('dashboard.onboarding_subtitle') }}</p>
-            </div>
-        </div>
-        <div class="text-right">
-            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{{ __('dashboard.progress') }}</p>
-            <div class="flex items-end gap-1 justify-end">
-                <span class="text-2xl font-black text-white leading-none">{{ $completed }}</span>
-                <span class="text-sm text-slate-500 font-bold mb-0.5">/ {{ $total }}</span>
+            
+            <!-- Dots Progress Bar -->
+            <div class="flex items-center gap-1.5 ml-2">
+                @foreach($steps as $step)
+                    <div class="size-2 rounded-full {{ $step['done'] ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-gray-700' }}"></div>
+                @endforeach
             </div>
         </div>
+        
+        <div class="flex items-center gap-3">
+            <a href="{{ $steps[min($completed, $total - 1)]['url'] }}" 
+               class="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors">
+                Lanjutkan Setup
+            </a>
+            <button @click="collapsed = !collapsed" class="p-1 text-gray-500 hover:text-white transition-colors">
+                <span class="material-symbols-outlined text-[20px]" x-text="collapsed ? 'expand_more' : 'expand_less'">expand_less</span>
+            </button>
+        </div>
     </div>
-    
-    {{-- High-End Progress Bar --}}
-    <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden mb-6">
-        <div class="h-full bg-gradient-to-r from-primary via-blue-400 to-cyan-400 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(19,91,236,0.3)]" 
-             style="width: {{ $progress }}%"></div>
-    </div>
-    
-    {{-- Checklist Grid --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        @foreach($checks as $key => $check)
-        <a href="{{ $check['url'] }}" 
-           class="group flex items-center gap-4 p-4 rounded-xl border {{ $check['done'] ? 'bg-green-500/5 border-green-500/20' : 'bg-slate-800/30 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50' }} transition-all">
-            <div class="size-8 rounded-lg flex items-center justify-center transition-colors {{ $check['done'] ? 'bg-green-500/20 text-green-400' : 'bg-slate-800 text-slate-500 group-hover:bg-primary/20 group-hover:text-primary' }}">
-                @if($check['done'])
-                    <span class="material-symbols-outlined text-[18px]">done_all</span>
-                @else
-                    <span class="material-symbols-outlined text-[18px]">{{ $check['icon'] }}</span>
-                @endif
+
+    <!-- Collapsible Detail (Linear Progress Bar) -->
+    <div x-show="!collapsed" x-collapse>
+        <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">
+            <div class="flex-1">
+                <div class="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500 transition-all duration-700" style="width: {{ ($completed / $total) * 100 }}%"></div>
+                </div>
+                <p class="text-[11px] text-gray-500 mt-2 italic">
+                    @php
+                        $nextStep = collect($steps)->first(fn($s) => !$s['done']);
+                    @endphp
+                    @if($nextStep)
+                        Tugas berikutnya: <strong>{{ $nextStep['label'] }}</strong> untuk memaksimalkan chatbot Anda.
+                    @endif
+                </p>
             </div>
-            <div class="flex-1 min-w-0">
-                <span class="block text-sm font-semibold truncate {{ $check['done'] ? 'text-green-300/60 line-through' : 'text-slate-200' }}">
-                    {{ $check['label'] }}
-                </span>
+            
+            <div class="hidden md:flex gap-2">
+                 @foreach($steps as $step)
+                    @if(!$step['done'])
+                        <a href="{{ $step['url'] }}" class="px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-[10px] font-bold text-gray-400 hover:text-white hover:border-gray-700 transition-all">
+                            {{ $step['label'] }}
+                        </a>
+                        @break
+                    @endif
+                 @endforeach
             </div>
-            @if(!$check['done'])
-                <span class="material-symbols-outlined text-slate-600 transition-transform group-hover:translate-x-1 text-sm">arrow_forward</span>
-            @endif
-        </a>
-        @endforeach
+        </div>
     </div>
 </div>
 @endif

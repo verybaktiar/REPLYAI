@@ -20,10 +20,10 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#135bec",
+                        "primary": "#3B82F6",
                         "background-light": "#f6f6f8",
-                        "background-dark": "#101622",
-                        "surface-dark": "#1a2230", 
+                        "background-dark": "#030712", // gray-950
+                        "surface-dark": "#0a101f", // slightly lighter than 950
                     },
                     fontFamily: {
                         "display": ["Inter", "sans-serif"]
@@ -41,9 +41,17 @@
     </script>
     <style>
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #101622; }
-        ::-webkit-scrollbar-thumb { background: #282e39; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+        /* Premium Glow Appreciations */
+        .glass-card { background: rgba(10, 16, 31, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.05); }
+        .skeleton-pulse { background: linear-gradient(90deg, #0a101f 25%, #111827 50%, #0a101f 75%); background-size: 200% 100%; animation: pulse-glow 1.5s infinite; }
+        @keyframes pulse-glow { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        
+        /* Material Symbols Filled State */
+        .filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden antialiased">
@@ -147,7 +155,7 @@
                 {{-- Status Indicator --}}
                 <div class="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 rounded-full border border-green-500/20">
                     <div class="size-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span class="text-xs font-bold text-green-500">{{ __('sidebar.online') }}</span>
+                    <span class="text-xs font-bold text-green-500">Aktif</span>
                 </div>
 
                 <!-- Language Switcher -->
@@ -156,13 +164,13 @@
         </header>
 
         <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scroll-smooth">
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 scroll-smooth">
             <div class="max-w-7xl mx-auto flex flex-col gap-8">
                 <!-- Page Heading Section -->
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div class="flex flex-col gap-1">
                         <div class="flex items-center gap-3">
-                            <h2 class="text-2xl md:text-3xl font-black tracking-tight dark:text-white text-slate-900">{{ __('dashboard.title') }}</h2>
+                            <h2 class="text-[28px] font-black tracking-tight text-white">Dashboard</h2>
                             @include('components.page-help', [
                                 'title' => 'Halaman Beranda',
                                 'description' => 'Ini adalah halaman utama yang menampilkan ringkasan aktivitas chatbot Anda hari ini.',
@@ -174,7 +182,7 @@
                                 ]
                             ])
                         </div>
-                        <p class="text-slate-500 dark:text-slate-400">{{ __('dashboard.subtitle') }}</p>
+                        <p class="text-sm text-gray-400">Ringkasan aktivitas chat hari ini</p>
                     </div>
                 </div>
 
@@ -186,60 +194,101 @@
                 <!-- Stats Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Stat 1: Total Messages -->
-                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
+                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-[#0a101f] border border-gray-800 shadow-sm hover:border-gray-700 transition-all">
                         <div class="flex items-start justify-between">
-                            <div class="p-2 bg-blue-50 dark:bg-blue-900/20 text-primary rounded-lg">
-                                <span class="material-symbols-outlined text-2xl">forum</span>
+                            <div class="size-10 rounded-xl bg-blue-900/20 text-blue-500 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[24px] filled">forum</span>
                             </div>
-                            <span class="flex items-center gap-1 text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-full">
-                                {{ $stats['growth'] > 0 ? '+' : '' }}{{ $stats['growth'] }}% <span class="material-symbols-outlined text-sm">trending_up</span>
-                            </span>
+                            @if($stats['total_messages'] > 0)
+                                <span class="flex items-center gap-1 text-xs font-bold text-green-500 bg-green-500/10 px-2.5 py-1 rounded-full border border-green-500/20">
+                                    Bagus <span class="material-symbols-outlined text-sm">check</span>
+                                </span>
+                            @else
+                                <span class="text-xs font-bold text-gray-500">-</span>
+                            @endif
                         </div>
                         <div>
-                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ __('dashboard.total_messages') }}</p>
-                            <p class="text-2xl font-bold dark:text-white text-slate-900 mt-1">{{ number_format($stats['total_messages']) }}</p>
+                            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest">Total Pesan</p>
+                            @if($stats['total_messages'] > 0)
+                                <p class="text-2xl font-black text-white mt-1">{{ number_format($stats['total_messages']) }}</p>
+                            @else
+                                <div class="mt-1">
+                                    <p class="text-sm text-gray-600">Belum ada data</p>
+                                    <a href="{{ route('whatsapp.settings') }}" class="text-[10px] text-blue-500 font-bold hover:underline mt-1">[Hubungkan WhatsApp]</a>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
                     <!-- Stat 2: AI Rate -->
-                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
+                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-[#0a101f] border border-gray-800 shadow-sm hover:border-gray-700 transition-all">
                         <div class="flex items-start justify-between">
-                            <div class="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-lg">
-                                <span class="material-symbols-outlined text-2xl">smart_toy</span>
+                            <div class="size-10 rounded-xl bg-purple-900/20 text-purple-500 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[24px] filled">smart_toy</span>
                             </div>
-                            <span class="flex items-center gap-1 text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-full">
-                                Good <span class="material-symbols-outlined text-sm">check</span>
-                            </span>
+                            @if($stats['ai_rate'] > 0)
+                                <span class="flex items-center gap-1 text-xs font-bold text-green-500 bg-green-500/10 px-2.5 py-1 rounded-full border border-green-500/20">
+                                    Bagus <span class="material-symbols-outlined text-sm">check</span>
+                                </span>
+                            @else
+                                <span class="text-xs font-bold text-gray-500">-</span>
+                            @endif
                         </div>
                         <div>
-                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ __('dashboard.ai_handled_rate') }}</p>
-                            <p class="text-2xl font-bold dark:text-white text-slate-900 mt-1">{{ $stats['ai_rate'] }}%</p>
+                            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest">Direspon AI</p>
+                            @if($stats['ai_rate'] > 0)
+                                <p class="text-2xl font-black text-white mt-1">{{ $stats['ai_rate'] }}%</p>
+                            @else
+                                <div class="mt-1">
+                                    <p class="text-sm text-gray-600">Belum ada data</p>
+                                    <a href="{{ route('kb.index') }}" class="text-[10px] text-blue-500 font-bold hover:underline mt-1">[Tambah Knowledge Base]</a>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
                     <!-- Stat 3: Pending Inbox -->
-                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
+                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-[#0a101f] border border-gray-800 shadow-sm hover:border-gray-700 transition-all">
                         <div class="flex items-start justify-between">
-                            <div class="p-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-lg">
-                                <span class="material-symbols-outlined text-2xl">mark_chat_unread</span>
+                            <div class="size-10 rounded-xl bg-orange-900/20 text-orange-500 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[24px] filled">mark_chat_unread</span>
                             </div>
+                            @if($stats['pending_inbox'] > 5)
+                                <span class="flex items-center gap-1 text-xs font-bold text-orange-500 bg-orange-500/10 px-2.5 py-1 rounded-full border border-orange-500/20">
+                                    Perhatian <span class="material-symbols-outlined text-sm">warning</span>
+                                </span>
+                            @endif
                         </div>
                         <div>
-                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ __('dashboard.pending_chats') }}</p>
-                            <p class="text-2xl font-bold dark:text-white text-slate-900 mt-1">{{ $stats['pending_inbox'] }}</p>
+                            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest">Menunggu Balasan</p>
+                            @if($stats['pending_inbox'] > 0)
+                                <p class="text-2xl font-black text-white mt-1">{{ $stats['pending_inbox'] }}</p>
+                            @else
+                                <div class="mt-1">
+                                    <p class="text-sm text-gray-600 font-medium">Semua Chat Teratasi</p>
+                                    <a href="{{ route('whatsapp.inbox') }}" class="text-[10px] text-blue-500 font-bold hover:underline mt-1">[Buka Inbox]</a>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
                     <!-- Stat 4: KB Count -->
-                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
+                    <div class="flex flex-col gap-3 p-5 rounded-xl bg-[#0a101f] border border-gray-800 shadow-sm hover:border-gray-700 transition-all">
                         <div class="flex items-start justify-between">
-                            <div class="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-lg">
-                                <span class="material-symbols-outlined text-2xl">library_books</span>
+                            <div class="size-10 rounded-xl bg-emerald-900/20 text-emerald-500 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[24px] filled">library_books</span>
                             </div>
                         </div>
                         <div>
-                            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ __('dashboard.kb_articles') }}</p>
-                            <p class="text-2xl font-bold dark:text-white text-slate-900 mt-1">{{ $stats['kb_count'] }}</p>
+                            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest">Artikel Pengetahuan</p>
+                            @if($stats['kb_count'] > 0)
+                                <p class="text-2xl font-black text-white mt-1">{{ $stats['kb_count'] }}</p>
+                            @else
+                                <div class="mt-1">
+                                    <p class="text-sm text-gray-600">Belum ada data</p>
+                                    <a href="{{ route('kb.index') }}" class="text-[10px] text-blue-500 font-bold hover:underline mt-1">[Buat Artikel Baru]</a>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -248,12 +297,12 @@
                 <div class="flex flex-col gap-6 p-6 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
                     <div class="flex items-center justify-between flex-wrap gap-4">
                         <div>
-                            <h3 class="text-lg font-bold dark:text-white text-slate-900">{{ __('dashboard.interaction_volume') }}</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('dashboard.interaction_volume_desc') }}</p>
+                            <h3 class="text-lg font-bold text-white">Volume Interaksi</h3>
+                            <p class="text-sm text-gray-500">Tren pesan masuk vs respon bot 7 hari terakhir</p>
                         </div>
-                        <div class="flex items-center gap-4 text-xs">
-                            <span class="flex items-center gap-1"><span class="size-3 rounded-full bg-primary"></span> {{ __('dashboard.incoming_messages') }}</span>
-                            <span class="flex items-center gap-1"><span class="size-3 rounded-full bg-purple-500"></span> {{ __('dashboard.bot_reply') }}</span>
+                        <div class="flex items-center gap-4 text-[10px] font-bold uppercase tracking-tight">
+                            <span class="flex items-center gap-1.5 text-blue-400"><span class="size-2 rounded-full bg-blue-500"></span> Pesan Masuk</span>
+                            <span class="flex items-center gap-1.5 text-purple-400"><span class="size-2 rounded-full bg-purple-500"></span> Respon Bot AI</span>
                         </div>
                     </div>
                     <div class="w-full h-[240px] relative">
@@ -265,8 +314,8 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="flex flex-col gap-4 p-6 rounded-xl bg-surface-dark border border-slate-800 shadow-sm">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-bold dark:text-white text-slate-900">{{ __('dashboard.top_questions') }}</h3>
-                            <span class="text-xs text-slate-500">{{ __('dashboard.top_questions_desc') }}</span>
+                            <h3 class="text-lg font-bold text-white">Pertanyaan Populer</h3>
+                            <span class="text-[10px] font-bold text-gray-500 uppercase">Input Tertinggi</span>
                         </div>
                         <div class="flex flex-col gap-2">
                             @forelse($topQuestions as $index => $q)
@@ -286,21 +335,21 @@
                     {{-- Usage Widget in Column --}}
                     <div class="flex flex-col gap-4">
                         <div class="flex items-center justify-between px-1">
-                            <h3 class="text-lg font-bold dark:text-white text-slate-900">{{ __('dashboard.usage_limit') }}</h3>
+                            <h3 class="text-lg font-bold text-white">Limit Penggunaan</h3>
                         </div>
                         @include('components.usage-widget', ['user' => $user, 'cols' => 1])
                     </div>
                     <!-- Response Time Card -->
                     <div class="flex flex-col gap-4 p-6 rounded-xl bg-surface-dark border border-slate-800 shadow-sm relative overflow-hidden group">
                         <div class="absolute -right-4 -top-4 size-20 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all"></div>
-                        <h3 class="text-lg font-bold dark:text-white text-slate-900 relative">{{ __('dashboard.ai_insight') }}</h3>
+                        <h3 class="text-lg font-bold text-white relative">Wawasan AI</h3>
                         <div class="space-y-4 relative">
-                            <div class="flex items-center gap-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
-                                <span class="material-symbols-outlined text-primary text-3xl">insights</span>
+                            <div class="flex items-center gap-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                                <span class="material-symbols-outlined text-blue-500 text-3xl filled">insights</span>
                                 <div>
-                                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">{{ __('dashboard.usage_forecast') }}</p>
+                                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Prediksi Kuota</p>
                                     <p class="text-lg font-bold text-white">
-                                        ± {{ $stats['forecast_days'] }} {{ __('dashboard.days_left') }}
+                                        ± {{ $stats['forecast_days'] }} Hari Lagi
                                     </p>
                                     <p class="text-[9px] text-slate-500 italic">{{ __('dashboard.forecast_desc') }}</p>
                                 </div>
@@ -321,69 +370,86 @@
                 </div>
 
                 <!-- Lower Section: Quick Actions & Activity -->
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     <!-- Quick Actions -->
-                    <div class="xl:col-span-1 flex flex-col gap-4">
-                        <h3 class="text-lg font-bold dark:text-white text-slate-900 px-1">{{ __('dashboard.quick_actions') }}</h3>
+                    <div class="lg:col-span-1 flex flex-col gap-4">
+                        <h3 class="text-sm font-black text-gray-500 uppercase tracking-widest px-1">Aksi Cepat</h3>
                         <div class="grid grid-cols-2 gap-3">
-                            <a href="{{ route('inbox') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-surface-dark border border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
-                                <div class="p-3 bg-blue-50 dark:bg-blue-900/20 text-primary rounded-full group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined">chat</span>
+                            <a href="{{ route('whatsapp.inbox') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-[#0a101f] border border-gray-800 hover:border-blue-500/50 group transition-all">
+                                <div class="p-3 bg-blue-900/20 text-blue-500 rounded-full group-hover:scale-110 transition-transform">
+                                    <span class="material-symbols-outlined filled">chat</span>
                                 </div>
-                                <span class="text-sm font-semibold dark:text-white text-slate-800">Inbox</span>
+                                <span class="text-xs font-bold text-gray-300">Buka Chat</span>
                             </a>
-                            <a href="{{ route('kb.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-surface-dark border border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
-                                <div class="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-full group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined">school</span>
+                            <a href="{{ route('kb.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-[#0a101f] border border-gray-800 hover:border-blue-500/50 group transition-all">
+                                <div class="p-3 bg-purple-900/20 text-purple-500 rounded-full group-hover:scale-110 transition-transform">
+                                    <span class="material-symbols-outlined filled">school</span>
                                 </div>
-                                <span class="text-sm font-semibold dark:text-white text-slate-800">{{ __('dashboard.train_ai') }}</span>
+                                <span class="text-xs font-bold text-gray-300">Setup AI</span>
                             </a>
-                            <a href="{{ route('rules.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-surface-dark border border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
-                                <div class="p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-full group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined">settings_suggest</span>
+                            <a href="{{ route('whatsapp.broadcast.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-[#0a101f] border border-gray-800 hover:border-blue-500/50 group transition-all">
+                                <div class="p-3 bg-orange-900/20 text-orange-500 rounded-full group-hover:scale-110 transition-transform">
+                                    <span class="material-symbols-outlined filled">campaign</span>
                                 </div>
-                                <span class="text-sm font-semibold dark:text-white text-slate-800">Rules</span>
+                                <span class="text-xs font-bold text-gray-300">Kirim Promo</span>
                             </a>
-                             <a href="{{ route('logs.index') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-surface-dark border border-slate-800 hover:border-primary dark:hover:border-primary group transition-all">
-                                <div class="p-3 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined">terminal</span>
+                             <a href="{{ route('settings.business') }}" class="flex flex-col items-center justify-center gap-3 p-6 rounded-xl bg-[#0a101f] border border-gray-800 hover:border-blue-500/50 group transition-all">
+                                <div class="p-3 bg-gray-800 text-gray-400 rounded-full group-hover:scale-110 transition-transform">
+                                    <span class="material-symbols-outlined filled">settings</span>
                                 </div>
-                                <span class="text-sm font-semibold dark:text-white text-slate-800">Logs</span>
+                                <span class="text-xs font-bold text-gray-300">Profil Bisnis</span>
                             </a>
                         </div>
                     </div>
 
-                    <!-- Recent Activity / Notifications -->
-                    <div class="xl:col-span-2 flex flex-col gap-4">
+                    <!-- Recent Activity / Notifications / Empty State -->
+                    <div class="lg:col-span-2 flex flex-col gap-4">
                         <div class="flex items-center justify-between px-1">
-                            <h3 class="text-lg font-bold dark:text-white text-slate-900">{{ __('dashboard.recent_activity') }}</h3>
+                            <h3 class="text-sm font-black text-gray-500 uppercase tracking-widest">Aktivitas Terakhir</h3>
                         </div>
-                        <div class="flex flex-col rounded-xl bg-surface-dark border border-slate-800 overflow-hidden">
-                            
-                            @forelse($activities as $activity)
-                            <div class="flex items-center gap-4 p-4 border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
-                                <div class="relative flex-shrink-0">
-                                    <div class="size-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 font-bold">
-                                         {{ substr($activity['user'], 0, 1) }}
+                        
+                        @if($stats['total_messages'] == 0 && count($activities) == 0)
+                            {{-- Empty State --}}
+                            <div class="flex flex-col items-center justify-center p-12 bg-[#0a101f] border border-dashed border-gray-800 rounded-xl">
+                                <div class="bg-blue-500/10 p-6 rounded-full mb-6">
+                                    <span class="material-symbols-outlined text-blue-500 text-[48px]">chat_bubble</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-white">Belum ada percakapan hari ini</h3>
+                                <p class="text-gray-500 text-center text-sm max-w-sm mt-1">
+                                    Hubungkan WhatsApp Anda untuk mulai menerima pesan dan biarkan AI kami membantu membalasnya.
+                                </p>
+                                <a href="{{ route('whatsapp.settings') }}" class="mt-8 flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20">
+                                    <span class="material-symbols-outlined text-sm">add</span>
+                                    Hubungkan WhatsApp Sekarang
+                                </a>
+                            </div>
+                        @else
+                            <div class="flex flex-col rounded-xl bg-[#0a101f] border border-gray-800 overflow-hidden divide-y divide-gray-800/50">
+                                @forelse($activities as $activity)
+                                <div class="flex items-center gap-4 p-4 hover:bg-gray-900/50 transition-colors cursor-pointer group">
+                                    <div class="relative flex-shrink-0">
+                                        <div class="size-10 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-black text-sm">
+                                             {{ strtoupper(substr($activity['user'], 0, 1)) }}
+                                        </div>
+                                        <div class="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-[#0a101f]">
+                                            <span class="material-symbols-outlined text-[10px] text-white block">chat</span>
+                                        </div>
                                     </div>
-                                    <div class="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-white dark:border-surface-dark">
-                                        <span class="material-symbols-outlined text-[10px] text-white block">chat</span>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between mb-0.5">
+                                            <p class="text-sm font-bold text-white truncate group-hover:text-blue-400 transition-colors">{{ $activity['user'] }}</p>
+                                            <span class="text-[10px] font-bold text-gray-500">{{ $activity['time'] }}</span>
+                                        </div>
+                                        <p class="text-xs text-gray-400 truncate">{{ $activity['content'] }}</p>
                                     </div>
                                 </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center justify-between mb-0.5">
-                                        <p class="text-sm font-bold dark:text-white text-slate-900 truncate">{{ $activity['user'] }}</p>
-                                        <span class="text-xs text-slate-500">{{ $activity['time'] }}</span>
-                                    </div>
-                                    <p class="text-sm text-slate-600 dark:text-slate-400 truncate">{{ $activity['content'] }}</p>
+                                @empty
+                                <div class="p-12 text-center text-gray-600 text-sm">
+                                    Belum ada aktivitas baru
                                 </div>
+                                @endforelse
                             </div>
-                            @empty
-                            <div class="p-8 text-center text-slate-500">
-                                {{ __('dashboard.no_activity') }}
-                            </div>
-                            @endforelse
-                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
