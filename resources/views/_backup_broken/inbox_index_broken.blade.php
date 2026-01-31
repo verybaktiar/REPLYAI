@@ -1,149 +1,11 @@
-<!DOCTYPE html>
-<html class="dark" lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>REPLYAI - {{ __('inbox.title') }}</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#135bec",
-                        "background-light": "#f6f6f8",
-                        "background-dark": "#101622",
-                        "surface-dark": "#1a202c", 
-                        "border-dark": "#2d3748",
-                    },
-                    fontFamily: {
-                        "display": ["Inter", "sans-serif"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem", 
-                        "md": "0.375rem",
-                        "lg": "0.5rem", 
-                        "xl": "0.75rem", 
-                    },
-                },
-            },
-        }
-    </script>
-    <!-- Google Fonts & Material Symbols -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-    <style>
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4a5568; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* Typing Indicator Animation */
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 12px 16px;
-        }
-        .typing-indicator span {
-            width: 8px;
-            height: 8px;
-            background: #94a3b8;
-            border-radius: 50%;
-            animation: typing 1.4s infinite ease-in-out;
-        }
-        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-            30% { transform: translateY(-6px); opacity: 1; }
-        }
-        
-        /* Read Receipt Checkmarks */
-        .read-receipt {
-            display: inline-flex;
-            align-items: center;
-            margin-left: 4px;
-        }
-        .read-receipt.sent { color: #94a3b8; }
-        .read-receipt.delivered { color: #94a3b8; }
-        .read-receipt.read { color: #3b82f6; }
-        
-        /* Smooth Panel Transition */
-        .detail-panel {
-            transition: width 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
-        }
-        .detail-panel.collapsed {
-            width: 0 !important;
-            opacity: 0;
-            transform: translateX(100%);
-            overflow: hidden;
-        }
-        
-        /* Message Hover Actions */
-        .message-bubble:hover .message-actions {
-            opacity: 1;
-        }
-        .message-actions {
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        
-        /* Pinned Conversation Highlight */
-        .conv-item.pinned {
-            background: linear-gradient(135deg, rgba(19, 91, 236, 0.1) 0%, transparent 100%);
-        }
-        .conv-item.pinned::before {
-            content: '';
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 16px;
-            height: 16px;
-            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f59e0b'%3E%3Cpath d='M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z'/%3E%3C/svg%3E") no-repeat center;
-            background-size: contain;
-        }
-        
-        /* Pulse animation for unread */
-        .unread-pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        /* Smooth conversation list item hover */
-        .conv-item {
-            transition: all 0.2s ease;
-        }
-        .conv-item:hover {
-            transform: translateX(4px);
-        }
-        
-        /* Message send animation */
-        @keyframes messageSend {
-            0% { opacity: 0; transform: translateY(10px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        .message-animate-in {
-            animation: messageSend 0.3s ease-out;
-        }
-    </style>
-</head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden h-screen w-screen flex">
-    
-<!-- Sidebar -->
-<!-- Sidebar Navigation -->
-<!-- Sidebar Navigation -->
-<!-- Sidebar Navigation -->
-@include('components.sidebar')
+<x-enterprise-layout title="{{ __('inbox.title') }}">
+    <div class="contents" x-data="{ 
+        search: '',
+        filter: 'all',
+        showDetail: {{ $selectedId ? 'true' : 'false' }},
+        sidebarOpen: false
+    }">
+
 
 <!-- Main Content Area -->
 <main class="flex flex-1 flex-col overflow-hidden h-full relative">
@@ -1086,29 +948,6 @@
 </script>
 
 <!-- Toast Notification -->
-@if(session('success'))
-<div id="toast-success" class="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg bg-green-500/90 text-white text-sm font-medium shadow-lg animate-pulse">
-    <span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>
-    {{ session('success') }}
-</div>
-<script>
-    setTimeout(() => {
-        document.getElementById('toast-success')?.remove();
-    }, 3000);
-</script>
 @endif
-
-@if(session('error'))
-<div id="toast-error" class="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500/90 text-white text-sm font-medium shadow-lg">
-    <span class="material-symbols-outlined" style="font-size: 18px;">error</span>
-    {{ session('error') }}
-</div>
-<script>
-    setTimeout(() => {
-        document.getElementById('toast-error')?.remove();
-    }, 5000);
-</script>
-@endif
-
-</body>
-</html>
+    </div>
+</x-enterprise-layout>

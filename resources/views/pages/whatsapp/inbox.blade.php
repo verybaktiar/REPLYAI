@@ -1,299 +1,441 @@
-<x-enterprise-layout title="WhatsApp Inbox">
-    <div class="contents" x-data="whatsappInbox()" x-init="init()">
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>WhatsApp Inbox - REPLYAI</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+    <!-- Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "whatsapp": "#25D366",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111722",
+                        "surface-dark": "#192233",
+                        "border-dark": "#324467",
+                        "text-secondary": "#92a4c9",
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"] },
+                },
+            },
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #324467; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475a80; }
+        
+        /* Hide Alpine.js elements until initialized */
+        [x-cloak] { display: none !important; }
+        
+        /* Typing Indicator Animation */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-6px); opacity: 1; }
+        }
+        
+        /* Message hover actions */
+        .message-bubble-wrapper:hover .message-actions {
+            opacity: 1;
+        }
+        .message-actions {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        /* Smooth chat item transitions */
+        .chat-item {
+            transition: all 0.2s ease;
+        }
+        .chat-item:hover {
+            transform: translateX(4px);
+        }
+        
+        /* Message animation */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-enter {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        /* Read receipt blue checkmark */
+        .read-check {
+            color: #3b82f6;
+        }
+        
+        /* Pinned chat highlight */
+        .chat-item.pinned {
+            background: linear-gradient(135deg, rgba(37, 211, 102, 0.1) 0%, transparent 100%);
+        }
+    </style>
+</head>
+<body class="bg-background-dark font-display text-white overflow-hidden h-screen flex flex-col lg:flex-row">
 
+<!-- Sidebar -->
+@include('components.sidebar')
+
+<main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0" x-data="whatsappInbox()" x-init="init()">
     
-    <x-master-chat-list>
-        <x-slot:header>
-            <div class="flex items-center gap-3">
-                <button @click="sidebarOpen = true" class="p-2 -ml-2 text-gray-400 hover:text-white lg:hidden">
-                    <span class="material-symbols-outlined">menu</span>
-                </button>
-                <h2 class="text-lg font-black tracking-tight text-white italic">WhatsApp</h2>
-            </div>
-            <div class="flex items-center gap-1">
-                <button @click="fetchConversations()" class="p-2 text-gray-500 hover:text-white transition-colors">
-                    <span class="material-symbols-outlined text-[20px]">refresh</span>
-                </button>
-                <div class="relative group">
-                    <button class="p-2 text-gray-500 hover:text-white transition-colors">
-                        <span class="material-symbols-outlined text-[20px]">more_vert</span>
-                    </button>
-                    <!-- Simple Dropdown for Export -->
-                    <div class="absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl hidden group-hover:block z-50 overflow-hidden">
-                        <a :href="'{{ route('whatsapp.api.training.export.csv') }}'" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
-                            <span class="material-symbols-outlined text-sm">csv</span>
-                            Export CSV
-                        </a>
-                        <a :href="'{{ route('whatsapp.api.training.export.json') }}'" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
-                            <span class="material-symbols-outlined text-sm">backup</span>
-                            Export JSON
-                        </a>
+    <!-- Inbox Layout -->
+    <div class="flex h-full">
+        <!-- Sidebar Contact List (Left) - Hidden on mobile when chat is active -->
+        <div class="border-r border-border-dark flex flex-col bg-[#111722] transition-all duration-300"
+             :class="activeChat ? 'hidden md:flex w-full md:w-[340px] lg:w-[360px] md:shrink-0' : 'w-full md:w-[340px] lg:w-[360px] md:shrink-0'">
+            <!-- Header Search -->
+            <div class="p-4 border-b border-border-dark bg-[#111722]">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-xl font-bold">WhatsApp</h2>
+                        @include('components.page-help', [
+                            'title' => 'WhatsApp',
+                            'description' => 'Lihat dan balas pesan pelanggan dari WhatsApp.',
+                            'tips' => [
+                                'Pilih percakapan dari daftar di kiri',
+                                'Hijau = Bot aktif menjawab',
+                                'Merah = CS menangani manual',
+                                'Klik "Ambil Alih" untuk membalas sendiri',
+                                'Klik "Aktifkan Bot" untuk mengembalikan ke bot'
+                            ]
+                        ])
+                    </div>
+                    <div class="flex space-x-2">
+                         <button @click="fetchConversations()" class="p-2 hover:bg-white/5 rounded-full text-text-secondary" title="Refresh">
+                            <span class="material-symbols-outlined">refresh</span>
+                        </button>
                     </div>
                 </div>
-            </div>
-        </x-slot:header>
-
-        <!-- Search & Device Filter Area -->
-        <div class="p-4 border-b border-gray-800/50 bg-gray-950/50 sticky top-0 z-10 backdrop-blur-md">
-            <div class="relative mb-3">
-                <input 
-                    type="text" 
-                    x-model="search"
-                    placeholder="Cari chat..." 
-                    class="w-full bg-gray-900 border-none text-white text-xs rounded-xl pl-9 pr-4 py-2.5 focus:ring-1 focus:ring-blue-600 placeholder-gray-600 transition-all font-medium"
-                >
-                <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-600 text-sm">search</span>
-            </div>
-            
-            <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" x-show="devices.length > 0">
-                <button @click="filterDevice = null; fetchConversations()" 
-                        class="px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap transition-all flex items-center gap-1.5 border"
-                        :class="!filterDevice ? 'bg-blue-600 text-white border-blue-500' : 'bg-gray-900 text-gray-500 border-gray-800 hover:border-gray-700'">
-                    Semua
-                </button>
-                <template x-for="device in devices" :key="device.session_id">
-                    <button @click="filterDevice = device.session_id; fetchConversations()"
-                            class="px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap transition-all flex items-center gap-1.5 border"
-                            :class="filterDevice === device.session_id ? 'text-white' : 'bg-gray-900 text-gray-500 border-gray-800 hover:border-gray-700'"
-                            :style="filterDevice === device.session_id ? 'background-color:' + device.color + '; border-color:' + device.color : ''">
-                        <span x-text="device.device_name" class="truncate max-w-[100px]"></span>
+                <div class="relative mb-3">
+                    <input 
+                        type="text" 
+                        x-model="search"
+                        placeholder="Cari chat..." 
+                        class="w-full bg-surface-dark border-border-dark text-white rounded-xl pl-10 pr-4 py-2 focus:ring-whatsapp focus:border-whatsapp placeholder-text-secondary"
+                    >
+                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-text-secondary text-sm">search</span>
+                </div>
+                
+                <!-- Device Filter Tabs -->
+                <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar" x-show="devices.length > 0">
+                    <button @click="filterDevice = null; fetchConversations()" 
+                            class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5"
+                            :class="!filterDevice ? 'bg-whatsapp text-white' : 'bg-surface-dark text-text-secondary hover:bg-white/10'">
+                        <span class="material-symbols-outlined text-sm">devices</span>
+                        Semua
                     </button>
+                    <template x-for="device in devices" :key="device.session_id">
+                        <button @click="filterDevice = device.session_id; fetchConversations()"
+                                class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5"
+                                :class="filterDevice === device.session_id ? 'text-white' : 'bg-surface-dark text-text-secondary hover:bg-white/10'"
+                                :style="filterDevice === device.session_id ? 'background-color:' + device.color : ''">
+                            <span class="w-2 h-2 rounded-full" :style="'background-color:' + device.color"></span>
+                            <span x-text="device.device_name" class="truncate max-w-[100px]"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- List Chat -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <template x-if="isLoadingConversations && conversations.length === 0">
+                    <div class="p-4 space-y-4">
+                        <template x-for="i in 5">
+                            <div class="animate-pulse flex space-x-4">
+                                <div class="rounded-full bg-white/5 h-12 w-12"></div>
+                                <div class="flex-1 space-y-2 py-1">
+                                    <div class="h-2 bg-white/5 rounded w-3/4"></div>
+                                    <div class="h-2 bg-white/5 rounded w-1/2"></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <template x-for="chat in filteredConversations" :key="chat.phone_number">
+                    <div 
+                        @click="selectChat(chat)"
+                        class="chat-item p-4 border-b border-border-dark cursor-pointer transition-colors relative"
+                        :class="activeChat?.phone_number === chat.phone_number ? 'bg-white/10' : 'hover:bg-white/5'"
+                    >
+                        <div class="flex justify-between items-start">
+                            <div class="flex space-x-3 items-center overflow-hidden">
+                                <div class="flex-shrink-0 h-12 w-12 rounded-full bg-surface-dark border border-border-dark flex items-center justify-center text-text-secondary font-bold relative">
+                                    <span x-text="getInitials(chat.name)" class="text-lg"></span>
+                                    <!-- Status Indicator Dot -->
+                                    <span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#111722]"
+                                          :class="{
+                                              'bg-green-500': chat.status === 'bot_active',
+                                              'bg-red-500': chat.status === 'agent_handling',
+                                              'bg-yellow-500 animate-pulse': chat.status === 'idle'
+                                          }"></span>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex justify-between items-baseline mb-1">
+                                        <p class="text-sm font-semibold text-white truncate" x-text="chat.name"></p>
+                                        <span class="text-[10px] text-text-secondary ml-2 whitespace-nowrap" x-text="chat.last_message_time"></span>
+                                    </div>
+                                    <!-- Status Badge & Device Badge -->
+                                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                        <!-- Device Badge -->
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1" 
+                                              :style="'background-color:' + (chat.device_color || '#888888') + '20; color:' + (chat.device_color || '#888888')">
+                                            <span class="w-1.5 h-1.5 rounded-full" :style="'background-color:' + (chat.device_color || '#888888')"></span>
+                                            <span x-text="chat.device_name || 'Unknown'" class="truncate max-w-[80px]"></span>
+                                        </span>
+                                        <template x-if="chat.status === 'agent_handling'">
+                                            <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[10px]">headset_mic</span>
+                                                CS
+                                            </span>
+                                        </template>
+                                        <template x-if="chat.status === 'idle' && chat.remaining_minutes">
+                                            <span class="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[10px]">schedule</span>
+                                                <span x-text="chat.remaining_minutes + 'm'"></span>
+                                            </span>
+                                        </template>
+                                        <template x-if="chat.status === 'bot_active'">
+                                            <span class="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[10px]">smart_toy</span>
+                                                Bot
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <p class="text-xs text-text-secondary truncate" x-text="chat.last_message"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                
+                <template x-if="conversations.length === 0 && !isLoadingConversations">
+                    <div class="p-8 text-center text-text-secondary">
+                        <p>Belum ada percakapan</p>
+                    </div>
                 </template>
             </div>
         </div>
 
-        <!-- Scrollable Conversation List -->
-        <div class="flex-1 overflow-y-auto divide-y divide-gray-800/30">
-            <template x-if="isLoadingConversations && conversations.length === 0">
-                <div class="p-4 space-y-4">
-                    <template x-for="i in 5">
-                        <div class="animate-pulse flex space-x-4">
-                            <div class="rounded-full bg-gray-900 h-10 w-10"></div>
-                            <div class="flex-1 space-y-2 py-1">
-                                <div class="h-2 bg-gray-900 rounded w-3/4"></div>
-                                <div class="h-2 bg-gray-900 rounded w-1/2"></div>
+        <!-- Chat Window (Right) - Visible on mobile only when chat is active -->
+        <div class="flex-1 flex flex-col bg-[#0b1019] relative min-w-0 transition-all duration-300"
+             :class="activeChat ? 'flex' : 'hidden md:flex'">
+             <!-- Chat Background Pattern -->
+             <div class="absolute inset-0 z-0 opacity-[0.03]" style="background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');"></div>
+
+            <template x-if="!activeChat">
+                <div class="flex-1 flex flex-col items-center justify-center text-center p-8 z-10">
+                    <div class="w-32 h-32 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                        <span class="material-symbols-outlined text-6xl text-text-secondary">chat</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">WhatsApp Inbox</h3>
+                    <p class="text-text-secondary mt-2 max-w-sm">Pilih percakapan dari daftar di sebelah kiri untuk mulai chat dan melihat riwayat pesan.</p>
+                </div>
+            </template>
+
+            <template x-if="activeChat">
+                <div class="flex-1 flex flex-col h-full z-10 relative">
+                    <!-- Chat Header -->
+                    <div class="h-16 flex items-center justify-between px-3 md:px-6 bg-surface-dark border-b border-border-dark shrink-0 z-20">
+                        <div class="flex items-center space-x-3 md:space-x-4">
+                            <!-- Back Button (Mobile Only) -->
+                            <button @click="activeChat = null; messages = []" 
+                                    class="md:hidden p-2 -ml-1 hover:bg-white/5 rounded-full text-text-secondary"
+                                    title="Kembali ke daftar chat">
+                                <span class="material-symbols-outlined">arrow_back</span>
+                            </button>
+                            <div class="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold">
+                                <span x-text="getInitials(activeChat.name)"></span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-sm" x-text="activeChat.name"></h3>
+                                <p class="text-xs text-text-secondary" x-text="activeChat.formatted_phone"></p>
                             </div>
                         </div>
-                    </template>
-                </div>
-            </template>
-
-            <template x-for="chat in filteredConversations" :key="chat.phone_number">
-                <div 
-                    @click="selectChat(chat)"
-                    class="group flex items-center gap-3 p-4 hover:bg-gray-900/50 cursor-pointer transition-all border-l-2"
-                    :class="activeChat?.phone_number === chat.phone_number ? 'bg-gray-900/80 border-blue-600' : 'border-transparent active:scale-[0.98]'"
-                >
-                    <div class="relative flex-shrink-0">
-                        <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 font-black border border-gray-700 group-hover:border-gray-500 transition-all overflow-hidden">
-                            <span x-text="getInitials(chat.name)"></span>
+                        <div class="flex items-center space-x-1 md:space-x-2">
+                            <!-- Takeover Button (when bot is active) -->
+                            <button x-show="activeChat?.status === 'bot_active'" @click="takeoverChat()"
+                                    class="flex items-center gap-1 px-2 md:px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs md:text-sm font-medium transition-colors">
+                                <span class="material-symbols-outlined text-base">headset_mic</span>
+                                <span class="hidden sm:inline">Ambil Alih</span>
+                            </button>
+                            <!-- Handback Button (when CS is handling) -->
+                            <button x-show="activeChat?.status !== 'bot_active'" @click="handbackToBot()"
+                                    class="flex items-center gap-1 px-2 md:px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs md:text-sm font-medium transition-colors">
+                                <span class="material-symbols-outlined text-base">replay</span>
+                                <span class="hidden sm:inline">Aktifkan Bot</span>
+                            </button>
+                            <button class="p-2 hover:bg-white/5 rounded-full text-text-secondary">
+                                <span class="material-symbols-outlined">more_vert</span>
+                            </button>
                         </div>
-                        <div class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-gray-950"
-                             :class="{
-                                 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]': chat.status === 'bot_active',
-                                 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]': chat.status === 'agent_handling',
-                                 'bg-yellow-500 animate-pulse': chat.status === 'idle'
-                             }"></div>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-center mb-1">
-                            <h4 class="text-sm font-bold text-gray-200 truncate group-hover:text-white transition-all" x-text="chat.name"></h4>
-                            <span class="text-[10px] font-bold text-gray-600 whitespace-nowrap" x-text="chat.last_message_time"></span>
-                        </div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-[9px] font-black uppercase tracking-tighter text-gray-500 flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full" :style="'background-color:' + (chat.device_color || '#888888')"></span>
-                                <span x-text="chat.device_name || 'WA'"></span>
-                            </span>
-                            <template x-if="chat.status === 'agent_handling'">
-                                <span class="text-[9px] font-black bg-red-500/10 text-red-500 px-1 rounded">CS</span>
+                    
+                    <!-- Agent Handling Banner -->
+                    <div x-show="activeChat?.status !== 'bot_active'" 
+                         class="bg-amber-500/10 border-b border-amber-500/30 px-3 md:px-4 py-2 flex items-center justify-between shrink-0 z-20 flex-wrap gap-2">
+                        <span class="text-xs md:text-sm text-amber-400 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">support_agent</span>
+                            <span class="hidden sm:inline">Bot saat ini <strong class="ml-1">nonaktif</strong> untuk percakapan ini.</span>
+                            <span class="sm:hidden">Bot nonaktif</span>
+                            <template x-if="activeChat?.remaining_minutes">
+                                <span class="text-[10px] md:text-xs opacity-75">(<span x-text="activeChat.remaining_minutes"></span>m)</span>
                             </template>
-                            <template x-if="chat.status === 'bot_active'">
-                                <span class="text-[9px] font-black bg-green-500/10 text-green-500 px-1 rounded">BOT</span>
-                            </template>
-                        </div>
-                        <p class="text-xs text-gray-600 truncate group-hover:text-gray-400 transition-all" x-text="chat.last_message"></p>
+                        </span>
+                        <button @click="handbackToBot()" 
+                                class="bg-green-500 hover:bg-green-600 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-lg flex items-center gap-1 transition-colors font-medium">
+                            <span class="material-symbols-outlined text-sm">replay</span>
+                            <span class="hidden sm:inline">Aktifkan Bot Kembali</span>
+                            <span class="sm:hidden">Bot</span>
+                        </button>
                     </div>
-                </div>
-            </template>
-            
-            <template x-if="conversations.length === 0 && !isLoadingConversations">
-                <div class="p-8 text-center">
-                    <span class="material-symbols-outlined text-gray-800 text-4xl mb-2">chat_bubble</span>
-                    <p class="text-xs font-bold text-gray-800 uppercase tracking-widest">No Conversations</p>
-                </div>
-            </template>
-        </div>
-    </x-master-chat-list>
 
-    <x-message-detail 
-        :name="activeChat ? activeChat.name : 'Pilih Percakapan'" 
-        :avatar="activeChat ? getInitials(activeChat.name) : '?'"
-        :empty="!activeChat"
-    >
-        <x-slot:header-actions>
-            <div class="flex items-center gap-2" x-show="activeChat">
-                <button x-show="activeChat?.status === 'bot_active'" @click="takeoverChat()"
-                        class="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all">
-                    <span class="material-symbols-outlined text-sm">headset_mic</span>
-                    Ambil Alih
-                </button>
-                <button x-show="activeChat?.status !== 'bot_active'" @click="handbackToBot()"
-                        class="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 text-green-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-white transition-all">
-                    <span class="material-symbols-outlined text-sm">replay</span>
-                    Bot Aktif
-                </button>
-                <button @click="toggleFollowup()"
-                        class="p-2 rounded-lg border transition-all"
-                        :class="activeChat?.stop_autofollowup ? 'bg-red-500/10 border-red-500/50 text-red-500' : 'bg-gray-900 border-gray-800 text-gray-500 hover:text-white'">
-                    <span class="material-symbols-outlined text-[18px]">notifications_off</span>
-                </button>
-            </div>
-        </x-slot:header-actions>
-
-        <!-- AI Insight Banner -->
-        <template x-if="activeChat && (aiSummary || isAiLoading)">
-            <div class="mb-6 bg-blue-600/5 border border-blue-600/20 rounded-2xl p-4 flex gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                <div class="w-10 h-10 bg-blue-600/20 rounded-full flex items-center justify-center shrink-0 border border-blue-600/30">
-                    <span class="material-symbols-outlined text-blue-500" :class="isAiLoading ? 'animate-spin' : ''">
-                        <template x-if="isAiLoading">sync</template>
-                        <template x-if="!isAiLoading">auto_awesome</template>
-                    </span>
-                </div>
-                <div class="flex-1">
-                    <h4 class="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-1">AI Smart Analysis</h4>
-                    <template x-if="isAiLoading">
-                        <div class="space-y-2">
-                            <div class="h-2 bg-blue-600/10 rounded w-full animate-pulse"></div>
-                            <div class="h-2 bg-blue-600/10 rounded w-2/3 animate-pulse"></div>
-                        </div>
-                    </template>
-                    <template x-if="!isAiLoading && aiSummary">
-                        <p class="text-[11px] text-gray-400 leading-relaxed font-medium italic" x-text="'&ldquo;' + aiSummary + '&rdquo;'"></p>
-                    </template>
-                </div>
-            </div>
-        </template>
-
-        <!-- Agent Handling Warning -->
-        <template x-if="activeChat && activeChat.status !== 'bot_active'">
-            <div class="mb-6 bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-2 flex items-center justify-between">
-                <span class="text-[10px] font-bold text-amber-500 flex items-center gap-2 uppercase tracking-wider">
-                    <span class="material-symbols-outlined text-sm">warning</span>
-                    Manual Handling Mode
-                </span>
-                <button @click="handbackToBot()" class="text-[9px] font-black text-amber-500 hover:underline">RE-ENABLE BOT</button>
-            </div>
-        </template>
-
-        <!-- Dynamic Message List -->
-        <div id="messages-container" class="space-y-6">
-            <template x-for="msg in messages" :key="msg.id">
-                <div class="flex flex-col group" :class="msg.direction === 'outgoing' ? 'items-end' : 'items-start'">
-                    <div class="flex gap-3 max-w-[85%]" :class="msg.direction === 'outgoing' ? 'flex-row-reverse' : ''">
-                        <div class="size-8 rounded-full flex-shrink-0 flex items-center justify-center text-[14px] border border-gray-800"
-                             :class="msg.direction === 'outgoing' ? 
-                                    (msg.is_bot_reply ? 'bg-blue-600 text-white border-blue-500' : 'bg-gray-800 text-gray-400') : 
-                                    'bg-gray-900 text-gray-500'">
-                            <span class="material-symbols-outlined text-sm" x-text="msg.is_bot_reply ? 'smart_toy' : (msg.direction === 'outgoing' ? 'person' : 'account_circle')"></span>
-                        </div>
-                        <div class="flex flex-col gap-1.5" :class="msg.direction === 'outgoing' ? 'items-end' : 'items-start'">
-                            <div class="flex items-center gap-2">
-                                <span class="text-[9px] font-black uppercase tracking-widest text-gray-600" 
-                                      x-text="msg.is_bot_reply ? 'AI AGENT' : (msg.direction === 'outgoing' ? 'ADMIN' : 'CUSTOMER')"></span>
-                                <span class="text-[9px] text-gray-700 font-bold" x-text="msg.time"></span>
-                            </div>
-                            <div class="p-4 rounded-2xl text-[13px] font-medium leading-relaxed relative group/msg"
-                                 :class="msg.direction === 'outgoing' ? 
-                                        'bg-blue-600 text-white rounded-tr-none' : 
-                                        'bg-gray-900 text-gray-300 border border-gray-800 rounded-tl-none'">
-                                <div x-text="msg.message" class="whitespace-pre-wrap"></div>
-                                
-                                <template x-if="msg.is_bot_reply">
-                                    <div class="mt-3 pt-3 border-t border-white/10 flex items-center justify-between gap-6">
-                                        <span class="text-[8px] font-black bg-white/20 px-1 rounded">AI POWERED</span>
-                                        <div class="flex gap-2">
-                                            <button @click="rateMessage(msg.id, 'good')" class="p-1 hover:bg-white/10 rounded transition-all" :class="msg.rated === 'good' ? 'text-green-300' : 'text-white/40'">
-                                                <span class="material-symbols-outlined text-[14px]" :class="msg.rated === 'good' ? 'filled' : ''">thumb_up</span>
-                                            </button>
-                                            <button @click="rateMessage(msg.id, 'bad')" class="p-1 hover:bg-white/10 rounded transition-all" :class="msg.rated === 'bad' ? 'text-red-300' : 'text-white/40'">
-                                                <span class="material-symbols-outlined text-[14px]" :class="msg.rated === 'bad' ? 'filled' : ''">thumb_down</span>
-                                            </button>
+                    <!-- Messages Area -->
+                    <div 
+                        class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
+                        id="messages-container"
+                    >
+                        <!-- AI Insight Section -->
+                        <template x-if="aiSummary || isAiLoading">
+                            <div class="mb-4 bg-primary/5 border border-primary/20 rounded-2xl p-4 flex gap-4 transition-all duration-500">
+                                <div class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-primary" :class="isAiLoading ? 'animate-spin' : ''">
+                                        <template x-if="isAiLoading">sync</template>
+                                        <template x-if="!isAiLoading">auto_awesome</template>
+                                    </span>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-1 flex items-center gap-2">
+                                        AI Insight 
+                                        <span class="text-[9px] bg-primary text-white px-1.5 py-0.5 rounded">Pro</span>
+                                    </h4>
+                                    <template x-if="isAiLoading">
+                                        <div class="space-y-2">
+                                            <div class="h-2 bg-primary/10 rounded w-full animate-pulse"></div>
+                                            <div class="h-2 bg-primary/10 rounded w-2/3 animate-pulse"></div>
                                         </div>
-                                    </div>
-                                </template>
+                                    </template>
+                                    <template x-if="!isAiLoading && aiSummary">
+                                        <p class="text-xs text-slate-300 leading-relaxed italic" x-text="'&ldquo;' + aiSummary + '&rdquo;'"></p>
+                                    </template>
+                                </div>
+                                <button @click="fetchAiInsight()" class="p-1 hover:bg-primary/10 rounded-full text-primary/50 hover:text-primary shrink-0" title="Refresh Insight">
+                                    <span class="material-symbols-outlined text-sm">refresh</span>
+                                </button>
+                            </div>
+                        </template>
 
-                                <!-- Quick Actions on Hover -->
-                                <button class="absolute top-0 opacity-0 group-hover/msg:opacity-100 transition-all p-2 text-gray-500 hover:text-white"
-                                        :class="msg.direction === 'outgoing' ? 'right-full' : 'left-full'">
-                                    <span class="material-symbols-outlined text-[18px]">reply</span>
+                        <template x-for="msg in messages" :key="msg.id">
+                            <!-- (existing message loop content) -->
+                        </template>
+                        
+                        <!-- Typing Indicator (shown when isTyping is true) -->
+                        <div x-show="isTyping" x-cloak class="flex items-start">
+                            <div class="bg-surface-dark rounded-2xl rounded-tl-sm border border-border-dark">
+                                <div class="typing-indicator">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="p-4 bg-surface-dark border-t border-border-dark shrink-0 z-20">
+                        <div class="flex flex-col space-y-3 max-w-4xl mx-auto">
+                            <!-- AI Suggestions -->
+                            <template x-if="aiSuggestions.length > 0">
+                                <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                                    <template x-for="sug in aiSuggestions" :key="sug">
+                                        <button @click="newMessage = sug; aiSuggestions = []" 
+                                                class="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-primary/50 hover:bg-primary/10 text-[11px] text-slate-300 hover:text-primary rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-sm opacity-50">magic_button</span>
+                                            <span x-text="sug"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <!-- File Preview -->
+                            <!-- (existing file preview content) -->
+
+                            <div class="flex items-end gap-3 w-full">
+                                <!-- Hidden File Input -->
+                                <input 
+                                    type="file" 
+                                    x-ref="fileInput" 
+                                    class="hidden" 
+                                    @change="handleFileSelect"
+                                    accept="image/*,video/*,application/pdf"
+                                >
+                                
+                                <!-- Attach Button -->
+                                <button 
+                                    @click="$refs.fileInput.click()"
+                                    class="p-3 text-text-secondary hover:text-white rounded-full hover:bg-white/5 transition-colors shrink-0"
+                                    title="Attach File"
+                                >
+                                    <span class="material-symbols-outlined">attach_file</span>
+                                </button>
+                                
+                                <!-- Text Input -->
+                                <div class="flex-1 bg-[#111722] rounded-2xl border border-border-dark focus-within:border-whatsapp transition-colors min-w-0">
+                                    <textarea 
+                                        x-model="newMessage"
+                                        @keydown.enter.prevent="sendMessage()"
+                                        rows="1" 
+                                        placeholder="Ketik pesan..." 
+                                        class="w-full bg-transparent border-none focus:ring-0 text-white placeholder-text-secondary py-3 px-4 text-sm max-h-32 resize-none"
+                                        style="min-height: 48px;"
+                                    ></textarea>
+                                </div>
+                                
+                                <!-- Send Button -->
+                                <button 
+                                    @click="sendMessage()"
+                                    :disabled="(!newMessage.trim() && !selectedFile) || isSending"
+                                    class="p-3 bg-whatsapp text-white rounded-full hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shrink-0 flex items-center justify-center w-12 h-12"
+                                >
+                                    <template x-if="!isSending">
+                                        <span class="material-symbols-outlined filled">send</span>
+                                    </template>
+                                    <template x-if="isSending">
+                                        <span class="material-symbols-outlined animate-spin text-xl">sync</span>
+                                    </template>
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            </template>
-
-            <!-- Typing State -->
-            <div x-show="isTyping" x-cloak class="flex items-center gap-3">
-                <div class="size-8 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center">
-                    <span class="material-symbols-outlined text-sm text-gray-500">smart_toy</span>
-                </div>
-                <div class="flex gap-1.5 p-4 bg-gray-900 border border-gray-800 rounded-2xl rounded-tl-none">
-                    <span class="size-1.5 rounded-full bg-blue-600 animate-bounce [animation-delay:-0.3s]"></span>
-                    <span class="size-1.5 rounded-full bg-blue-600 animate-bounce [animation-delay:-0.15s]"></span>
-                    <span class="size-1.5 rounded-full bg-blue-600 animate-bounce"></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Custom Input Area Slot -->
-        <x-slot:input>
-            <div class="max-w-4xl mx-auto space-y-3">
-                <!-- AI Suggestions -->
-                <div class="flex gap-2 overflow-x-auto scrollbar-hide" x-show="aiSuggestions.length > 0">
-                    <template x-for="sug in aiSuggestions" :key="sug">
-                        <button @click="newMessage = sug; aiSuggestions = []" 
-                                class="px-3 py-1.5 bg-gray-900 border border-gray-800 hover:border-blue-600 text-[10px] font-bold text-gray-400 hover:text-blue-500 rounded-xl transition-all whitespace-nowrap flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm">magic_button</span>
-                            <span x-text="sug"></span>
-                        </button>
-                    </template>
-                </div>
-
-                <div class="flex items-end gap-3">
-                    <input type="file" x-ref="fileInput" class="hidden" @change="handleFileSelect" accept="image/*,video/*,application/pdf">
-                    <button @click="$refs.fileInput.click()" class="size-11 flex items-center justify-center text-gray-500 hover:text-white bg-gray-900 border border-gray-800 rounded-xl transition-all">
-                        <span class="material-symbols-outlined">attach_file</span>
-                    </button>
-                    
-                    <div class="flex-1 bg-gray-900 border border-gray-800 rounded-xl focus-within:border-blue-600/50 transition-all p-2 flex items-end">
-                        <textarea 
-                            x-model="newMessage"
-                            @keydown.enter.prevent="sendMessage()"
-                            rows="1" 
-                            placeholder="Tulis balasan..." 
-                            class="w-full bg-transparent border-none focus:ring-0 text-white placeholder-gray-600 text-[13px] py-1 px-2 max-h-32 resize-none"
-                            oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
-                        ></textarea>
-                    </div>
-
-                    <button 
-                        @click="sendMessage()"
-                        :disabled="(!newMessage.trim() && !selectedFile) || isSending"
-                        class="size-11 bg-blue-600 text-white rounded-xl flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-                    >
-                        <template x-if="!isSending">
-                            <span class="material-symbols-outlined filled">send</span>
-                        </template>
-                        <template x-if="isSending">
-                            <span class="material-symbols-outlined animate-spin text-lg">sync</span>
-                        </template>
-                    </button>
-                </div>
-            </div>
-        </x-slot:input>
-    </x-message-detail>
                 </div>
             </template>
         </div>
@@ -636,58 +778,10 @@
             dismissIdleWarning() {
                 this.showIdleWarning = false;
                 this.idleChat = null;
-            },
-
-            // AI Style Training
-            async rateMessage(messageId, rating) {
-                try {
-                    const response = await fetch('{{ route("whatsapp.api.messages.rate") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        body: JSON.stringify({ message_id: messageId, rating: rating })
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        // Update UI locally
-                        const msg = this.messages.find(m => m.id === messageId);
-                        if (msg) msg.rated = rating;
-                        
-                        // Show simple toast or feedback? Logic below
-                        console.log('AI Training Example Saved:', rating);
-                    }
-                } catch (error) {
-                    console.error('Error rating message:', error);
-                }
-            },
-
-            async toggleFollowup() {
-                if (!this.activeChat) return;
-                try {
-                    const phone = this.activeChat.phone_number;
-                    const response = await fetch(`/whatsapp/api/conversations/${phone}/toggle-followup`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        }
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        this.activeChat.stop_autofollowup = result.stop_autofollowup;
-                        // Update in conversations list too
-                        const conv = this.conversations.find(c => c.phone_number === phone);
-                        if (conv) conv.stop_autofollowup = result.stop_autofollowup;
-                        
-                        alert(result.message);
-                    }
-                } catch (error) {
-                    console.error('Error toggling follow-up:', error);
-                }
             }
         }
     }
-    </div>
-</x-enterprise-layout>
+</script>
+
+</body>
+</html>
