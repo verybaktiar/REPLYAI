@@ -9,6 +9,8 @@ use App\Models\Conversation;
 use App\Models\AutoReplyLog;
 use App\Models\KbArticle;
 use App\Models\WaMessage;
+use App\Models\WhatsAppDevice;
+use App\Models\AutoReplyRule;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -143,5 +145,4 @@ class DashboardController extends Controller
             'trend7Days' => $trend7Days,
         ]);
     }
-}
 }
