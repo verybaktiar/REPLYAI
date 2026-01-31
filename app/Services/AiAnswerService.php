@@ -195,11 +195,16 @@ class AiAnswerService
         
         $imagePath = null;
         if (!$articles->isEmpty()) {
-            // Cek apakah artikel paling relevan punya gambar
             $topArticle = $articles->first();
-            if ($topArticle->image_path) {
-                // Gunakan URL absolut yang bisa diakses publik
-                $imagePath = config('app.url') . '/storage/' . $topArticle->image_path;
+            if ($topArticle && $topArticle->image_path) {
+                // Gunakan URL absolut dan pastikan skema (https/http) sesuai dengan APP_URL
+                $baseUrl = config('app.url');
+                $imagePath = $baseUrl . '/storage/' . $topArticle->image_path;
+                
+                // Pastikan jika APP_URL https, maka imagePath juga dipaksa https agar tidak SSL error
+                if (str_starts_with($baseUrl, 'https')) {
+                    $imagePath = str_replace('http://', 'https://', $imagePath);
+                }
             }
         }
 
