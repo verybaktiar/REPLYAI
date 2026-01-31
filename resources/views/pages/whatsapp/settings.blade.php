@@ -163,6 +163,13 @@
                     </svg>
                     Inbox
                 </a>
+                @elseif($device->status === 'disconnected')
+                <button onclick="reconnectDevice('{{ $device->session_id }}')" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-lg text-sm font-medium transition-all border border-yellow-500/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Sambungkan Ulang
+                </button>
                 @endif
 
                 <button onclick="disconnectDevice('{{ $device->session_id }}')" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-all border border-red-500/20">
@@ -291,6 +298,44 @@ async function addDevice(event) {
     } catch (error) {
         console.error('Error:', error);
         showNotification('Terjadi kesalahan saat menambahkan device', 'error');
+    }
+}
+
+// Reconnect Device
+async function reconnectDevice(sessionId) {
+    try {
+        const btn = event.currentTarget;
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Connecting...';
+
+        const response = await fetch(`/whatsapp/device/${sessionId}/reconnect`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Sesi berhasil diinisialisasi ulang. Silakan scan QR code.', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification(result.error || 'Gagal menyambungkan ulang', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Terjadi kesalahan koneksi', 'error');
+        // Restore button state
+        const btn = event.target.closest('button');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'Sambungkan Ulang';
+        }
     }
 }
 

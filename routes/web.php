@@ -321,6 +321,7 @@ Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
         Route::delete('/device/{sessionId}', [WhatsAppController::class, 'destroy'])->name('destroy');
         Route::get('/status/{sessionId}', [WhatsAppController::class, 'status'])->name('status');
         Route::get('/qr/{sessionId}', [WhatsAppController::class, 'qr'])->name('qr');
+        Route::post('/device/{sessionId}/reconnect', [WhatsAppController::class, 'reconnect'])->name('reconnect');
         Route::put('/device/{sessionId}/profile', [WhatsAppController::class, 'updateProfile'])->name('updateProfile');
         Route::post('/send', [WhatsAppController::class, 'send'])->middleware(['quota:ai_messages'])->name('send');
         Route::post('/toggle-auto-reply', [WhatsAppController::class, 'toggleAutoReply'])->name('toggle-auto-reply');

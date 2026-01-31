@@ -140,6 +140,29 @@ class WhatsAppController extends Controller
     }
 
     /**
+     * Reconnect device (Re-initialize session)
+     */
+    public function reconnect($sessionId): JsonResponse
+    {
+        try {
+            $device = WhatsAppDevice::where('session_id', $sessionId)->firstOrFail();
+            
+            // Re-create session in Node.js service
+            $this->waService->createSession($sessionId);
+            
+            // Update status to scanning so UI shows QR code
+            $device->update(['status' => 'scanning']);
+            
+            return response()->json([
+                'success' => true, 
+                'message' => 'Session re-initialized. Please scan the QR code.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Disconnect device
      */
     public function destroy($sessionId): JsonResponse
