@@ -389,11 +389,7 @@
                             <!-- File Preview -->
                             <!-- (existing file preview content) -->
 
-                            <div class="flex items-end space-x-3">
-                                <!-- (existing input field content) -->
-                            </div>
-                        </div>
-                    </div>
+                            <div class="flex items-end gap-3 w-full">
                                 <!-- Hidden File Input -->
                                 <input 
                                     type="file" 
@@ -403,15 +399,17 @@
                                     accept="image/*,video/*,application/pdf"
                                 >
                                 
+                                <!-- Attach Button -->
                                 <button 
                                     @click="$refs.fileInput.click()"
-                                    class="p-3 text-text-secondary hover:text-white rounded-full hover:bg-white/5 transition-colors"
+                                    class="p-3 text-text-secondary hover:text-white rounded-full hover:bg-white/5 transition-colors shrink-0"
                                     title="Attach File"
                                 >
                                     <span class="material-symbols-outlined">attach_file</span>
                                 </button>
                                 
-                                <div class="flex-1 bg-[#111722] rounded-2xl border border-border-dark focus-within:border-whatsapp transition-colors">
+                                <!-- Text Input -->
+                                <div class="flex-1 bg-[#111722] rounded-2xl border border-border-dark focus-within:border-whatsapp transition-colors min-w-0">
                                     <textarea 
                                         x-model="newMessage"
                                         @keydown.enter.prevent="sendMessage()"
@@ -422,16 +420,17 @@
                                     ></textarea>
                                 </div>
                                 
+                                <!-- Send Button -->
                                 <button 
                                     @click="sendMessage()"
                                     :disabled="(!newMessage.trim() && !selectedFile) || isSending"
-                                    class="p-3 bg-whatsapp text-white rounded-full hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+                                    class="p-3 bg-whatsapp text-white rounded-full hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shrink-0 flex items-center justify-center w-12 h-12"
                                 >
                                     <template x-if="!isSending">
                                         <span class="material-symbols-outlined filled">send</span>
                                     </template>
                                     <template x-if="isSending">
-                                        <span class="material-symbols-outlined animate-spin">sync</span>
+                                        <span class="material-symbols-outlined animate-spin text-xl">sync</span>
                                     </template>
                                 </button>
                             </div>
