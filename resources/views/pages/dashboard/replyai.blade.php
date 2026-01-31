@@ -71,8 +71,7 @@
                 
                 <div class="flex items-center gap-6">
                     <div class="hidden md:block text-right">
-                        <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest">{{ now()->translatedFormat('l') }}</p>
-                        <p class="text-xs font-bold text-gray-300">{{ now()->translatedFormat('d F Y') }}</p>
+                        <p class="text-sm font-bold text-gray-300">{{ now()->translatedFormat('l, d F Y') }}</p>
                     </div>
                     @include('components.language-switcher')
                 </div>
@@ -142,13 +141,21 @@
                                     <div class="size-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
                                         <span class="material-symbols-outlined text-blue-500 text-[28px]">forum</span>
                                     </div>
+                                    @if($stats['total_messages'] > 0)
                                     <div class="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
                                         <span class="material-symbols-outlined text-[14px] text-blue-400">trending_up</span>
                                         <span class="text-[10px] font-black text-blue-400 uppercase">{{ $stats['msg_trend'] }}%</span>
                                     </div>
+                                    @endif
                                 </div>
-                                <h3 class="text-4xl font-black tracking-tighter text-white">{{ number_format($stats['total_messages'], 0, ',', '.') }}</h3>
-                                <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Total Pesan Masuk</p>
+                                @if($stats['total_messages'] > 0)
+                                    <h3 class="text-4xl font-black tracking-tighter text-white">{{ number_format($stats['total_messages'], 0, ',', '.') }}</h3>
+                                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Total Pesan Masuk</p>
+                                @else
+                                    <h3 class="text-lg font-semibold text-gray-300">Setup</h3>
+                                    <p class="text-xs text-gray-500 mt-1">Hubungkan WA untuk aktivasi</p>
+                                    <a href="{{ route('whatsapp.settings') }}" class="text-blue-400 text-[10px] font-bold mt-2 hover:underline">Hubungkan →</a>
+                                @endif
                             </div>
                         </div>
 
@@ -160,13 +167,21 @@
                                     <div class="size-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
                                         <span class="material-symbols-outlined text-purple-500 text-[28px]">smart_toy</span>
                                     </div>
+                                    @if($stats['ai_responses'] > 0)
                                     <div class="flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full">
                                         <span class="material-symbols-outlined text-[14px] text-purple-400">auto_awesome</span>
                                         <span class="text-[10px] font-black text-purple-400 uppercase">{{ $stats['ai_rate'] }}%</span>
                                     </div>
+                                    @endif
                                 </div>
-                                <h3 class="text-4xl font-black tracking-tighter text-white">{{ number_format($stats['ai_responses'], 0, ',', '.') }}</h3>
-                                <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Direspon AI</p>
+                                @if($stats['ai_responses'] > 0)
+                                    <h3 class="text-4xl font-black tracking-tighter text-white">{{ number_format($stats['ai_responses'], 0, ',', '.') }}</h3>
+                                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Direspon AI</p>
+                                @else
+                                    <h3 class="text-lg font-semibold text-gray-300">Setup</h3>
+                                    <p class="text-xs text-gray-500 mt-1">Hubungkan WA untuk aktivasi</p>
+                                    <a href="{{ route('whatsapp.settings') }}" class="text-blue-400 text-[10px] font-bold mt-2 hover:underline">Hubungkan →</a>
+                                @endif
                             </div>
                         </div>
 
@@ -236,6 +251,10 @@
                                     </div>
                                     <h4 class="text-xl font-black text-gray-400 uppercase tracking-tight">Menunggu Data Pertama</h4>
                                     <p class="text-xs text-gray-600 max-w-xs mt-3 font-medium uppercase tracking-widest">Hubungkan WhatsApp Anda untuk melihat visualisasi AI secara real-time.</p>
+                                    <a href="{{ route('whatsapp.settings') }}" class="mt-6 flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                                        <span class="material-symbols-outlined text-[18px]">add</span>
+                                        Hubungkan WhatsApp
+                                    </a>
                                 </div>
                                 @else
                                 <canvas id="mainDashboardChart"></canvas>
@@ -298,8 +317,8 @@
                                 </div>
                             </div>
 
-                            <!-- FORECAST CARD -->
-                            <div class="bg-gradient-to-br from-indigo-900 to-indigo-950 border border-indigo-500/30 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl">
+                            <!-- VIP MEMBER CARD -->
+                            <div class="bg-gradient-to-r from-indigo-600 to-blue-600 border border-white/10 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl">
                                 <div class="absolute right-0 bottom-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mb-16"></div>
                                 <div class="relative z-10 flex items-center gap-6">
                                     <div class="size-16 rounded-[1.5rem] bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shadow-2xl shadow-indigo-950">
