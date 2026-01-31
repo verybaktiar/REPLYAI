@@ -302,6 +302,7 @@ Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
     Route::post('/kb/import-file', [KbArticleController::class, 'importFile'])->middleware(['quota:kb_articles'])->name('kb.importFile');
     Route::patch('/kb/{kb}/toggle', [KbArticleController::class, 'toggle'])->name('kb.toggle');
     Route::patch('/kb/{kb}/profile', [KbArticleController::class, 'updateProfile'])->name('kb.updateProfile');
+    Route::post('/kb/{kb}/update', [KbArticleController::class, 'update'])->name('kb.update');
     Route::delete('/kb/{kb}', [KbArticleController::class, 'destroy'])->name('kb.destroy');
     Route::post('/kb/test-ai', [KbArticleController::class, 'testAi'])->name('kb.testAi');
 

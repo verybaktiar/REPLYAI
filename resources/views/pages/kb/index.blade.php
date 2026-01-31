@@ -238,6 +238,17 @@
                             class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#111722] text-text-secondary hover:text-white border border-border-dark transition">
                             {{ __('kb.button_detail') }}
                           </button>
+                          
+                          <button
+                             data-action="edit"
+                             data-id="{{ $a->id }}"
+                             data-title="{{ e($a->title ?? '') }}"
+                             data-tags="{{ e($a->tags ?? '') }}"
+                             data-profile-id="{{ $a->business_profile_id }}"
+                             data-content="{{ e($a->content) }}"
+                             class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#111722] text-text-secondary hover:text-white border border-border-dark transition">
+                             Edit
+                           </button>
 
                           <button data-action="toggle" data-id="{{ $a->id }}"
                             class="px-3 py-1.5 rounded-lg text-xs font-bold border border-transparent
@@ -300,6 +311,70 @@
       <div class="flex items-center justify-end px-6 py-4 border-t border-[#324467]">
         <button type="button" data-modal-close="kb-detail-modal" class="px-4 py-2 rounded-lg bg-[#324467] text-white text-sm font-semibold hover:bg-[#405580]">{{ __('kb.button_close') }}</button>
       </div>
+    </div>
+  </div>
+</div>
+
+{{-- ================= MODAL EDIT KB ================= --}}
+<div id="kb-edit-modal" class="hidden fixed inset-0 z-50">
+  <div data-modal-close="kb-edit-modal" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+  <div class="absolute inset-0 flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-[#1e2634] border border-[#324467] shadow-2xl">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-[#324467]">
+        <div>
+          <h3 class="text-lg font-bold text-white">Edit Knowledge Base</h3>
+          <p class="text-xs text-[#92a4c9]">Perbarui informasi artikel atau lampiran gambar.</p>
+        </div>
+        <button type="button" data-modal-close="kb-edit-modal" class="text-[#92a4c9] hover:text-white">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="kb-edit-form" method="POST" enctype="multipart/form-data" class="px-6 py-6 space-y-4">
+        @csrf
+        <input type="hidden" name="id" id="edit-kb-id">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">Judul Artikel</label>
+                <input name="title" id="edit-kb-title" type="text" required
+                       class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">Pilih Profil Bisnis</label>
+                <select name="business_profile_id" id="edit-kb-profile-id" class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+                    <option value="">📋 Semua Profile (Umum)</option>
+                    @foreach($businessProfiles as $bp)
+                        <option value="{{ $bp->id }}">{{ $bp->getIndustryIcon() }} {{ $bp->business_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">Isi Artikel / Jawaban</label>
+            <textarea name="content" id="edit-kb-content" rows="5" required
+                      class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary"></textarea>
+        </div>
+        
+        <div>
+            <label class="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">Tags (Koma dipisah)</label>
+            <input name="tags" id="edit-kb-tags" type="text"
+                   class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">📸 Media Lampiran (Opsional)</label>
+            <input name="image" type="file" accept="image/*"
+                   class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/20 file:text-primary hover:file:bg-primary/30 cursor-pointer">
+            <p class="mt-1 text-[10px] text-text-secondary italic">Upload gambar baru untuk mengganti gambar lama.</p>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" data-modal-close="kb-edit-modal" class="px-4 py-2 rounded-lg bg-[#324467] text-white text-sm font-semibold hover:bg-[#405580]">Batal</button>
+          <button type="submit" id="btn-save-kb" class="px-6 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-blue-600 shadow-lg shadow-primary/20">
+            Simpan Perubahan
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -556,6 +631,17 @@ async function updateKbProfile(kbId, profileId) {
       return;
     }
 
+    const edt = e.target.closest('[data-action="edit"]');
+    if(edt){
+      document.getElementById('edit-kb-id').value = edt.dataset.id;
+      document.getElementById('edit-kb-title').value = edt.dataset.title || '';
+      document.getElementById('edit-kb-tags').value = edt.dataset.tags || '';
+      document.getElementById('edit-kb-profile-id').value = edt.dataset.profileId || '';
+      document.getElementById('edit-kb-content').value = edt.dataset.content || '';
+      openModal('kb-edit-modal');
+      return;
+    }
+
     if(tgl){
       const id = tgl.dataset.id;
       const res = await fetch(`/kb/${id}/toggle`, {
@@ -585,6 +671,42 @@ async function updateKbProfile(kbId, profileId) {
       const data = await res.json();
       if(data.ok) document.getElementById(`kb-${id}`)?.remove();
       return;
+    }
+  });
+
+  // ===== EDIT KB FORM
+  const editForm = document.getElementById('kb-edit-form');
+  const btnSave = document.getElementById('btn-save-kb');
+  editForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('edit-kb-id').value;
+    const formData = new FormData(editForm);
+    
+    btnSave.disabled = true;
+    btnSave.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> Menyimpan...';
+    
+    try {
+      const res = await fetch(`/kb/${id}/update`, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': csrf,
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData
+      });
+      
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.message || 'Gagal mengupdate KB');
+      
+      alert('KB Article berhasil diperbarui!');
+      window.location.reload();
+    } catch(err) {
+      alert('Error: ' + err.message);
+      console.error(err);
+    } finally {
+      btnSave.disabled = false;
+      btnSave.innerHTML = 'Simpan Perubahan';
     }
   });
 

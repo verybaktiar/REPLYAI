@@ -210,6 +210,51 @@ class KbArticleController extends Controller
     }
 
     /**
+     * Update existing KB article (AJAX or Form)
+     */
+    public function update(Request $request, KbArticle $kb)
+    {
+        $validated = $request->validate([
+            'title'   => ['nullable', 'string', 'max:255'],
+            'content' => ['required', 'string'],
+            'tags'    => ['nullable', 'string', 'max:255'],
+            'business_profile_id' => ['nullable', 'exists:business_profiles,id'],
+            'image'   => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+        ]);
+
+        $updateData = [
+            'title'     => $validated['title'] ?? $kb->title,
+            'content'   => $validated['content'],
+            'tags'      => $validated['tags'] ?? null,
+            'business_profile_id' => $validated['business_profile_id'] ?? null,
+        ];
+
+        if ($request->hasFile('image')) {
+            // Hapus gambar lama jika ada (opsional tapi disarankan)
+            if ($kb->image_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($kb->image_path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($kb->image_path);
+            }
+            
+            $path = $request->file('image')->store('kb_images', 'public');
+            $updateData['image_path'] = $path;
+        }
+
+        $kb->update($updateData);
+
+        ActivityLogService::logUpdated($kb, "Mengedit artikel KB: " . ($kb->title ?? 'Tanpa Judul'));
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'KB article berhasil diupdate',
+                'article' => $kb->fresh()
+            ]);
+        }
+
+        return back()->with('ok', 'KB article berhasil diupdate');
+    }
+
+    /**
      * Update KB article's profile assignment (AJAX)
      */
     public function updateProfile(Request $request, KbArticle $kb)
