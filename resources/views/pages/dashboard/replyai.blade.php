@@ -152,9 +152,9 @@
                                     <h3 class="text-4xl font-black tracking-tighter text-white">{{ number_format($stats['total_messages'], 0, ',', '.') }}</h3>
                                     <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Total Pesan Masuk</p>
                                 @else
-                                    <h3 class="text-lg font-semibold text-gray-300">Setup</h3>
-                                    <p class="text-xs text-gray-500 mt-1">Hubungkan WA untuk aktivasi</p>
-                                    <a href="{{ route('whatsapp.settings') }}" class="text-blue-400 text-[10px] font-bold mt-2 hover:underline">Hubungkan →</a>
+                                    <h3 class="text-lg font-semibold text-gray-300">Hubungkan</h3>
+                                    <p class="text-xs text-gray-500 mt-1">Aktifkan WhatsApp untuk menerima pesan</p>
+                                    <a href="{{ route('whatsapp.settings') }}" class="text-blue-400 text-[10px] font-bold mt-2 hover:underline">Koneksi →</a>
                                 @endif
                             </div>
                         </div>
@@ -178,9 +178,9 @@
                                     <h3 class="text-4xl font-black tracking-tighter text-white">{{ number_format($stats['ai_responses'], 0, ',', '.') }}</h3>
                                     <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Direspon AI</p>
                                 @else
-                                    <h3 class="text-lg font-semibold text-gray-300">Setup</h3>
-                                    <p class="text-xs text-gray-500 mt-1">Hubungkan WA untuk aktivasi</p>
-                                    <a href="{{ route('whatsapp.settings') }}" class="text-blue-400 text-[10px] font-bold mt-2 hover:underline">Hubungkan →</a>
+                                    <h3 class="text-lg font-semibold text-gray-300">Konfigurasi</h3>
+                                    <p class="text-xs text-gray-500 mt-1">Setup Knowledge Base untuk auto-reply</p>
+                                    <a href="{{ route('kb.index') }}" class="text-purple-400 text-[10px] font-bold mt-2 hover:underline">Setup AI →</a>
                                 @endif
                             </div>
                         </div>
