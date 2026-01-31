@@ -137,17 +137,20 @@
         }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden h-screen w-screen flex">
+<body class="bg-gray-950 font-display text-white antialiased overflow-hidden">
     
-<!-- Sidebar -->
-<!-- Sidebar Navigation -->
-<!-- Sidebar Navigation -->
-<!-- Sidebar Navigation -->
-@include('components.sidebar')
+<!-- ============================================= -->
+<!-- THE ROOT CAGE: h-[100dvh] + flex + overflow-hidden -->
+<!-- 100dvh fixes iOS address bar bug, overflow-hidden prevents double scroll -->
+<!-- ============================================= -->
+<div class="h-[100dvh] bg-gray-950 flex overflow-hidden">
 
-<!-- Main Content Area -->
-<main class="flex flex-1 flex-col overflow-hidden h-full relative">
-    <!-- Top Header for Inbox -->
+    <!-- SIDEBAR (Left) - flex-shrink-0, integrates with Root Cage flexbox -->
+    @include('components.sidebar')
+    
+    <!-- MAIN WRAPPER - flex-1 + min-w-0 for proper flex behavior -->
+    <main class="flex-1 min-w-0 flex flex-row h-full overflow-hidden">
+        <!-- Top Header for Inbox -->
     <header class="h-14 border-b border-white/5 bg-[#111722] flex items-center justify-between px-6 z-20 shrink-0">
         <div class="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-widest">
             <span class="material-symbols-outlined text-[18px]">calendar_today</span>
@@ -1109,6 +1112,8 @@
     }, 5000);
 </script>
 @endif
+
+</div><!-- END ROOT CAGE -->
 
 </body>
 </html>

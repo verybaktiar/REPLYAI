@@ -48,41 +48,40 @@
     </a>
 </div>
 
-<!-- Desktop Sidebar -->
-<aside class="hidden lg:flex flex-col w-[250px] h-full bg-gray-950 border-r border-gray-800 shrink-0 fixed inset-y-0 left-0 z-50">
+<!-- Desktop Sidebar - flex-shrink-0, NOT fixed (integrates with Root Cage flexbox) -->
+<aside class="hidden lg:flex flex-col w-64 h-full bg-gray-900 border-r border-gray-800 flex-shrink-0">
     <!-- Brand Header -->
-    <div class="px-6 py-8 border-b border-gray-900">
+    <div class="h-16 flex items-center px-4 border-b border-gray-800 flex-shrink-0">
         <div class="flex items-center gap-3">
-            <div class="size-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-900/20">
+            <div class="size-10 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-900/20">
                 <span class="text-white font-black text-xl">R</span>
             </div>
             <div>
-                <h1 class="text-lg font-black text-white leading-none tracking-tight">ReplyAI</h1>
-                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Chatbot AI</p>
+                <h1 class="text-lg font-bold text-white leading-none tracking-tight">ReplyAI</h1>
+                <p class="text-[10px] font-medium text-gray-500 uppercase tracking-widest mt-0.5">Chatbot AI</p>
             </div>
         </div>
     </div>
     
-    <!-- Navigation Links -->
-    <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-2">
+    <!-- Navigation Links (flex-1 overflow-y-auto - ONLY this scrolls) -->
+    <nav class="flex-1 overflow-y-auto px-4 py-4 space-y-1">
         @include('components.sidebar-nav-links')
     </nav>
     
-    <!-- User Profile with Logout -->
-    <div class="border-t border-gray-900 p-4">
+    <!-- User Profile with Logout (flex-shrink-0) -->
+    <div class="border-t border-gray-800 p-4 flex-shrink-0">
         <form action="{{ route('logout') }}" method="POST">
             @csrf
-            <button type="submit" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-900 transition-all group border border-transparent hover:border-gray-800">
-                <div class="size-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-inner">
+            <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors group">
+                <div class="size-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
                     {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
                 </div>
                 <div class="flex-1 min-w-0 text-left">
-                    <p class="text-sm font-bold text-white truncate">{{ Auth::user()->name ?? 'Admin' }}</p>
+                    <p class="text-sm font-medium text-white truncate">{{ Auth::user()->name ?? 'Admin' }}</p>
                 </div>
                 <span class="material-symbols-outlined text-gray-600 group-hover:text-red-400 text-lg transition-colors">logout</span>
             </button>
         </form>
     </div>
 </aside>
-</div>
 

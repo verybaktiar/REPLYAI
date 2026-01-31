@@ -100,73 +100,80 @@
         }
     </style>
 </head>
-<body class="bg-background-dark font-display text-white overflow-hidden h-screen flex flex-col lg:flex-row">
-
-<!-- Sidebar -->
-@include('components.sidebar')
-
-<main class="flex-1 flex flex-col h-full overflow-hidden relative pt-14 lg:pt-0" x-data="whatsappInbox()" x-init="init()">
+<body class="bg-gray-950 font-display text-white antialiased overflow-hidden">
     
-    <!-- Inbox Layout -->
-    <div class="flex h-full">
-        <!-- Sidebar Contact List (Left) - Hidden on mobile when chat is active -->
-        <div class="border-r border-border-dark flex flex-col bg-[#111722] transition-all duration-300"
-             :class="activeChat ? 'hidden md:flex w-full md:w-[340px] lg:w-[360px] md:shrink-0' : 'w-full md:w-[340px] lg:w-[360px] md:shrink-0'">
-            <!-- Header Search -->
-            <div class="p-4 border-b border-border-dark bg-[#111722]">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-2">
-                        <h2 class="text-xl font-bold">WhatsApp</h2>
-                        @include('components.page-help', [
-                            'title' => 'WhatsApp',
-                            'description' => 'Lihat dan balas pesan pelanggan dari WhatsApp.',
-                            'tips' => [
-                                'Pilih percakapan dari daftar di kiri',
-                                'Hijau = Bot aktif menjawab',
-                                'Merah = CS menangani manual',
-                                'Klik "Ambil Alih" untuk membalas sendiri',
-                                'Klik "Aktifkan Bot" untuk mengembalikan ke bot'
-                            ]
-                        ])
-                    </div>
-                    <div class="flex space-x-2">
-                         <button @click="fetchConversations()" class="p-2 hover:bg-white/5 rounded-full text-text-secondary" title="Refresh">
-                            <span class="material-symbols-outlined">refresh</span>
-                        </button>
-                    </div>
+<!-- ============================================= -->
+<!-- THE ROOT CAGE: h-[100dvh] + flex + overflow-hidden -->
+<!-- 100dvh fixes iOS address bar bug, overflow-hidden prevents double scroll -->
+<!-- ============================================= -->
+<div class="h-[100dvh] bg-gray-950 flex overflow-hidden" x-data="whatsappInbox()" x-init="init()">
+
+    <!-- SIDEBAR (Left) - z-50 for mobile, w-64 fixed, flex-shrink-0 prevents compression -->
+    @include('components.sidebar')
+    
+    <!-- MAIN WRAPPER (Chat List + Content) - flex-1 + min-w-0 for proper flex behavior -->
+    <main class="flex-1 min-w-0 flex flex-row h-full overflow-hidden">
+
+        <!-- CHAT LIST (Middle) - w-80 fixed on desktop, full on mobile, flex-shrink-0 -->
+        <div class="w-full lg:w-80 flex-shrink-0 flex flex-col border-r border-gray-800 bg-gray-900 transition-all duration-300"
+             :class="activeChat ? 'hidden lg:flex' : 'flex'">
+
+            <!-- HEADER (h-16 fixed, flex-shrink-0) -->
+            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-800 bg-gray-900 flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-lg font-semibold text-white">WhatsApp</h2>
+                    @include('components.page-help', [
+                        'title' => 'WhatsApp',
+                        'description' => 'Lihat dan balas pesan pelanggan dari WhatsApp.',
+                        'tips' => [
+                            'Pilih percakapan dari daftar di kiri',
+                            'Hijau = Bot aktif menjawab',
+                            'Merah = CS menangani manual',
+                            'Klik "Ambil Alih" untuk membalas sendiri',
+                            'Klik "Aktifkan Bot" untuk mengembalikan ke bot'
+                        ]
+                    ])
                 </div>
-                <div class="relative mb-3">
+                <button @click="fetchConversations()" class="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors" title="Refresh">
+                    <span class="material-symbols-outlined text-xl">refresh</span>
+                </button>
+            </div>
+            
+            <!-- SEARCH & FILTER (p-4, flex-shrink-0) -->
+            <div class="p-4 border-b border-gray-800 flex-shrink-0 space-y-3">
+                <div class="relative">
                     <input 
                         type="text" 
                         x-model="search"
-                        placeholder="Cari chat..." 
-                        class="w-full bg-surface-dark border-border-dark text-white rounded-xl pl-10 pr-4 py-2 focus:ring-whatsapp focus:border-whatsapp placeholder-text-secondary"
+                        placeholder="Cari percakapan..." 
+                        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 placeholder-gray-500"
                     >
-                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-text-secondary text-sm">search</span>
+                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-500 text-lg">search</span>
                 </div>
                 
-                <!-- Device Filter Tabs -->
-                <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar" x-show="devices.length > 0">
+                <!-- Device Filter Pills -->
+                <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" x-show="devices.length > 0">
                     <button @click="filterDevice = null; fetchConversations()" 
-                            class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5"
-                            :class="!filterDevice ? 'bg-whatsapp text-white' : 'bg-surface-dark text-text-secondary hover:bg-white/10'">
+                            class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5"
+                            :class="!filterDevice ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'">
                         <span class="material-symbols-outlined text-sm">devices</span>
                         Semua
                     </button>
                     <template x-for="device in devices" :key="device.session_id">
                         <button @click="filterDevice = device.session_id; fetchConversations()"
-                                class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5"
-                                :class="filterDevice === device.session_id ? 'text-white' : 'bg-surface-dark text-text-secondary hover:bg-white/10'"
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5"
+                                :class="filterDevice === device.session_id ? 'text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'"
                                 :style="filterDevice === device.session_id ? 'background-color:' + device.color : ''">
                             <span class="w-2 h-2 rounded-full" :style="'background-color:' + device.color"></span>
-                            <span x-text="device.device_name" class="truncate max-w-[100px]"></span>
+                            <span x-text="device.device_name" class="truncate max-w-24"></span>
                         </button>
                     </template>
                 </div>
             </div>
 
-            <!-- List Chat -->
-            <div class="flex-1 overflow-y-auto custom-scrollbar">
+            <!-- CHAT LIST (flex-1 overflow-y-auto - ONLY this scrolls) -->
+            <div class="flex-1 overflow-y-auto">
+
                 <template x-if="isLoadingConversations && conversations.length === 0">
                     <div class="p-4 space-y-4">
                         <template x-for="i in 5">
@@ -246,26 +253,27 @@
             </div>
         </div>
 
-        <!-- Chat Window (Right) - Visible on mobile only when chat is active -->
-        <div class="flex-1 flex flex-col bg-[#0b1019] relative min-w-0 transition-all duration-300"
-             :class="activeChat ? 'flex' : 'hidden md:flex'">
+        <!-- CONTENT AREA (Right) - flex-1 + min-w-0 CRITICAL for text overflow -->
+        <div class="flex-1 min-w-0 flex flex-col bg-gray-950 relative transition-all duration-300"
+             :class="activeChat ? 'flex' : 'hidden lg:flex'">
              <!-- Chat Background Pattern -->
              <div class="absolute inset-0 z-0 opacity-[0.03]" style="background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');"></div>
 
             <template x-if="!activeChat">
+                <!-- EMPTY STATE: Centered content with icon -->
                 <div class="flex-1 flex flex-col items-center justify-center text-center p-8 z-10">
-                    <div class="w-32 h-32 bg-white/5 rounded-full flex items-center justify-center mb-6">
-                        <span class="material-symbols-outlined text-6xl text-text-secondary">chat</span>
+                    <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mb-6">
+                        <span class="material-symbols-outlined text-5xl text-gray-500">chat</span>
                     </div>
-                    <h3 class="text-xl font-bold text-white">WhatsApp Inbox</h3>
-                    <p class="text-text-secondary mt-2 max-w-sm">Pilih percakapan dari daftar di sebelah kiri untuk mulai chat dan melihat riwayat pesan.</p>
+                    <h3 class="text-xl font-semibold text-white">WhatsApp Inbox</h3>
+                    <p class="text-gray-400 mt-2 max-w-sm">Pilih percakapan dari daftar di sebelah kiri untuk mulai chat dan melihat riwayat pesan.</p>
                 </div>
             </template>
 
             <template x-if="activeChat">
-                <div class="flex-1 flex flex-col h-full z-10 relative">
-                    <!-- Chat Header -->
-                    <div class="h-16 flex items-center justify-between px-3 md:px-6 bg-surface-dark border-b border-border-dark shrink-0 z-20">
+                <div class="flex-1 flex flex-col h-full z-10 relative min-w-0">
+                    <!-- CHAT HEADER (h-16 fixed, flex-shrink-0) -->
+                    <div class="h-16 flex items-center justify-between px-4 bg-gray-900 border-b border-gray-800 flex-shrink-0">
                         <div class="flex items-center space-x-3 md:space-x-4">
                             <!-- Back Button (Mobile Only) -->
                             <button @click="activeChat = null; messages = []" 
@@ -439,9 +447,9 @@
                 </div>
             </template>
         </div>
-    </div>
+    </main>
     
-    <!-- Idle Notification Popup -->
+    <!-- MODAL: Idle Notification Popup (z-50 highest z-index) -->
     <div x-show="showIdleWarning" x-cloak
          class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm"
          x-transition:enter="transition ease-out duration-200"
@@ -450,38 +458,39 @@
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0">
-        <div class="bg-surface-dark border border-border-dark rounded-2xl p-6 max-w-md mx-4 shadow-2xl"
+        <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 max-w-md mx-4 shadow-2xl"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                     <span class="material-symbols-outlined text-yellow-400 text-2xl">schedule</span>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-white">⏰ Peringatan Idle</h3>
-                    <p class="text-sm text-text-secondary">Chat belum dibalas</p>
+                    <h3 class="text-lg font-semibold text-white">⏰ Peringatan Idle</h3>
+                    <p class="text-sm text-gray-400">Chat belum dibalas</p>
                 </div>
             </div>
-            <p class="text-text-secondary mb-6">
+            <p class="text-gray-400 mb-6">
                 Kamu belum membalas chat dari <strong class="text-white" x-text="idleChat?.name"></strong> 
                 selama <span class="text-yellow-400 font-semibold" x-text="idleMinutes"></span> menit. 
                 Kembalikan ke Bot sekarang atau teruskan secara manual.
             </p>
             <div class="flex gap-3">
                 <button @click="handbackIdleChat()" 
-                        class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2">
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-lg">replay</span>
                     Kembalikan ke Bot
                 </button>
                 <button @click="dismissIdleWarning()" 
-                        class="flex-1 bg-white/10 hover:bg-white/20 text-white py-2.5 rounded-xl font-medium transition-colors">
+                        class="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2.5 rounded-lg font-medium transition-colors">
                     Lanjutkan
                 </button>
             </div>
         </div>
     </div>
-</main>
+    
+</div><!-- END ROOT CAGE -->
 
 <script>
     function whatsappInbox() {
