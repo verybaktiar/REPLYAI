@@ -76,6 +76,18 @@ class DashboardController extends Controller
             $aiTrend = 100;
         }
 
+        // --- AI RATE ---
+        $userMessagesCount = Message::whereIn('conversation_id', $userConversationIds)
+            ->where('sender_type', 'contact')
+            ->whereDate('created_at', Carbon::today())
+            ->count();
+            
+        $aiRate = 0;
+        if ($userMessagesCount > 0) {
+            $aiRate = round(($totalAutoReplies / $userMessagesCount) * 100);
+            if ($aiRate > 100) $aiRate = 100;
+        }
+
         // 3. PENDING REPLIES
         $pendingInbox = Conversation::where('status', '!=', 'resolved')->count();
 
@@ -136,6 +148,7 @@ class DashboardController extends Controller
                 'total_messages' => $totalMessagesToday,
                 'msg_trend' => $msgTrend,
                 'ai_responses' => $totalAutoReplies,
+                'ai_rate' => $aiRate,
                 'ai_trend' => $aiTrend,
                 'pending_replies' => $pendingInbox,
                 'kb_articles' => $kbCount,
