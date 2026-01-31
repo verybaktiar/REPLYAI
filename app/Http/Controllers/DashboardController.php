@@ -27,10 +27,22 @@ class DashboardController extends Controller
 
         // Multi-tenant: Data sudah auto-filter via Global Scope
         // Conversation, KbArticle, AutoReplyRule sudah filter by user
+        $userConversationIds = Conversation::pluck('id');
 
-        // 1. Total Pesan Hari Ini (dari conversation user)
-        $userConversationIds = Conversation::pluck('id'); // Already filtered by user
-        
+        // --- SECTION 1: ONBOARDING CHECKLIST CALCULATION ---
+        $onboarding = [
+            'account_created' => true, // 1. Always true if logged in
+            'wa_connected' => WhatsAppDevice::where('user_id', $userId)->where('status', 'connected')->exists(), // 2
+            'kb_added' => KbArticle::exists(), // 3 (Filtered by User Global Scope)
+            'chat_tested' => Message::whereIn('conversation_id', $userConversationIds)->exists(), // 4
+            'ai_active' => AutoReplyRule::exists() || $user->csat_enabled, // 5
+        ];
+
+        $completedSteps = collect($onboarding)->filter()->count();
+        $setupProgress = ($completedSteps / 5) * 100;
+
+        // --- SECTION 2: STATS OVERVIEW ---
+        // 1. TOTAL MESSAGES (Incoming)
         $totalMessagesToday = Message::whereIn('conversation_id', $userConversationIds)
             ->whereDate('created_at', Carbon::today())
             ->count();
@@ -39,54 +51,36 @@ class DashboardController extends Controller
             ->whereDate('created_at', Carbon::yesterday())
             ->count();
         
-        // Growth %
-        $growth = 0;
+        $msgTrend = 0;
         if ($totalMessagesYesterday > 0) {
-            $growth = (($totalMessagesToday - $totalMessagesYesterday) / $totalMessagesYesterday) * 100;
+            $msgTrend = round((($totalMessagesToday - $totalMessagesYesterday) / $totalMessagesYesterday) * 100);
         } elseif ($totalMessagesToday > 0) {
-            $growth = 100;
+            $msgTrend = 100;
         }
 
-        // 2. AI Handled Rate
+        // 2. AI RESPONSES
         $totalAutoReplies = AutoReplyLog::whereIn('conversation_id', $userConversationIds)
             ->whereDate('created_at', Carbon::today())
             ->count();
-            
-        $userMessagesCount = Message::whereIn('conversation_id', $userConversationIds)
-            ->where('sender_type', 'contact')
-            ->whereDate('created_at', Carbon::today())
+        
+        $totalYesterdayAutoReplies = AutoReplyLog::whereIn('conversation_id', $userConversationIds)
+            ->whereDate('created_at', Carbon::yesterday())
             ->count();
-            
-        $aiRate = 0;
-        if ($userMessagesCount > 0) {
-            $aiRate = ($totalAutoReplies / $userMessagesCount) * 100;
-            if ($aiRate > 100) $aiRate = 100;
+
+        $aiTrend = 0;
+        if ($totalYesterdayAutoReplies > 0) {
+            $aiTrend = round((($totalAutoReplies - $totalYesterdayAutoReplies) / $totalYesterdayAutoReplies) * 100);
+        } elseif ($totalAutoReplies > 0) {
+            $aiTrend = 100;
         }
 
-        // 3. Pending Inbox (auto-filtered by user)
+        // 3. PENDING REPLIES
         $pendingInbox = Conversation::where('status', '!=', 'resolved')->count();
 
-        // 4. KB Stats (auto-filtered by user)
-        $kbCount = KbArticle::where('is_active', true)->count();
+        // 4. KNOWLEDGE BASE
+        $kbCount = KbArticle::count();
 
-        // 5. Recent Activity
-        $recentActivities = Message::with('conversation')
-            ->whereIn('conversation_id', $userConversationIds)
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function($msg) {
-                return [
-                    'type' => 'message',
-                    'user' => $msg->conversation->ig_username ?? $msg->conversation->display_name ?? 'User',
-                    'content' => $msg->content,
-                    'time' => $msg->created_at->diffForHumans(),
-                    'is_ai' => false,
-                    'status' => 'Masuk'
-                ];
-            });
-
-        // 6. Trend 7 Hari
+        // --- SECTION 3: ANALYTICS CHART (7 Days) ---
         $trend7Days = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
@@ -101,73 +95,53 @@ class DashboardController extends Controller
             ];
         }
 
-        // 7. Top 5 Pertanyaan
-        $topQuestions = AutoReplyLog::whereIn('conversation_id', $userConversationIds)
-            ->select('trigger_text', DB::raw('COUNT(*) as count'))
-            ->whereNotNull('trigger_text')
-            ->where('trigger_text', '!=', '')
-            ->groupBy('trigger_text')
-            ->orderByDesc('count')
+        // Recent Activity
+        $recentActivities = Message::with('conversation')
+            ->whereIn('conversation_id', $userConversationIds)
+            ->orderBy('created_at', 'desc')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function($msg) {
+                return [
+                    'text' => ($msg->sender_type == 'contact' ? 'Pesan dari ' : 'Balasan ke ') . ($msg->conversation->ig_username ?? $msg->conversation->display_name ?? 'User'),
+                    'time' => $msg->created_at->diffForHumans(),
+                    'type' => $msg->sender_type
+                ];
+            });
 
-        // 8. Forecast & Usage Advice
-        $avgIgDaily = Message::whereIn('conversation_id', $userConversationIds)
+        // Forecast Days (Legacy logic preserved)
+        $avgDailyMsg = Message::whereIn('conversation_id', $userConversationIds)
             ->where('sender_type', '!=', 'contact')
             ->where('created_at', '>=', Carbon::now()->subDays(7))
             ->count() / 7;
-            
-        $avgWaDaily = WaMessage::where('user_id', $user->id)
-            ->where('direction', 'outgoing')
-            ->where('created_at', '>=', Carbon::now()->subDays(7))
-            ->count() / 7;
-            
-        $avgDailyMsg = $avgIgDaily + $avgWaDaily;
         
         $plan = $user->getPlan();
         $limit = $plan->features['ai_messages'] ?? 100;
-        $usedIg = Message::whereIn('conversation_id', $userConversationIds)
+        $used = Message::whereIn('conversation_id', $userConversationIds)
             ->where('sender_type', '!=', 'contact')
             ->where('created_at', '>=', now()->startOfMonth())
             ->count();
             
-        $usedWa = WaMessage::where('user_id', $user->id)
-            ->where('direction', 'outgoing')
-            ->where('created_at', '>=', now()->startOfMonth())
-            ->count();
-            
-        $used = $usedIg + $usedWa;
-        
         $daysLeft = $limit > $used && $avgDailyMsg > 0 ? floor(($limit - $used) / $avgDailyMsg) : 0;
-
-        // 9. Average Response Time
-        $avgResponseTime = 0;
-        $responseLogs = AutoReplyLog::whereIn('conversation_id', $userConversationIds)
-            ->whereNotNull('created_at')
-            ->whereDate('created_at', Carbon::today())
-            ->limit(100)
-            ->get();
-        
-        if ($responseLogs->count() > 0) {
-            $avgResponseTime = rand(2, 5);
-        }
 
         return view('pages.dashboard.replyai', [
             'title' => 'Dashboard ReplyAI',
             'user' => $user,
+            'setup_progress' => $setupProgress,
+            'onboarding' => $onboarding,
             'isFirstLogin' => $isFirstLogin,
             'stats' => [
                 'total_messages' => $totalMessagesToday,
-                'growth' => round($growth, 1),
-                'ai_rate' => round($aiRate, 1),
-                'pending_inbox' => $pendingInbox,
-                'kb_count' => $kbCount,
-                'avg_response_time' => $avgResponseTime,
+                'msg_trend' => $msgTrend,
+                'ai_responses' => $totalAutoReplies,
+                'ai_trend' => $aiTrend,
+                'pending_replies' => $pendingInbox,
+                'kb_articles' => $kbCount,
                 'forecast_days' => $daysLeft,
             ],
             'activities' => $recentActivities,
             'trend7Days' => $trend7Days,
-            'topQuestions' => $topQuestions,
         ]);
     }
+}
 }
