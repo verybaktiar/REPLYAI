@@ -22,11 +22,11 @@
     } catch (\Exception $e) {}
 @endphp
 
-{{-- 1. BERANDA --}}
+{{-- 1. OVERVIEW --}}
 <a class="flex items-center gap-3 px-4 py-2.5 transition-all {{ request()->routeIs('dashboard') ? 'bg-blue-500/10 text-blue-400 border-l-[3px] border-blue-500' : 'rounded-xl text-gray-400 hover:bg-gray-800/50 hover:text-white' }}" href="{{ route('dashboard') }}">
     <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('dashboard') ? 'filled' : '' }}">dashboard</span>
     <div class="flex flex-col">
-        <span class="text-xs font-bold uppercase tracking-tighter">Beranda</span>
+        <span class="text-xs font-bold uppercase tracking-tighter">Overview</span>
     </div>
 </a>
 
@@ -56,6 +56,24 @@
             @endif
         </a>
         <a class="block py-2 text-xs {{ request()->routeIs('contacts*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('contacts.index') }}">Kontak</a>
+    </div>
+</div>
+
+{{-- 3. LAPORAN (Grouped) --}}
+@php
+    $isReportActive = request()->routeIs('analytics*') || request()->routeIs('logs*');
+@endphp
+<div x-data="{ open: {{ $isReportActive ? 'true' : 'false' }} }" class="space-y-1">
+    <button @click="open = !open" 
+            class="w-full flex items-center gap-3 px-4 py-2.5 transition-all {{ $isReportActive ? 'bg-blue-500/10 text-blue-400 border-l-[3px] border-blue-500' : 'rounded-xl text-gray-400 hover:bg-gray-800/50 hover:text-white' }}">
+        <span class="material-symbols-outlined text-[24px] {{ $isReportActive ? 'filled' : '' }}">bar_chart_4_bars</span>
+        <span class="text-xs font-bold uppercase tracking-tighter text-left flex-1">Laporan</span>
+        <span class="material-symbols-outlined text-sm transition-transform" :class="open ? 'rotate-180' : ''">expand_more</span>
+    </button>
+    
+    <div x-show="open" x-collapse class="ml-4 border-l border-gray-800 pl-4 space-y-1">
+        <a class="block py-2 text-xs {{ request()->routeIs('analytics*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('analytics.index') }}">Statistik</a>
+        <a class="block py-2 text-xs {{ request()->routeIs('logs*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('logs.index') }}">Riwayat Aktivitas</a>
     </div>
 </div>
 
@@ -95,24 +113,23 @@
     </div>
 </div>
 
-{{-- 5. PENGATURAN (Grouped) --}}
+{{-- 6. PENGATURAN (Grouped) --}}
 @php
-    $isSettingsActive = request()->routeIs('analytics*') || request()->routeIs('settings*') || request()->routeIs('logs*') || request()->routeIs('whatsapp.settings*') || request()->routeIs('instagram.settings*');
+    $isSettingsActive = request()->routeIs('settings*') || request()->routeIs('whatsapp.settings*') || request()->routeIs('instagram.settings*');
 @endphp
 <div x-data="{ open: {{ $isSettingsActive ? 'true' : 'false' }} }" class="space-y-1">
     <button @click="open = !open" 
             class="w-full flex items-center gap-3 px-4 py-2.5 transition-all {{ $isSettingsActive ? 'bg-blue-500/10 text-blue-400 border-l-[3px] border-blue-500' : 'rounded-xl text-gray-400 hover:bg-gray-800/50 hover:text-white' }}">
-        <span class="material-symbols-outlined text-[24px] {{ $isSettingsActive ? 'filled' : '' }}">settings</span>
-        <span class="text-xs font-bold uppercase tracking-tighter text-left flex-1">Pengaturan</span>
+        <span class="material-symbols-outlined text-[24px] {{ $isSettingsActive ? 'filled' : '' }}">admin_panel_settings</span>
+        <span class="text-xs font-bold uppercase tracking-tighter text-left flex-1">Integrasi & Profil</span>
         <span class="material-symbols-outlined text-sm transition-transform" :class="open ? 'rotate-180' : ''">expand_more</span>
     </button>
     
     <div x-show="open" x-collapse class="ml-4 border-l border-gray-800 pl-4 space-y-1">
-        <a class="block py-2 text-xs {{ request()->routeIs('analytics*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('analytics.index') }}">Statistik</a>
         <a class="block py-2 text-xs {{ request()->routeIs('whatsapp.settings*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('whatsapp.settings') }}">WhatsApp Connect</a>
         <a class="block py-2 text-xs {{ request()->routeIs('instagram.settings*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('instagram.settings') }}">Instagram Connect</a>
         <a class="block py-2 text-xs {{ request()->routeIs('settings.business*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('settings.business') }}">Profil Bisnis</a>
-        <a class="block py-2 text-xs {{ request()->routeIs('logs*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('logs.index') }}">Riwayat Aktivitas</a>
+        <a class="block py-2 text-xs text-gray-500 cursor-not-allowed opacity-50" href="#">Preferensi Sistem</a>
     </div>
 </div>
 
