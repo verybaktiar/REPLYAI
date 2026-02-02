@@ -80,25 +80,48 @@ class PaymentService
 
         $total = max(0, $amount - $discount);
 
-        // Buat payment record
-        $payment = Payment::create([
-            'invoice_number' => Payment::generateInvoiceNumber(),
-            'user_id' => $user->id,
-            'plan_id' => $plan->id,
-            'amount' => $amount,
-            'discount' => $discount,
-            'total' => $total,
-            'payment_method' => Payment::METHOD_MANUAL,
-            'status' => Payment::STATUS_PENDING,
-            'duration_months' => $durationMonths,
-            'promo_code' => $promoCodeModel?->code,
-            'expires_at' => now()->addHours(24), // Expired dalam 24 jam
-            'metadata' => [
-                'plan_name' => $plan->name,
-                'plan_slug' => $plan->slug,
-                'created_from' => 'checkout',
-            ],
-        ]);
+        // Buat payment record dengan retry logic (untuk handle race condition nomor invoice)
+        $attempts = 0;
+        $maxAttempts = 3;
+        $payment = null;
+
+        do {
+            try {
+                $payment = Payment::create([
+                    'invoice_number' => Payment::generateInvoiceNumber(),
+                    'user_id' => $user->id,
+                    'plan_id' => $plan->id,
+                    'amount' => $amount,
+                    'discount' => $discount,
+                    'total' => $total,
+                    'payment_method' => Payment::METHOD_MANUAL,
+                    'status' => Payment::STATUS_PENDING,
+                    'duration_months' => $durationMonths,
+                    'promo_code' => $promoCodeModel?->code,
+                    'expires_at' => now()->addHours(24), // Expired dalam 24 jam
+                    'metadata' => [
+                        'plan_name' => $plan->name,
+                        'plan_slug' => $plan->slug,
+                        'created_from' => 'checkout',
+                    ],
+                ]);
+                
+                break; // Berhasil, keluar dari loop
+
+            } catch (\Illuminate\Database\QueryException $e) {
+                $errorCode = $e->errorInfo[1] ?? 0;
+                
+                // Jika error duplicate entry, kita retry
+                if ($errorCode == 1062) {
+                    $attempts++;
+                    if ($attempts >= $maxAttempts) throw $e;
+                    usleep(100000); // Wait 100ms before retry
+                    continue;
+                }
+                
+                throw $e;
+            }
+        } while ($attempts < $maxAttempts);
 
         return $payment;
     }
