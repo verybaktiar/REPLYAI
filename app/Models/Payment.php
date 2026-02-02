@@ -147,15 +147,24 @@ class Payment extends Model
     public static function generateInvoiceNumber(): string
     {
         $year = date('Y');
-        $lastPayment = self::whereYear('created_at', $year)
-                          ->orderBy('id', 'desc')
+        $prefix = "INV-{$year}-";
+        
+        // Cari invoice terakhir yang menggunakan prefix tahun ini
+        $lastPayment = self::where('invoice_number', 'LIKE', $prefix . '%')
+                          ->orderBy('invoice_number', 'desc')
                           ->first();
         
-        $nextNumber = $lastPayment 
-            ? (int) substr($lastPayment->invoice_number, -5) + 1 
-            : 1;
+        $nextNumber = 1;
+
+        if ($lastPayment) {
+            // Ambil 5 digit terakhir
+            $lastInvoice = $lastPayment->invoice_number;
+            $parts = explode('-', $lastInvoice);
+            $lastSequence = (int) end($parts);
+            $nextNumber = $lastSequence + 1;
+        }
         
-        return sprintf('INV-%s-%05d', $year, $nextNumber);
+        return sprintf('%s%05d', $prefix, $nextNumber);
     }
 
     /**
