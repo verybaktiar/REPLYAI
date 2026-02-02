@@ -91,11 +91,10 @@
                     </ul>
                 </div>
 
-                <!-- Checkout Form -->
-                <div class="bg-surface-dark rounded-2xl p-6 border border-slate-700" x-data="{ duration: '1' }">
+                <div class="bg-surface-dark rounded-2xl p-6 border border-slate-700" x-data="{ duration: '1', loading: false }">
                     <h2 class="font-semibold text-lg mb-4">Pilih Durasi</h2>
                     
-                    <form action="{{ route('checkout.process', $plan->slug) }}" method="POST">
+                    <form action="{{ route('checkout.process', $plan->slug) }}" method="POST" @submit="loading = true">
                         @csrf
                         
                         <div class="space-y-3 mb-6">
@@ -134,8 +133,21 @@
                             <span class="text-2xl font-black text-primary" x-text="duration === '12' ? 'Rp {{ number_format($plan->price_yearly, 0, ',', '.') }}' : 'Rp {{ number_format($plan->price_monthly, 0, ',', '.') }}'"></span>
                         </div>
 
-                        <button type="submit" class="w-full py-4 rounded-xl bg-primary text-white font-bold text-lg hover:bg-primary/90 transition">
-                            Lanjutkan Pembayaran
+                        <button type="submit" 
+                                :disabled="loading"
+                                class="w-full py-4 rounded-xl bg-primary text-white font-bold text-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                            <template x-if="!loading">
+                                <span>Lanjutkan Pembayaran</span>
+                            </template>
+                            <template x-if="loading">
+                                <div class="flex items-center gap-2">
+                                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Memproses...</span>
+                                </div>
+                            </template>
                         </button>
                     </form>
                 </div>
