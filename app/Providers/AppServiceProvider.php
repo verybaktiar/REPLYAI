@@ -10,6 +10,9 @@ use App\Models\WaConversation;
 use App\Models\Announcement;
 use Illuminate\Support\Facades\URL;
 use Carbon\Carbon;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,9 +29,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (app()->environment('production') || env('APP_URL') !== 'http://localhost') {
+        // Force HTTPS if APP_URL starts with https
+        if (str_starts_with(config('app.url'), 'https')) {
             URL::forceScheme('https');
         }
+
+        // Define rate limiters
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
 
         // Register Observers for automated activity logging
         \App\Models\KbArticle::observe(\App\Observers\ActivityObserver::class);

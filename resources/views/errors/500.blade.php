@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.dark')
 
 @section('title', '500 - Server Error')
 

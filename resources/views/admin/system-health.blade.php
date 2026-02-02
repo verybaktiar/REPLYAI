@@ -60,6 +60,17 @@
         </div>
         <p class="text-sm font-bold text-white">{{ PHP_VERSION }}</p>
     </div>
+
+    <!-- System Ports Status -->
+    @foreach($systemPorts as $port)
+    <div class="bg-surface-dark rounded-xl p-4 border border-slate-800">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-2.5 h-2.5 rounded-full {{ $port['status'] === 'online' ? 'bg-green-500' : 'bg-red-500' }}"></div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ $port['name'] }}</span>
+        </div>
+        <p class="text-sm font-bold text-white">{{ $port['status'] === 'online' ? 'PORT ' . $port['port'] . ' RUNNING' : 'OFFLINE' }}</p>
+    </div>
+    @endforeach
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
@@ -115,6 +126,85 @@
                         <p>Semua saluran WhatsApp & Instagram lancar.</p>
                     </div>
                 @endforelse
+            </div>
+        </div>
+
+        <!-- PM2 Services Management -->
+        <div class="bg-surface-dark rounded-2xl border border-slate-800 overflow-hidden mt-8">
+            <div class="px-6 py-4 border-b border-slate-800 bg-surface-light/30 flex items-center justify-between">
+                <h3 class="font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-500">terminal</span>
+                    Internal Services (PM2)
+                </h3>
+            </div>
+            <div class="overflow-x-auto text-sm">
+                <table class="w-full text-left">
+                    <thead class="bg-background-dark/50 text-slate-400 font-medium border-b border-slate-800 text-xs">
+                        <tr>
+                            <th class="px-6 py-3">Service Name</th>
+                            <th class="px-6 py-3 text-center">ID</th>
+                            <th class="px-6 py-3 text-center">Status</th>
+                            <th class="px-6 py-3 text-center">CPU / RAM</th>
+                            <th class="px-6 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        @forelse($pm2Status as $proc)
+                        <tr class="hover:bg-surface-light/10 transition group">
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-white flex items-center gap-2">
+                                    {{ $proc['name'] }}
+                                    <span class="text-[9px] font-normal px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 uppercase tracking-tight">{{ $proc['mode'] }}</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 font-mono">Restarts: {{ $proc['restart_count'] }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-center text-slate-400 font-mono">{{ $proc['pm_id'] }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $proc['status'] === 'online' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20' }}">
+                                    {{ $proc['status'] }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="text-slate-300">{{ $proc['cpu'] }}%</span>
+                                <span class="text-slate-500 mx-1">/</span>
+                                <span class="text-slate-300">{{ $proc['memory'] }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <form action="{{ route('admin.system-health.service-action') }}" method="POST" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="service_name" value="{{ $proc['name'] }}">
+                                        @if($proc['status'] === 'online')
+                                            <input type="hidden" name="action" value="restart">
+                                            <button type="submit" class="p-1.5 rounded-lg bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500 hover:text-white transition" title="Restart Service">
+                                                <span class="material-symbols-outlined text-sm">restart_alt</span>
+                                            </button>
+                                            
+                                            <input type="hidden" name="action" value="stop">
+                                            <button type="submit" onclick="this.form.action.value='stop'; return confirm('Stop service {{ $proc['name'] }}?')" class="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition" title="Stop Service">
+                                                <span class="material-symbols-outlined text-sm">stop</span>
+                                            </button>
+                                        @else
+                                            <input type="hidden" name="action" value="start">
+                                            <button type="submit" class="p-1.5 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition" title="Start Service">
+                                                <span class="material-symbols-outlined text-sm">play_arrow</span>
+                                            </button>
+                                        @endif
+                                    </form>
+                                    
+                                    <button onclick="showLogs('{{ $proc['name'] }}')" class="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition" title="View Logs">
+                                        <span class="material-symbols-outlined text-sm">description</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-12 text-center text-slate-500 italic">Tidak ada proses PM2 yang berjalan.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -181,3 +271,67 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<div id="logsModal" class="fixed inset-0 bg-background-dark/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-surface-dark border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[80vh] flex flex-col overflow-hidden shadow-2xl">
+        <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-surface-light/30">
+            <h3 class="font-bold flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-400">terminal</span>
+                Service Logs: <span id="modalServiceName" class="text-white"></span>
+            </h3>
+            <button onclick="hideLogs()" class="p-2 text-slate-400 hover:text-white transition">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div id="logsContent" class="p-6 overflow-y-auto font-mono text-xs text-slate-300 whitespace-pre-wrap bg-background-dark/50">
+            Loading logs...
+        </div>
+        <div class="px-6 py-4 border-t border-slate-800 bg-surface-light/30 flex justify-end gap-3">
+            <button onclick="refreshLogs()" class="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg text-sm font-bold border border-blue-500/20 hover:bg-blue-500 hover:text-white transition flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">refresh</span>
+                Refresh
+            </button>
+            <button onclick="hideLogs()" class="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-700 transition">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentLogService = '';
+
+    function showLogs(serviceName) {
+        currentLogService = serviceName;
+        document.getElementById('modalServiceName').innerText = serviceName;
+        document.getElementById('logsModal').classList.remove('hidden');
+        document.getElementById('logsContent').innerText = 'Loading logs...';
+        
+        refreshLogs();
+    }
+
+    function hideLogs() {
+        document.getElementById('logsModal').classList.add('hidden');
+    }
+
+    function refreshLogs() {
+        if (!currentLogService) return;
+        
+        fetch(`{{ route('admin.system-health.logs') }}?service_name=${encodeURIComponent(currentLogService)}`)
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('logsContent').innerText = data;
+                // Scroll to bottom
+                const content = document.getElementById('logsContent');
+                content.scrollTop = content.scrollHeight;
+            })
+            .catch(error => {
+                document.getElementById('logsContent').innerText = 'Error loading logs: ' + error;
+            });
+    }
+
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hideLogs();
+    });
+</script>
+@endpush

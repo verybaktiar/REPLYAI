@@ -100,7 +100,7 @@ async function startBaileys(sessionId) {
     const sock = makeWASocket({
         version,
         logger,
-        printQRInTerminal: true, // Useful for debugging one session, might be messy for multiple
+        printQRInTerminal: false, // Deprecated and removed to avoid warnings
         auth: {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, logger)

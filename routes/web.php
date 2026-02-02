@@ -26,6 +26,7 @@ use App\Http\Controllers\BusinessProfileController;
 use App\Http\Controllers\UserAnnouncementController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\DocumentationController;
+use App\Http\Controllers\SubscriptionController;
 
 /*
 |--------------------------------------------------------------------------

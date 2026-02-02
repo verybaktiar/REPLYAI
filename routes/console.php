@@ -104,4 +104,9 @@ app()->booted(function () {
         ->withoutOverlapping()
         ->appendOutputTo(storage_path('logs/ai-daily-summary.log'));
 
+    // System Health Self-Healing
+    $schedule->command('system:health-check')
+        ->everyFiveMinutes()
+        ->withoutOverlapping();
+
 });
