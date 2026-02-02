@@ -123,8 +123,8 @@
     <main class="flex-1 min-w-0 flex flex-row h-full overflow-hidden">
 
         <!-- CHAT LIST (Middle) - w-80 fixed on desktop, full on mobile, flex-shrink-0 -->
-        <div class="w-full lg:w-80 flex-shrink-0 flex flex-col border-r border-gray-800 bg-gray-900 transition-all duration-300"
-             :class="activeChat ? 'hidden lg:flex' : 'flex'">
+        <!-- Chat List (Master) -->
+        <div :class="activeChat ? 'hidden lg:flex' : 'flex'" class="w-full lg:w-96 flex-col border-r border-[#232f48] bg-[#0f172a] shrink-0 pt-14 lg:pt-0">
 
             <!-- HEADER (h-16 fixed, flex-shrink-0) -->
             <div class="h-16 flex items-center justify-between px-4 border-b border-gray-800 bg-gray-900 flex-shrink-0">
@@ -262,8 +262,8 @@
         </div>
 
         <!-- CONTENT AREA (Right) - flex-1 + min-w-0 CRITICAL for text overflow -->
-        <div class="flex-1 min-w-0 flex flex-col bg-gray-950 relative transition-all duration-300"
-             :class="activeChat ? 'flex' : 'hidden lg:flex'">
+        <!-- Chat Conversation (Detail) -->
+        <div :class="activeChat ? 'flex' : 'hidden lg:flex'" class="flex-1 flex-col bg-[#101622] pt-14 lg:pt-0">
              <!-- Chat Background Pattern -->
              <div class="absolute inset-0 z-0 opacity-[0.03]" style="background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');"></div>
 

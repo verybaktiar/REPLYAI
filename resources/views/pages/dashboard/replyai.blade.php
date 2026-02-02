@@ -72,7 +72,7 @@
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
             
             <!-- STICKY HEADER -->
-            <header class="h-16 flex-shrink-0 flex items-center justify-between px-6 glass-header z-30">
+            <header class="hidden lg:flex h-16 flex-shrink-0 items-center justify-between px-6 glass-header z-30">
                 <div class="flex items-center gap-4">
                     <h1 class="text-xl font-extrabold tracking-tight text-white uppercase italic">Dashboard</h1>
                     <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
@@ -90,7 +90,7 @@
             </header>
 
             <!-- SCROLLABLE CONTENT -->
-            <main class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 pb-24 lg:pb-12 space-y-8 scroll-smooth custom-scrollbar">
+            <main class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 pb-24 lg:pb-12 pt-20 lg:pt-12 space-y-8 scroll-smooth custom-scrollbar">
                 <div class="max-w-7xl mx-auto space-y-8 pb-12">
 
                     <!-- STEPPER / ONBOARDING [IF INCOMPLETE] -->

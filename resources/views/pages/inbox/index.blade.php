@@ -147,7 +147,7 @@
      class="h-[100dvh] bg-gray-950 flex overflow-hidden">
 
     <!-- SIDEBAR (Left) - flex-shrink-0, integrates with Root Cage flexbox -->
-    <main :class="activeChat ? 'hidden lg:flex' : 'flex'" class="flex flex-col w-full lg:w-96 bg-background-dark border-r border-white/5 shrink-0 z-10">
+    <main :class="activeChat ? 'hidden lg:flex' : 'flex'" class="flex flex-col w-full lg:w-96 bg-background-dark border-r border-white/5 shrink-0 z-10 pt-14 lg:pt-0">
         @include('components.sidebar')
     
     <!-- MAIN WRAPPER - flex-1 + min-w-0 for proper flex behavior -->
@@ -302,7 +302,7 @@
     </div>
 
     <!-- MAIN CHAT AREA (Right) -->
-    <main :class="activeChat ? 'flex' : 'hidden lg:flex'" class="flex-1 flex flex-col h-full bg-[#101622] relative border-l border-white/5 min-w-0 {{ $selectedId ? 'flex' : 'hidden md:flex' }}">
+    <main :class="activeChat ? 'flex' : 'hidden lg:flex'" class="flex-1 flex flex-col h-full bg-[#101622] relative border-l border-white/5 min-w-0 pt-14 lg:pt-0 {{ $selectedId ? 'flex' : 'hidden md:flex' }}">
         @if($selectedId)
             <!-- Chat Header -->
             <header class="min-h-[64px] border-b border-white/5 flex items-center justify-between px-4 lg:px-6 bg-[#111722] shrink-0 gap-2 flex-wrap py-2">
