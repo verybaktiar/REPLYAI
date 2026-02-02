@@ -17,6 +17,8 @@
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(-100%); opacity: 0; }
     }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .filled { font-variation-settings: 'FILL' 1; }
 </style>
 
 <div x-data="{ mobileSidebarOpen: false }" class="contents">
@@ -38,7 +40,7 @@
     </div>
 
     <!-- Mobile Bottom Navigation (Visible only on mobile) -->
-    <div class="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#030712]/80 backdrop-blur-lg border-t border-gray-800 flex items-center justify-around px-2 z-40 pb-safe">
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 min-h-[4.5rem] bg-[#030712]/90 backdrop-blur-xl border-t border-gray-800 flex items-center justify-around px-2 z-40 pb-safe">
         <a href="{{ route('dashboard') }}" class="flex flex-col items-center gap-1 min-w-[60px] transition-all duration-300 {{ request()->routeIs('dashboard*') ? 'text-blue-500 scale-110' : 'text-gray-500' }}">
             <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('dashboard*') ? 'filled' : '' }}">dashboard</span>
             <span class="text-[9px] font-bold uppercase tracking-tighter">Home</span>
@@ -49,9 +51,9 @@
         </a>
         
         <!-- Floating Action Button (FAB) for Broadcast -->
-        <div class="relative -top-6">
+        <div class="relative -top-7">
             <a href="{{ route('whatsapp.broadcast.index') }}" 
-               class="bg-blue-600 w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-blue-900/40 active:scale-95 transition-transform border-4 border-[#030712]">
+               class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center shadow-lg shadow-blue-600/20 active:scale-95 transition-transform border-[6px] border-[#030712]">
                 <span class="material-symbols-outlined text-white text-[28px]">campaign</span>
             </a>
         </div>
@@ -62,7 +64,7 @@
         </button>
 
         <a href="{{ route('settings.business') }}" class="flex flex-col items-center gap-1 min-w-[60px] transition-all duration-300 {{ request()->routeIs('settings.business*') ? 'text-blue-500 scale-110' : 'text-gray-500' }}">
-            <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('settings.business*') ? 'filled' : '' }}">person_settings</span>
+            <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('settings.business*') ? 'filled' : '' }}">account_circle</span>
             <span class="text-[9px] font-bold uppercase tracking-tighter">Profil</span>
         </a>
     </div>
