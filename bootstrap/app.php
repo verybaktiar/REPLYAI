@@ -33,6 +33,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'onboarding' => \App\Http\Middleware\CheckOnboardingComplete::class,
             'quota' => \App\Http\Middleware\CheckPlanLimits::class,
         ]);
+
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\WaMessage;
 use App\Models\WaConversation;
 use App\Models\Announcement;
+use Illuminate\Support\Facades\URL;
 use Carbon\Carbon;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (app()->environment('production') || env('APP_URL') !== 'http://localhost') {
+            URL::forceScheme('https');
+        }
+
         // Register Observers for automated activity logging
         \App\Models\KbArticle::observe(\App\Observers\ActivityObserver::class);
         \App\Models\AutoReplyRule::observe(\App\Observers\ActivityObserver::class);
