@@ -90,7 +90,7 @@
             </header>
 
             <!-- SCROLLABLE CONTENT -->
-            <main class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 pb-24 lg:pb-12 pt-20 lg:pt-12 space-y-8 scroll-smooth custom-scrollbar">
+            <main class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 pb-24 lg:pb-12 pt-24 lg:pt-12 space-y-8 scroll-smooth custom-scrollbar {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
                 <div class="max-w-7xl mx-auto space-y-8 pb-12">
 
                     <!-- STEPPER / ONBOARDING [IF INCOMPLETE] -->

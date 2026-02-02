@@ -151,7 +151,7 @@
             </header>
 
             <!-- Scrollable Content -->
-            <div class="flex-1 overflow-y-auto p-4 lg:p-10 pb-24 lg:pb-10 pt-20 lg:pt-10 scroll-smooth custom-scrollbar">
+            <div class="flex-1 overflow-y-auto p-4 lg:p-10 pb-24 lg:pb-10 pt-24 lg:pt-10 scroll-smooth custom-scrollbar {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
                 <div class="max-w-7xl mx-auto">
                     @yield('content')
                 </div>

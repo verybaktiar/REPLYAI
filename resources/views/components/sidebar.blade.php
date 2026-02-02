@@ -21,7 +21,8 @@
 
 <div x-data="{ mobileSidebarOpen: false }" class="contents">
     <!-- Mobile Top Header -->
-    <div class="lg:hidden fixed top-0 left-0 right-0 h-14 bg-[#030712] border-b border-gray-800 flex items-center justify-between px-4 z-[40] transition-all duration-300"
+    <div class="lg:hidden fixed left-0 right-0 h-14 bg-[#030712] border-b border-gray-800 flex items-center justify-between px-4 z-[40] transition-all duration-300"
+         style="top: {{ session()->has('impersonating_from_admin') ? '44px' : '0' }}"
          :class="mobileSidebarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'">
         <div class="flex items-center gap-2">
             <button @click="mobileSidebarOpen = true" class="p-2 -ml-2 text-gray-400 hover:text-white transition-colors">
@@ -55,8 +56,8 @@
             </a>
         </div>
 
-        <button @click="mobileSidebarOpen = true" class="flex flex-col items-center gap-1 min-w-[60px] text-gray-500">
-            <span class="material-symbols-outlined text-[24px]">widgets</span>
+        <button @click="mobileSidebarOpen = true" class="flex flex-col items-center gap-1 min-w-[60px] text-gray-500 active:scale-95 transition-transform">
+            <span class="material-symbols-outlined text-[24px]">grid_view</span>
             <span class="text-[9px] font-bold uppercase tracking-tighter">Menu</span>
         </button>
 
@@ -68,7 +69,7 @@
 
     <!-- Mobile Sidebar Drawer -->
     <div x-show="mobileSidebarOpen" 
-         class="fixed inset-0 z-[100] lg:hidden" 
+         class="fixed inset-0 z-[300] lg:hidden" 
          style="display: none;">
         <!-- Backdrop -->
         <div x-show="mobileSidebarOpen"
