@@ -6,7 +6,7 @@
     <title>{{ $title ?? 'Dashboard | ReplyAI' }}</title>
     
     <!-- PWA -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json?v=2">
     <meta name="theme-color" content="#030712">
     <link rel="apple-touch-icon" href="/logo-round.png">
     <script>

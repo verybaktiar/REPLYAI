@@ -2,7 +2,7 @@
 <html class="dark" lang="en">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
     <title>REPLYAI - {{ __('inbox.title') }}</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -143,10 +143,12 @@
 <!-- THE ROOT CAGE: h-[100dvh] + flex + overflow-hidden -->
 <!-- 100dvh fixes iOS address bar bug, overflow-hidden prevents double scroll -->
 <!-- ============================================= -->
-<div class="h-[100dvh] bg-gray-950 flex overflow-hidden">
+<div x-data="{ activeChat: {{ $selectedId ? 'true' : 'false' }}, isAiLoading: false, aiSuggestions: [] }" 
+     class="h-[100dvh] bg-gray-950 flex overflow-hidden">
 
     <!-- SIDEBAR (Left) - flex-shrink-0, integrates with Root Cage flexbox -->
-    @include('components.sidebar')
+    <main :class="activeChat ? 'hidden lg:flex' : 'flex'" class="flex flex-col w-full lg:w-96 bg-background-dark border-r border-white/5 shrink-0 z-10">
+        @include('components.sidebar')
     
     <!-- MAIN WRAPPER - flex-1 + min-w-0 for proper flex behavior -->
     <main class="flex-1 min-w-0 flex flex-row h-full overflow-hidden">
@@ -299,21 +301,25 @@
         </div>
     </div>
 
-    <!-- Chat Interface (Right Column) -->
-    <div class="flex-1 flex flex-col h-full bg-[#101622] relative border-l border-white/5 min-w-0 {{ $selectedId ? 'flex' : 'hidden md:flex' }}">
+    <!-- MAIN CHAT AREA (Right) -->
+    <main :class="activeChat ? 'flex' : 'hidden lg:flex'" class="flex-1 flex flex-col h-full bg-[#101622] relative border-l border-white/5 min-w-0 {{ $selectedId ? 'flex' : 'hidden md:flex' }}">
         @if($selectedId)
             <!-- Chat Header -->
             <header class="min-h-[64px] border-b border-white/5 flex items-center justify-between px-4 lg:px-6 bg-[#111722] shrink-0 gap-2 flex-wrap py-2">
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('inbox') }}" class="md:hidden text-slate-400 mr-2">
+                    <!-- Back Button (Mobile Only) -->
+                    <button @click="activeChat = false" 
+                            class="lg:hidden p-2 -ml-1 hover:bg-white/5 rounded-full text-slate-400"
+                            title="Kembali">
                         <span class="material-symbols-outlined">arrow_back</span>
-                    </a>
-                    
-                    <div class="size-8 rounded-full bg-slate-700 bg-center bg-cover" 
+                    </button>
+                    <div class="size-10 rounded-full bg-slate-700 bg-center bg-cover border border-white/10" 
                          style='background-image: url("{{ $contact['avatar'] ?: 'https://ui-avatars.com/api/?name='.urlencode($contact['name']).'&background=374151&color=fff' }}");'></div>
                     <div>
-                        <h2 class="text-base font-semibold text-white">{{ $contact['name'] }}</h2>
-                        <p class="text-xs text-slate-500">{{ $contact['ig_username'] }}</p>
+                        <h2 class="text-sm font-bold text-white">{{ $contact['name'] ?: 'Select a conversation' }}</h2>
+                        <p class="text-[10px] text-green-500 flex items-center gap-1">
+                            <span class="size-1.5 rounded-full bg-green-500"></span> Online
+                        </p>
                     </div>
                 </div>
                 <!-- Actions -->

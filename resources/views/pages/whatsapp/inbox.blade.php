@@ -5,7 +5,7 @@
     <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>WhatsApp Inbox - REPLYAI</title>
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json?v=2">
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

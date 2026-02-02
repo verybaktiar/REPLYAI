@@ -1,4 +1,4 @@
-const CACHE_NAME = 'replyai-v1';
+const CACHE_NAME = 'replyai-v2';
 const ASSETS = [
   '/dashboard',
   '/manifest.json',
