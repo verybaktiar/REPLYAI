@@ -95,9 +95,9 @@
     </div>
 </div>
 
-<!-- Profile Modal -->
-<div id="profileModal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/80 backdrop-blur-sm px-4 overflow-y-auto py-8">
-    <div class="w-full max-w-2xl bg-surface-dark border border-border-dark rounded-xl shadow-2xl my-auto">
+{{-- Profile Modal --}}
+<div id="profileModal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4 overflow-y-auto">
+    <div class="w-full max-w-2xl bg-surface-dark border border-border-dark rounded-xl shadow-2xl my-auto modal-content-mobile">
         <!-- Modal Header -->
         <div class="flex items-center justify-between px-6 py-4 border-b border-border-dark">
             <h3 class="text-xl font-bold text-white" id="modalTitle">Tambah Profil Bisnis</h3>

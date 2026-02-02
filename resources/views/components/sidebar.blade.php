@@ -20,30 +20,30 @@
 </style>
 
 <!-- Mobile Bottom Navigation (Visible only on mobile) -->
-<div class="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0a0f18] border-t border-gray-800 flex items-center justify-around px-2 z-50">
+<div class="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#030712] border-t border-gray-800 flex items-center justify-around px-2 z-50 pb-safe">
+    <a href="{{ route('dashboard') }}" class="flex flex-col items-center gap-1 min-w-[60px] {{ request()->routeIs('dashboard*') ? 'text-blue-500' : 'text-gray-500' }}">
+        <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('dashboard*') ? 'filled' : '' }}">dashboard</span>
+        <span class="text-[10px] font-bold uppercase tracking-tighter">Overview</span>
+    </a>
     <a href="{{ route('whatsapp.inbox') }}" class="flex flex-col items-center gap-1 min-w-[60px] {{ request()->routeIs('whatsapp.inbox*') ? 'text-blue-500' : 'text-gray-500' }}">
         <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('whatsapp.inbox*') ? 'filled' : '' }}">chat</span>
         <span class="text-[10px] font-bold uppercase tracking-tighter">Chat</span>
-    </a>
-    <a href="{{ route('kb.index') }}" class="flex flex-col items-center gap-1 min-w-[60px] {{ request()->routeIs('kb*') || request()->routeIs('rules*') ? 'text-blue-500' : 'text-gray-500' }}">
-        <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('kb*') || request()->routeIs('rules*') ? 'filled' : '' }}">psychology</span>
-        <span class="text-[10px] font-bold uppercase tracking-tighter">AI</span>
     </a>
     
     <!-- Floating Action Button (FAB) for Broadcast -->
     <div class="relative -top-6">
         <a href="{{ route('whatsapp.broadcast.index') }}" 
-           class="bg-blue-600 w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-blue-900/40 active:scale-95 transition-transform">
-            <span class="material-symbols-outlined text-white text-[28px]">add</span>
+           class="bg-blue-600 w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-blue-900/40 active:scale-95 transition-transform border-4 border-[#030712]">
+            <span class="material-symbols-outlined text-white text-[28px]">campaign</span>
         </a>
     </div>
 
-    <a href="{{ route('whatsapp.broadcast.index') }}" class="flex flex-col items-center gap-1 min-w-[60px] {{ request()->routeIs('whatsapp.broadcast*') ? 'text-blue-500' : 'text-gray-500' }}">
-        <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('whatsapp.broadcast*') ? 'filled' : '' }}">campaign</span>
-        <span class="text-[10px] font-bold uppercase tracking-tighter">Promo</span>
+    <a href="{{ route('analytics.index') }}" class="flex flex-col items-center gap-1 min-w-[60px] {{ request()->routeIs('analytics*') ? 'text-blue-500' : 'text-gray-500' }}">
+        <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('analytics*') ? 'filled' : '' }}">bar_chart_4_bars</span>
+        <span class="text-[10px] font-bold uppercase tracking-tighter">Laporan</span>
     </a>
-    <a href="{{ route('analytics.index') }}" class="flex flex-col items-center gap-1 min-w-[60px] {{ request()->routeIs('analytics*') || request()->routeIs('settings*') ? 'text-blue-500' : 'text-gray-500' }}">
-        <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('analytics*') ? 'filled' : '' }}">settings</span>
+    <a href="{{ route('whatsapp.settings') }}" class="flex flex-col items-center gap-1 min-w-[60px] {{ request()->routeIs('whatsapp.settings*') || request()->routeIs('settings.business*') ? 'text-blue-500' : 'text-gray-500' }}">
+        <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('whatsapp.settings*') ? 'filled' : '' }}">admin_panel_settings</span>
         <span class="text-[10px] font-bold uppercase tracking-tighter">Setting</span>
     </a>
 </div>

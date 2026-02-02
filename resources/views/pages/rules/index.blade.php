@@ -2,7 +2,7 @@
 <html class="dark" lang="en">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ __('rules.title') }} - ReplyAI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
@@ -47,6 +47,18 @@
             /* Toggle Switch Styling */
             .toggle-checkbox:checked { right: 0; border-color: #135bec; }
             .toggle-checkbox:checked + .toggle-label { background-color: #135bec; }
+
+            @media (max-width: 640px) {
+                .modal-content-mobile {
+                    position: fixed;
+                    bottom: 0;
+                    width: 100%;
+                    max-width: none !important;
+                    border-radius: 1.5rem 1.5rem 0 0 !important;
+                    margin: 0 !important;
+                    padding-bottom: env(safe-area-inset-bottom);
+                }
+            }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden">
@@ -162,8 +174,8 @@
     <!-- backdrop -->
     <div data-modal-close="rule-modal" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
     <!-- modal box -->
-    <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="w-full max-w-xl rounded-2xl bg-[#1e293b] border border-[#232f48] shadow-2xl">
+    <div class="absolute inset-0 flex items-center justify-center p-0 md:p-4">
+        <div class="w-full max-w-xl rounded-2xl bg-[#1e293b] border border-[#232f48] shadow-2xl modal-content-mobile">
              <!-- header -->
             <div class="flex items-center justify-between px-6 py-5 border-b border-[#232f48]">
                 <div>
@@ -222,8 +234,8 @@
 {{-- ================= MODAL DELETE ================= --}}
 <div id="delete-modal" class="hidden fixed inset-0 z-50">
     <div data-modal-close="delete-modal" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-    <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="w-full max-w-sm rounded-2xl bg-[#1e293b] border border-[#232f48] shadow-2xl p-6 text-center">
+    <div class="absolute inset-0 flex items-center justify-center p-0 md:p-4">
+        <div class="w-full max-w-sm rounded-2xl bg-[#1e293b] border border-[#232f48] shadow-2xl p-6 text-center modal-content-mobile">
             <div class="size-14 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span class="material-symbols-outlined text-3xl">delete_forever</span>
             </div>

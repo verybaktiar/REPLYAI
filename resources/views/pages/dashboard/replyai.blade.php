@@ -2,8 +2,20 @@
 <html class="dark" lang="id">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
     <title>{{ $title ?? 'Dashboard | ReplyAI' }}</title>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#030712">
+    <link rel="apple-touch-icon" href="/logo-round.png">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js');
+            });
+        }
+    </script>
     
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -78,7 +90,7 @@
             </header>
 
             <!-- SCROLLABLE CONTENT -->
-            <main class="flex-1 overflow-y-auto p-6 space-y-8 scroll-smooth custom-scrollbar">
+            <main class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 pb-24 lg:pb-12 space-y-8 scroll-smooth custom-scrollbar">
                 <div class="max-w-7xl mx-auto space-y-8 pb-12">
 
                     <!-- STEPPER / ONBOARDING [IF INCOMPLETE] -->
@@ -131,7 +143,7 @@
                     @endif
 
                     <!-- HIGH PERFORMANCE STATS -->
-                    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                         
                         <!-- 1. TOTAL MESSAGES -->
                         <div class="relative overflow-hidden bg-gray-900 border border-gray-800 rounded-3xl p-6 group hover:border-gray-700 transition-all duration-500">
@@ -242,7 +254,7 @@
                                 </div>
                             </div>
 
-                            <div class="h-[400px] relative">
+                            <div class="h-[300px] md:h-[400px] relative">
                                 @if(collect($trend7Days)->sum('messages') == 0)
                                 <div class="flex flex-col items-center justify-center h-full text-center relative">
                                     <div class="absolute inset-0 bg-blue-500/5 blur-[100px] rounded-full"></div>
@@ -433,6 +445,16 @@
     </script>
     @endif
 
+    <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(reg => console.log('SW Registered'))
+                    .catch(err => console.log('SW Error', err));
+            });
+        }
+    </script>
 </body>
 </html>
 

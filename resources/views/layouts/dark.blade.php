@@ -2,9 +2,20 @@
 <html class="dark" lang="en">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'ReplyAI') - Admin</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#111722">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(reg => console.log('SW registered!', reg))
+                    .catch(err => console.log('SW registration failed!', err));
+            });
+        }
+    </script>
     
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -38,6 +49,22 @@
         ::-webkit-scrollbar-track { background: #101622; }
         ::-webkit-scrollbar-thumb { background: #232f48; border-radius: 10px; }
         [x-cloak] { display: none !important; }
+
+        @media (max-width: 640px) {
+            .modal-content-mobile {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                max-width: none !important;
+                border-radius: 1.5rem 1.5rem 0 0 !important;
+                margin: 0 !important;
+                padding-bottom: env(safe-area-inset-bottom);
+                max-height: 92vh;
+                overflow-y: auto;
+            }
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        }
     </style>
     @stack('styles')
 </head>
@@ -124,7 +151,7 @@
             </header>
 
             <!-- Scrollable Content -->
-            <div class="flex-1 overflow-y-auto p-4 lg:p-10 scroll-smooth custom-scrollbar">
+            <div class="flex-1 overflow-y-auto p-4 lg:p-10 pb-24 lg:pb-10 scroll-smooth custom-scrollbar">
                 <div class="max-w-7xl mx-auto">
                     @yield('content')
                 </div>

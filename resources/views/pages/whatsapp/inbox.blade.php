@@ -2,9 +2,17 @@
 <html class="dark" lang="en">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>WhatsApp Inbox - REPLYAI</title>
+    <link rel="manifest" href="/manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js');
+            });
+        }
+    </script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -363,12 +371,47 @@
                         </template>
 
                         <template x-for="msg in messages" :key="msg.id">
-                            <!-- (existing message loop content) -->
+                            <div class="flex flex-col" :class="msg.direction === 'incoming' ? 'items-start' : 'items-end'">
+                                <div class="max-w-[85%] sm:max-w-[75%] md:max-w-[70%]">
+                                    <!-- Bubble Message -->
+                                    <div 
+                                        class="relative px-4 py-2.5 rounded-2xl shadow-sm"
+                                        :class="msg.direction === 'incoming' 
+                                            ? 'bg-gray-800 text-white rounded-tl-none border border-gray-700' 
+                                            : 'bg-primary text-white rounded-tr-none'"
+                                    >
+                                        <!-- Image content support -->
+                                        <template x-if="msg.type === 'image'">
+                                            <div class="mb-2">
+                                                <img :src="msg.message" class="rounded-lg max-w-full h-auto cursor-pointer" @click="window.open(msg.message, '_blank')">
+                                            </div>
+                                        </template>
+                                        <template x-if="msg.type !== 'image'">
+                                            <p class="text-sm md:text-base whitespace-pre-wrap break-words leading-relaxed" x-text="msg.message"></p>
+                                        </template>
+
+                                        <div class="flex justify-end items-center gap-1 mt-1 opacity-50">
+                                            <span class="text-[9px] font-medium" x-text="msg.time"></span>
+                                            <template x-if="msg.direction === 'outgoing'">
+                                                <span class="material-symbols-outlined text-[14px]" :class="msg.status === 'read' ? 'text-blue-400 filled' : ''" x-text="msg.status === 'read' ? 'done_all' : 'done'"></span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Bot Badge (under bubble) -->
+                                    <template x-if="msg.is_bot_reply">
+                                        <div class="flex items-center gap-1 mt-1 opacity-40 px-2" :class="msg.direction === 'incoming' ? 'justify-start' : 'justify-end'">
+                                            <span class="material-symbols-outlined text-[10px]">smart_toy</span>
+                                            <span class="text-[9px] uppercase tracking-tighter font-bold">Respon AI</span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
                         </template>
                         
                         <!-- Typing Indicator (shown when isTyping is true) -->
                         <div x-show="isTyping" x-cloak class="flex items-start">
-                            <div class="bg-surface-dark rounded-2xl rounded-tl-sm border border-border-dark">
+                            <div class="bg-surface-dark rounded-2xl rounded-tl-none border border-border-dark">
                                 <div class="typing-indicator">
                                     <span></span>
                                     <span></span>
@@ -379,7 +422,7 @@
                     </div>
 
                     <!-- Input Area -->
-                    <div class="p-4 bg-surface-dark border-t border-border-dark shrink-0 z-20">
+                    <div class="p-4 bg-surface-dark border-t border-border-dark shrink-0 z-20 pb-safe md:pb-4">
                         <div class="flex flex-col space-y-3 max-w-4xl mx-auto">
                             <!-- AI Suggestions -->
                             <template x-if="aiSuggestions.length > 0">
@@ -395,7 +438,27 @@
                             </template>
 
                             <!-- File Preview -->
-                            <!-- (existing file preview content) -->
+                            <template x-if="selectedFile">
+                                <div class="p-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3 overflow-hidden">
+                                        <template x-if="filePreview">
+                                            <img :src="filePreview" class="w-10 h-10 object-cover rounded-lg">
+                                        </template>
+                                        <template x-if="!filePreview">
+                                            <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-gray-400">description</span>
+                                            </div>
+                                        </template>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs text-white truncate" x-text="selectedFile.name"></p>
+                                            <p class="text-[10px] text-gray-500" x-text="(selectedFile.size / 1024).toFixed(1) + ' KB'"></p>
+                                        </div>
+                                    </div>
+                                    <button @click="clearFile()" class="p-2 hover:bg-white/10 rounded-full text-red-400 transition-colors">
+                                        <span class="material-symbols-outlined">close</span>
+                                    </button>
+                                </div>
+                            </template>
 
                             <div class="flex items-end gap-3 w-full">
                                 <!-- Hidden File Input -->

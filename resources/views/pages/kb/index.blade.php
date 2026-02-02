@@ -2,7 +2,7 @@
 <html class="dark" lang="en">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ __('kb.title') }} - REPLYAI</title>
     <!-- Google Fonts -->
@@ -36,6 +36,20 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #111722; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #324467; border-radius: 10px; }
+        
+        @media (max-width: 640px) {
+            .modal-content-mobile {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                max-width: none !important;
+                border-radius: 1.5rem 1.5rem 0 0 !important;
+                margin: 0 !important;
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen flex flex-col lg:flex-row">
@@ -91,14 +105,14 @@
 
           <!-- Import Section (Tabs) -->
           <div class="rounded-xl border border-border-dark bg-surface-dark overflow-hidden">
-              <div class="flex border-b border-border-dark">
-                  <button id="tab-url" class="flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors">
+              <div class="flex border-b border-border-dark overflow-x-auto custom-scrollbar no-scrollbar">
+                  <button id="tab-url" class="flex-none px-6 py-4 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors whitespace-nowrap">
                       <span class="material-symbols-outlined align-middle mr-1 text-[18px]">link</span> {{ __('kb.tab_url') }}
                   </button>
-                  <button id="tab-file" class="flex-1 px-4 py-3 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors">
+                  <button id="tab-file" class="flex-none px-6 py-4 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors whitespace-nowrap">
                       <span class="material-symbols-outlined align-middle mr-1 text-[18px]">upload_file</span> {{ __('kb.tab_file') }}
                   </button>
-                  <button id="tab-manual" class="flex-1 px-4 py-3 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors">
+                  <button id="tab-manual" class="flex-none px-6 py-4 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors whitespace-nowrap">
                       <span class="material-symbols-outlined align-middle mr-1 text-[18px]">edit_note</span> Input Manual
                   </button>
               </div>
@@ -294,8 +308,8 @@
 {{-- ================= MODAL DETAIL KB ================= --}}
 <div id="kb-detail-modal" class="hidden fixed inset-0 z-50">
   <div data-modal-close="kb-detail-modal" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-  <div class="absolute inset-0 flex items-center justify-center p-4">
-    <div class="w-full max-w-3xl rounded-2xl bg-[#1e2634] border border-[#324467] shadow-2xl flex flex-col max-h-[90vh]">
+  <div class="absolute inset-0 flex items-center justify-center p-0 md:p-4">
+    <div class="w-full max-w-3xl rounded-2xl bg-[#1e2634] border border-[#324467] shadow-2xl flex flex-col max-h-[90vh] modal-content-mobile">
       <div class="flex items-center justify-between px-6 py-4 border-b border-[#324467]">
         <div>
           <h3 id="kb-detail-title" class="text-lg font-bold text-white">{{ __('kb.modal_detail_title') }}</h3>
@@ -318,8 +332,8 @@
 {{-- ================= MODAL EDIT KB ================= --}}
 <div id="kb-edit-modal" class="hidden fixed inset-0 z-50">
   <div data-modal-close="kb-edit-modal" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-  <div class="absolute inset-0 flex items-center justify-center p-4">
-    <div class="w-full max-w-2xl rounded-2xl bg-[#1e2634] border border-[#324467] shadow-2xl">
+  <div class="absolute inset-0 flex items-center justify-center p-0 md:p-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-[#1e2634] border border-[#324467] shadow-2xl modal-content-mobile">
       <div class="flex items-center justify-between px-6 py-4 border-b border-[#324467]">
         <div>
           <h3 class="text-lg font-bold text-white">Edit Knowledge Base</h3>
@@ -382,8 +396,8 @@
 {{-- ================= MODAL TEST AI ================= --}}
 <div id="ai-test-modal" class="hidden fixed inset-0 z-50">
   <div data-modal-close="ai-test-modal" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-  <div class="absolute inset-0 flex items-center justify-center p-4">
-    <div class="w-full max-w-2xl rounded-2xl bg-[#1e2634] border border-[#324467] shadow-2xl">
+  <div class="absolute inset-0 flex items-center justify-center p-0 md:p-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-[#1e2634] border border-[#324467] shadow-2xl modal-content-mobile">
       <div class="flex items-center justify-between px-6 py-4 border-b border-[#324467]">
         <div>
           <h3 class="text-lg font-bold text-white">{{ __('kb.modal_test_title') }}</h3>
@@ -527,13 +541,13 @@ async function updateKbProfile(kbId, profileId) {
       panels.forEach(p => p?.classList.add('hidden'));
 
       if(mode === 'url'){
-          tabUrl.className = "flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors";
+          tabUrl.className = "flex-none px-6 py-4 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors whitespace-nowrap";
           panelUrl.classList.remove('hidden');
       } else if(mode === 'file') {
-          tabFile.className = "flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors";
+          tabFile.className = "flex-none px-6 py-4 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors whitespace-nowrap";
           panelFile.classList.remove('hidden');
       } else {
-          tabManual.className = "flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors";
+          tabManual.className = "flex-none px-6 py-4 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors whitespace-nowrap";
           panelManual.classList.remove('hidden');
       }
   }
