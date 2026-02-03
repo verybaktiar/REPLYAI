@@ -6,6 +6,7 @@ use App\Models\WaMessage;
 use App\Models\WhatsAppDevice;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class WhatsAppService
 {
@@ -126,6 +127,11 @@ class WhatsAppService
             ];
 
             if ($mediaUrl && $mediaType) {
+                // Fix SSL Loopback issue: Convert HTTPS to HTTP for local processing
+                if (Str::startsWith($mediaUrl, 'https://replai.my.id')) {
+                    $mediaUrl = str_replace('https://replai.my.id', 'http://replai.my.id', $mediaUrl);
+                }
+                
                 $payload['mediaUrl'] = $mediaUrl;
                 $payload['mediaType'] = $mediaType;
             }

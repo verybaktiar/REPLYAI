@@ -169,6 +169,9 @@ class WhatsAppController extends Controller
     public function destroy($sessionId): JsonResponse
     {
         try {
+            // Find device first so we can use it for logging/deletion
+            $device = WhatsAppDevice::withoutGlobalScopes()->where('session_id', $sessionId)->first();
+
             $this->waService->disconnect($sessionId);
             
             if ($device) {

@@ -88,6 +88,55 @@ class AutoReplyEngine
         }
     }
 
+    /**
+     * Proses semua percakapan yang statusnya 'bot_handling'.
+     * Dipanggil oleh RunAutoReplyJob via Scheduler.
+     */
+    public function runForAllConversations(): array
+    {
+        // Ambil semua percakapan aktif yang sedang ditangani bot
+        // Anda bisa sesuaikan filter 'updated_at' agar tidak memproses percakapan purba
+        $conversations = Conversation::where('status', 'bot_handling')
+            ->where('updated_at', '>=', now()->subHours(24)) 
+            ->get();
+
+        $stats = [
+            'total' => $conversations->count(),
+            'processed' => 0,
+            'errors' => 0,
+        ];
+
+        foreach ($conversations as $conversation) {
+            try {
+                // Ambil pesan terakhir dari user yang BELUM dibalas
+                // Logika sederhana: ambil pesan terakhir, cek apakah dari user
+                // dan belum ada log auto-reply untuk message_id tersebut.
+                $lastMessage = Message::where('conversation_id', $conversation->id)
+                    ->orderByDesc('id')
+                    ->first();
+
+                if (!$lastMessage) continue;
+
+                // Cek apakah pesan terakhir dari user/contact
+                if (!in_array($lastMessage->sender_type, ['user', 'contact'])) continue;
+
+                // Cek apakah sudah diproses sebelumnya
+                $alreadyProcessed = AutoReplyLog::where('message_id', $lastMessage->id)->exists();
+                if ($alreadyProcessed) continue;
+
+                // Proses pesan ini
+                $this->handleIncomingInstagramMessage($lastMessage, $conversation);
+                $stats['processed']++;
+
+            } catch (\Throwable $e) {
+                Log::error("AutoReplyEngine Error [ConvID: {$conversation->id}]: " . $e->getMessage());
+                $stats['errors']++;
+            }
+        }
+
+        return $stats;
+    }
+
     public function handleIncomingInstagramMessage(Message $message, Conversation $conversation): ?array
     {
         // ✅ jangan respon pesan agent/bot/echo
