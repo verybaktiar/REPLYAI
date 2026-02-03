@@ -80,50 +80,39 @@ class PaymentService
 
         $total = max(0, $amount - $discount);
 
-        // Buat payment record dengan retry logic (untuk handle race condition nomor invoice)
-        $attempts = 0;
-        $maxAttempts = 3;
-        $payment = null;
+        // Generate payment dalam transaction dengan locking untuk mencegah duplicate
+        return DB::transaction(function () use ($user, $plan, $amount, $discount, $total, $durationMonths, $promoCodeModel) {
+            
+            // Lock table/rows untuk memastikan urutan invoice
+            // Kita lock row terakhir untuk mencegah race condition pada generateInvoiceNumber
+            // Note: generateInvoiceNumber akan dipanggil di dalam transaction ini
+            // Namun agar aman, kita lock dulu record terakhir secara eksplisit
+            $lockQuery = Payment::orderBy('invoice_number', 'desc')->lockForUpdate()->first();
+            
+            $invoiceNumber = Payment::generateInvoiceNumber();
 
-        do {
-            try {
-                $payment = Payment::create([
-                    'invoice_number' => Payment::generateInvoiceNumber(),
-                    'user_id' => $user->id,
-                    'plan_id' => $plan->id,
-                    'amount' => $amount,
-                    'discount' => $discount,
-                    'total' => $total,
-                    'payment_method' => Payment::METHOD_MANUAL,
-                    'status' => Payment::STATUS_PENDING,
-                    'duration_months' => $durationMonths,
-                    'promo_code' => $promoCodeModel?->code,
-                    'expires_at' => now()->addHours(24), // Expired dalam 24 jam
-                    'metadata' => [
-                        'plan_name' => $plan->name,
-                        'plan_slug' => $plan->slug,
-                        'created_from' => 'checkout',
-                    ],
-                ]);
-                
-                break; // Berhasil, keluar dari loop
+            // Buat payment record
+            $payment = Payment::create([
+                'invoice_number' => $invoiceNumber,
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'amount' => $amount,
+                'discount' => $discount,
+                'total' => $total,
+                'payment_method' => Payment::METHOD_MANUAL,
+                'status' => Payment::STATUS_PENDING,
+                'duration_months' => $durationMonths,
+                'promo_code' => $promoCodeModel?->code,
+                'expires_at' => now()->addHours(24),
+                'metadata' => [
+                    'plan_name' => $plan->name,
+                    'plan_slug' => $plan->slug,
+                    'created_from' => 'checkout',
+                ],
+            ]);
 
-            } catch (\Illuminate\Database\QueryException $e) {
-                $errorCode = $e->errorInfo[1] ?? 0;
-                
-                // Jika error duplicate entry, kita retry
-                if ($errorCode == 1062) {
-                    $attempts++;
-                    if ($attempts >= $maxAttempts) throw $e;
-                    usleep(100000); // Wait 100ms before retry
-                    continue;
-                }
-                
-                throw $e;
-            }
-        } while ($attempts < $maxAttempts);
-
-        return $payment;
+            return $payment;
+        });
     }
 
     /**
