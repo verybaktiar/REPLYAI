@@ -152,6 +152,7 @@ class WhatsAppInboxController extends Controller
                 return [
                     'id' => $msg->id,
                     'direction' => $msg->direction,
+                    'is_from_me' => $msg->direction === 'outgoing',
                     'message' => $msg->message,
                     'type' => $msg->message_type,
                     'status' => $msg->status,
@@ -174,17 +175,21 @@ class WhatsAppInboxController extends Controller
     {
         $messages = WaMessage::where('phone_number', $phone)
             ->orderBy('created_at', 'desc')
-            ->take(10)
+            ->take(15)
             ->get()
             ->reverse()
             ->map(function($msg) {
                 return [
-                    'role' => $msg->direction === 'incoming' ? 'user' : 'assistant',
+                    'role' => ($msg->direction === 'incoming' || $msg->direction === 'inbound') ? 'user' : 'assistant',
                     'content' => $msg->message
                 ];
             })
             ->values()
             ->toArray();
+
+        if (empty($messages)) {
+            return response()->json(['summary' => 'Belum ada percakapan untuk diringkas.']);
+        }
 
         $aiService = app(\App\Services\AiAnswerService::class);
         $summary = $aiService->generateSummary($messages);
@@ -201,12 +206,12 @@ class WhatsAppInboxController extends Controller
     {
         $messages = WaMessage::where('phone_number', $phone)
             ->orderBy('created_at', 'desc')
-            ->take(6)
+            ->take(10)
             ->get()
             ->reverse()
             ->map(function($msg) {
                 return [
-                    'role' => $msg->direction === 'incoming' ? 'user' : 'assistant',
+                    'role' => ($msg->direction === 'incoming' || $msg->direction === 'inbound') ? 'user' : 'assistant',
                     'content' => $msg->message
                 ];
             })

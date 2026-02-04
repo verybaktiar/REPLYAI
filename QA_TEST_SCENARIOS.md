@@ -62,13 +62,21 @@ Sebelum memulai pengujian, pastikan lingkungan pengembangan berjalan dengan bena
 
 | ID | Skenario | Langkah Pengujian | Ekspektasi (Expected Result) |
 |----|----------|-------------------|------------------------------|
-| C01 | **Buka Detail Panel** | 1. Buka Inbox.<br>2. Klik ikon "Detail Kontak" (Dock Left) di header chat. | Panel kanan terbuka dengan animasi slide-in. Menampilkan tab "Catatan" dan "Label". |
-| C02 | **Tambah Catatan** | 1. Pilih tab "Catatan".<br>2. Ketik catatan internal.<br>3. Klik "Simpan". | Catatan muncul di list bawahnya dengan nama penulis dan waktu "Just now". |
-| C03 | **Lihat Label (Tags)** | 1. Pilih tab "Label". | Menampilkan daftar label yang sudah ditempel ke kontak ini (jika ada). |
-| C04 | **Pasang Label** | 1. Di tab "Label", lihat daftar "Tambah Label".<br>2. Klik salah satu label. | Label berpindah ke bagian "Active Tags" di atas. |
-| C05 | **Lepas Label** | 1. Klik ikon "X" pada label di bagian "Active Tags". | Label terhapus dari kontak dan kembali ke daftar pilihan di bawah. |
+| C01 | **Buka Detail Panel (Layout 3 Kolom)** | 1. Buka Inbox.<br>2. Klik salah satu chat.<br>3. Pastikan panel kanan (kolom ke-3) muncul atau klik ikon "Info" jika tertutup. | Layout menjadi 3 kolom: List Chat | Percakapan | CRM Panel. Panel menampilkan info kontak, tabs "Notes", "Tags", "AI Insight". |
+| C02 | **Tambah Catatan (Notes)** | 1. Pilih tab "Notes" di panel kanan.<br>2. Ketik catatan di input area.<br>3. Tekan Enter atau klik tombol kirim. | Catatan baru muncul di daftar list di bawahnya secara real-time. |
+| C03 | **Kelola Label (Tags)** | 1. Pilih tab "Tags".<br>2. Klik badge label yang tersedia di "Available Tags".<br>3. Klik ikon X pada label di "Active Tags". | Label berpindah antara Active dan Available tanpa reload halaman. |
+| C04 | **AI Insight (Generative AI)** | 1. Pilih tab "AI Insight".<br>2. Tunggu proses loading (animasi).<br>3. Cek hasil ringkasan dan saran. | **Ringkasan:** Menampilkan rangkuman percakapan terakhir (10-15 pesan).<br>**Saran:** Menampilkan 3 opsi balasan cepat yang relevan untuk agen.<br>*Note: Membutuhkan API Key Perplexity.* |
 
-### 5. Auto Reply Rules
+### 5. Data Integrity & Duplication - **FIXED**
+**Tujuan:** Memastikan tidak ada duplikasi kontak (LID vs Phone Number) dan tools perbaikan berfungsi.
+
+| ID | Skenario | Langkah Pengujian | Ekspektasi (Expected Result) |
+|----|----------|-------------------|------------------------------|
+| D01 | **Cek Duplikasi (Command)** | 1. Buka terminal.<br>2. Jalankan `php artisan wa:merge-duplicates --dry-run`. | Menampilkan jumlah percakapan LID yang terdeteksi dan kandidat merge. |
+| D02 | **Eksekusi Merge** | 1. Jalankan `php artisan wa:merge-duplicates`. | Percakapan LID digabungkan ke percakapan Phone Number utama. History chat LID pindah ke kontak utama. |
+| D03 | **Pencegahan Duplikasi Baru** | 1. Kirim pesan dari akun WA baru (simulasi webhook).<br>2. Cek database apakah terbuat double entry. | Sistem otomatis menormalisasi nomor HP dan mencegah pembuatan row duplikat jika kontak sudah ada. |
+
+### 6. Auto Reply Rules
 **Tujuan:** Memastikan logika balasan otomatis berjalan.
 
 | ID | Skenario | Langkah Pengujian | Ekspektasi (Expected Result) |
@@ -76,7 +84,7 @@ Sebelum memulai pengujian, pastikan lingkungan pengembangan berjalan dengan bena
 | R01 | Buat Rule Baru | 1. Menu **Rules** > Add New.<br>2. Keyword: "hallo", Reply: "Hai, ada yang bisa dibantu?". | Rule tersimpan di database. |
 | R02 | Tes Rule | 1. Kirim pesan "hallo" dari HP pelanggan. | Bot membalas otomatis "Hai, ada yang bisa dibantu?" dalam beberapa detik. |
 
-### 6. Knowledge Base (KB)
+### 7. Knowledge Base (KB)
 **Tujuan:** Memastikan artikel KB bisa dibuat untuk AI Context.
 
 | ID | Skenario | Langkah Pengujian | Ekspektasi (Expected Result) |
@@ -96,8 +104,9 @@ Daftar ini adalah fitur yang mungkin memerlukan perhatian di masa depan:
 
 ## ✅ Status Pengembangan
 
-1.  **CRM UI (Notes & Tags)**: ✅ **SELESAI**. Sudah ada di Inbox dengan panel samping.
+1.  **CRM UI (Notes & Tags)**: ✅ **SELESAI**. Sudah ada di Inbox dengan panel samping (3-Kolom).
 2.  **WhatsApp Stability**: ✅ **SELESAI**. Config `maxReconnectAttempts` sudah diubah ke `Infinity`.
 3.  **Queue & Real-time**: ✅ **SELESAI**. Berjalan normal.
+4.  **Duplicate Handling**: ✅ **SELESAI**. Command `wa:merge-duplicates` siap, webhook logic updated.
 
 Sistem siap untuk pengujian QA menyeluruh (User Acceptance Testing).

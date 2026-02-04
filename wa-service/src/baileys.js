@@ -157,13 +157,13 @@ async function startBaileys(sessionId) {
             });
 
             if (shouldReconnect) {
-                // Determine disconnect reason to avoid infinite loops on fatal errors
-                if (statusCode === DisconnectReason.connectionLost || statusCode === DisconnectReason.restartRequired || statusCode === DisconnectReason.timedOut) {
-                    setTimeout(() => {
-                        console.log(`[${sessionId}] 🔄 Attempting to reconnect...`);
-                        startBaileys(sessionId);
-                    }, config.reconnectInterval);
-                }
+                // ALWAYS reconnect unless logged out.
+                // We want to be aggressive to keep the connection alive.
+                console.log(`[${sessionId}] 🔄 Reconnecting due to: ${lastDisconnect?.error?.message || 'Unknown Error'}`);
+                setTimeout(() => {
+                    console.log(`[${sessionId}] 🔄 Attempting to reconnect...`);
+                    startBaileys(sessionId);
+                }, config.reconnectInterval);
             } else {
                 // Logged out
                 if (statusCode === DisconnectReason.loggedOut) {

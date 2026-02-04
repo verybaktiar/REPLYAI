@@ -30,11 +30,14 @@
                     colors: {
                         "primary": "#135bec",
                         "whatsapp": "#25D366",
+                        "whatsapp-dark": "#128C7E",
                         "background-light": "#f6f6f8",
-                        "background-dark": "#111722",
-                        "surface-dark": "#192233",
-                        "border-dark": "#324467",
-                        "text-secondary": "#92a4c9",
+                        "background-dark": "#0f172a",
+                        "surface-dark": "#1e293b",
+                        "border-dark": "#334155",
+                        "text-secondary": "#94a3b8",
+                        "bubble-in": "#334155",
+                        "bubble-out": "#059669",
                     },
                     fontFamily: { "display": ["Inter", "sans-serif"] },
                 },
@@ -44,24 +47,12 @@
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #324467; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475a80; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
         
-        /* Hide Alpine.js elements until initialized */
         [x-cloak] { display: none !important; }
         
-        /* Typing Indicator Animation */
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 12px 16px;
-        }
         .typing-indicator span {
-            width: 8px;
-            height: 8px;
-            background: #94a3b8;
-            border-radius: 50%;
             animation: typing 1.4s infinite ease-in-out;
         }
         .typing-indicator span:nth-child(1) { animation-delay: 0s; }
@@ -72,737 +63,566 @@
             30% { transform: translateY(-6px); opacity: 1; }
         }
         
-        /* Message hover actions */
-        .message-bubble-wrapper:hover .message-actions {
-            opacity: 1;
-        }
-        .message-actions {
-            opacity: 0;
-            transition: opacity 0.2s ease;
+        .message-bubble {
+            position: relative;
+            border-radius: 12px;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
         }
         
-        /* Smooth chat item transitions */
-        .chat-item {
-            transition: all 0.2s ease;
-        }
-        .chat-item:hover {
-            transform: translateX(4px);
+        .message-in {
+            border-top-left-radius: 0;
         }
         
-        /* Message animation */
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .message-out {
+            border-top-right-radius: 0;
         }
-        .message-enter {
-            animation: slideIn 0.3s ease-out;
-        }
-        
-        /* Read receipt blue checkmark */
-        .read-check {
-            color: #3b82f6;
-        }
-        
-        /* Pinned chat highlight */
-        .chat-item.pinned {
-            background: linear-gradient(135deg, rgba(37, 211, 102, 0.1) 0%, transparent 100%);
+
+        .chat-bg {
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-repeat: repeat;
+            opacity: 0.06;
         }
     </style>
 </head>
-<body class="bg-gray-950 font-display text-white antialiased overflow-hidden">
+<body class="bg-gray-950 font-display text-white antialiased overflow-hidden flex flex-col h-[100dvh]">
     
-<!-- ============================================= -->
-<!-- THE ROOT CAGE: h-[100dvh] + flex + overflow-hidden -->
-<!-- 100dvh fixes iOS address bar bug, overflow-hidden prevents double scroll -->
-<!-- ============================================= -->
-<div class="h-[100dvh] bg-gray-950 flex overflow-hidden" x-data="whatsappInbox()" x-init="init()">
+<!-- ROOT CONTAINER -->
+<div class="flex-1 min-h-0 bg-gray-950 flex overflow-hidden" x-data="whatsappInbox()" x-init="init()">
 
-    <!-- SIDEBAR (Left) - z-50 for mobile, w-64 fixed, flex-shrink-0 prevents compression -->
+    <!-- SIDEBAR (Dynamic Impersonation Padding) -->
     @include('components.sidebar')
     
-    <!-- MAIN WRAPPER (Chat List + Content) - flex-1 + min-w-0 for proper flex behavior -->
+    <!-- MAIN CONTENT -->
     <main class="flex-1 min-w-0 flex flex-row h-full overflow-hidden">
 
-        <!-- CHAT LIST (Middle) - w-80 fixed on desktop, full on mobile, flex-shrink-0 -->
-        <!-- Chat List (Master) -->
-        <div :class="activeChat ? 'hidden lg:flex' : 'flex'" class="w-full lg:w-96 flex-col border-r border-[#232f48] bg-[#0f172a] shrink-0 pt-20 lg:pt-0 {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
+        <!-- COLUMN 1: CHAT LIST (Fixed width 360px on desktop) -->
+        <div :class="activeChat ? 'hidden lg:flex' : 'flex'" class="w-full lg:w-[360px] flex-col border-r border-gray-800 bg-gray-900 shrink-0 {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
 
-            <!-- HEADER (h-16 fixed, flex-shrink-0) -->
-            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-800 bg-gray-900 flex-shrink-0">
+            <!-- Header -->
+            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-800 shrink-0 bg-gray-900">
                 <div class="flex items-center gap-2">
-                    <h2 class="text-lg font-semibold text-white">WhatsApp</h2>
-                    @include('components.page-help', [
-                        'title' => 'WhatsApp',
-                        'description' => 'Lihat dan balas pesan pelanggan dari WhatsApp.',
-                        'tips' => [
-                            'Pilih percakapan dari daftar di kiri',
-                            'Hijau = Bot aktif menjawab',
-                            'Merah = CS menangani manual',
-                            'Klik "Ambil Alih" untuk membalas sendiri',
-                            'Klik "Aktifkan Bot" untuk mengembalikan ke bot'
-                        ]
-                    ])
+                    <h2 class="text-lg font-bold text-white tracking-tight">Chats</h2>
+                    <div class="bg-blue-600/20 text-blue-400 text-xs px-2 py-0.5 rounded-full font-medium" x-text="conversations.length"></div>
                 </div>
-                <button @click="fetchConversations()" class="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors" title="Refresh">
-                    <span class="material-symbols-outlined text-xl">refresh</span>
-                </button>
+                <div class="flex gap-1">
+                    <button @click="fetchConversations()" class="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined text-xl">refresh</span>
+                    </button>
+                    <!-- Add Contact Button (Future) -->
+                    <!-- <button class="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined text-xl">add_comment</span>
+                    </button> -->
+                </div>
             </div>
             
-            <!-- SEARCH & FILTER (p-4, flex-shrink-0) -->
-            <div class="p-4 border-b border-gray-800 flex-shrink-0 space-y-3">
-                <div class="relative">
+            <!-- Search & Filters -->
+            <div class="p-3 border-b border-gray-800 space-y-3 shrink-0 bg-gray-900 z-10">
+                <!-- Search -->
+                <div class="relative group">
                     <input 
                         type="text" 
                         x-model="search"
-                        placeholder="Cari percakapan..." 
-                        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 placeholder-gray-500"
+                        placeholder="Search or start new chat" 
+                        class="w-full bg-gray-800/50 border border-gray-700 text-white rounded-lg pl-9 pr-4 py-2 text-sm focus:ring-1 focus:ring-whatsapp focus:border-whatsapp placeholder-gray-500 transition-all"
                     >
-                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-500 text-lg">search</span>
+                    <span class="material-symbols-outlined absolute left-2.5 top-2.5 text-gray-500 text-lg group-focus-within:text-whatsapp transition-colors">search</span>
                 </div>
                 
-                <!-- Device Filter Pills -->
+                <!-- Filter Tabs -->
+                <div class="flex gap-2">
+                    <button @click="activeTab = 'all'" 
+                            class="flex-1 py-1.5 text-xs font-medium rounded-md transition-colors"
+                            :class="activeTab === 'all' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-300'">
+                        All
+                    </button>
+                    <button @click="activeTab = 'unread'" 
+                            class="flex-1 py-1.5 text-xs font-medium rounded-md transition-colors relative"
+                            :class="activeTab === 'unread' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-300'">
+                        Unread
+                        <span x-show="unreadCount > 0" class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-whatsapp rounded-full border-2 border-gray-900"></span>
+                    </button>
+                    <button @click="activeTab = 'human'" 
+                            class="flex-1 py-1.5 text-xs font-medium rounded-md transition-colors"
+                            :class="activeTab === 'human' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-300'">
+                        Human
+                    </button>
+                </div>
+
+                <!-- Device Filter (Horizontal Scroll) -->
                 <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" x-show="devices.length > 0">
                     <button @click="filterDevice = null; fetchConversations()" 
-                            class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5"
-                            :class="!filterDevice ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'">
-                        <span class="material-symbols-outlined text-sm">devices</span>
-                        Semua
+                            class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-colors border border-transparent"
+                            :class="!filterDevice ? 'bg-whatsapp/10 text-whatsapp border-whatsapp/20' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'">
+                        All Devices
                     </button>
                     <template x-for="device in devices" :key="device.session_id">
                         <button @click="filterDevice = device.session_id; fetchConversations()"
-                                class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5"
-                                :class="filterDevice === device.session_id ? 'text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'"
-                                :style="filterDevice === device.session_id ? 'background-color:' + device.color : ''">
-                            <span class="w-2 h-2 rounded-full" :style="'background-color:' + device.color"></span>
-                            <span x-text="device.device_name" class="truncate max-w-24"></span>
+                                class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 border border-transparent"
+                                :class="filterDevice === device.session_id ? 'bg-gray-700 text-white border-gray-600' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'">
+                            <span class="w-1.5 h-1.5 rounded-full" :style="'background-color:' + device.color"></span>
+                            <span x-text="device.device_name" class="truncate max-w-[80px]"></span>
                         </button>
                     </template>
                 </div>
             </div>
 
-            <!-- CHAT LIST (flex-1 overflow-y-auto - ONLY this scrolls) -->
-            <div class="flex-1 overflow-y-auto">
-
+            <!-- Chat List Items -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <!-- Loading Skeleton -->
                 <template x-if="isLoadingConversations && conversations.length === 0">
                     <div class="p-4 space-y-4">
                         <template x-for="i in 5">
-                            <div class="animate-pulse flex space-x-4">
-                                <div class="rounded-full bg-white/5 h-12 w-12"></div>
+                            <div class="animate-pulse flex space-x-3">
+                                <div class="rounded-full bg-gray-800 h-12 w-12 shrink-0"></div>
                                 <div class="flex-1 space-y-2 py-1">
-                                    <div class="h-2 bg-white/5 rounded w-3/4"></div>
-                                    <div class="h-2 bg-white/5 rounded w-1/2"></div>
+                                    <div class="h-2 bg-gray-800 rounded w-3/4"></div>
+                                    <div class="h-2 bg-gray-800 rounded w-1/2"></div>
                                 </div>
                             </div>
                         </template>
                     </div>
                 </template>
 
+                <!-- Empty State -->
+                <template x-if="!isLoadingConversations && filteredConversations.length === 0">
+                    <div class="p-8 text-center flex flex-col items-center justify-center h-full text-gray-500">
+                        <span class="material-symbols-outlined text-4xl mb-2 opacity-50">forum</span>
+                        <p class="text-sm">No conversations found</p>
+                    </div>
+                </template>
+
+                <!-- List -->
                 <template x-for="chat in filteredConversations" :key="chat.phone_number">
                     <div 
                         @click="selectChat(chat)"
-                        class="chat-item p-4 border-b border-border-dark cursor-pointer transition-colors relative"
-                        :class="activeChat?.phone_number === chat.phone_number ? 'bg-white/10' : 'hover:bg-white/5'"
+                        class="p-3 cursor-pointer transition-colors relative hover:bg-gray-800/50 group border-b border-gray-800/50"
+                        :class="activeChat?.phone_number === chat.phone_number ? 'bg-gray-800 border-l-2 border-l-whatsapp' : 'border-l-2 border-l-transparent'"
                     >
-                        <div class="flex justify-between items-start">
-                            <div class="flex space-x-3 items-center overflow-hidden">
-                                <div class="flex-shrink-0 h-12 w-12 rounded-full bg-surface-dark border border-border-dark flex items-center justify-center text-text-secondary font-bold relative">
-                                    <span x-text="getInitials(chat.name)" class="text-lg"></span>
-                                    <!-- Status Indicator Dot -->
-                                    <span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#111722]"
-                                          :class="{
-                                              'bg-green-500': chat.status === 'bot_active',
-                                              'bg-red-500': chat.status === 'agent_handling',
-                                              'bg-yellow-500 animate-pulse': chat.status === 'idle'
-                                          }"></span>
+                        <div class="flex gap-3">
+                            <!-- Avatar -->
+                            <div class="relative shrink-0">
+                                <div class="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center text-gray-300 font-bold text-lg border border-gray-600">
+                                    <span x-text="getInitials(chat.name)"></span>
                                 </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex justify-between items-baseline mb-1">
-                                        <p class="text-sm font-semibold text-white truncate" x-text="chat.name"></p>
-                                        <span class="text-[10px] text-text-secondary ml-2 whitespace-nowrap" x-text="chat.last_message_time"></span>
-                                    </div>
-                                    <!-- Status Badge & Device Badge -->
-                                    <div class="flex items-center gap-2 mb-1 flex-wrap">
-                                        <!-- Device Badge -->
-                                        <span class="text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1" 
-                                              :style="'background-color:' + (chat.device_color || '#888888') + '20; color:' + (chat.device_color || '#888888')">
-                                            <span class="w-1.5 h-1.5 rounded-full" :style="'background-color:' + (chat.device_color || '#888888')"></span>
-                                            <span x-text="chat.device_name || 'Unknown'" class="truncate max-w-[80px]"></span>
-                                        </span>
-                                        <template x-if="chat.status === 'agent_handling'">
-                                            <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                                <span class="material-symbols-outlined text-[10px]">headset_mic</span>
-                                                CS
-                                            </span>
-                                        </template>
-                                        <template x-if="chat.status === 'idle' && chat.remaining_minutes">
-                                            <span class="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                                <span class="material-symbols-outlined text-[10px]">schedule</span>
-                                                <span x-text="chat.remaining_minutes + 'm'"></span>
-                                            </span>
-                                        </template>
-                                        <template x-if="chat.status === 'bot_active'">
-                                            <span class="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                                <span class="material-symbols-outlined text-[10px]">smart_toy</span>
-                                                Bot
-                                            </span>
-                                        </template>
-                                    </div>
-                                    <p class="text-xs text-text-secondary truncate" x-text="chat.last_message"></p>
+                                <!-- Status Badge (Bot/Human) -->
+                                <div class="absolute -bottom-1 -right-1 bg-gray-900 rounded-full p-0.5">
+                                    <span class="block w-3.5 h-3.5 rounded-full border-2 border-gray-900 flex items-center justify-center text-[8px]"
+                                          :class="{
+                                              'bg-whatsapp text-white': chat.status === 'bot_active',
+                                              'bg-amber-500 text-white': chat.status === 'agent_handling',
+                                              'bg-red-500 text-white': chat.status === 'idle'
+                                          }">
+                                          <span class="material-symbols-outlined text-[8px]" 
+                                                x-text="chat.status === 'bot_active' ? 'smart_toy' : 'person'"></span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="flex-1 min-w-0 flex flex-col justify-center">
+                                <div class="flex justify-between items-center mb-0.5">
+                                    <span class="font-medium text-white text-sm truncate" x-text="chat.name"></span>
+                                    <span class="text-[10px] text-gray-500 shrink-0 ml-2" x-text="chat.last_message_time"></span>
+                                </div>
+                                <div class="flex items-center justify-between gap-2">
+                                    <p class="text-xs text-gray-400 truncate flex-1" :class="chat.unread > 0 ? 'font-semibold text-white' : ''" x-text="chat.last_message"></p>
+                                    
+                                    <!-- Unread Badge -->
+                                    <template x-if="chat.unread > 0">
+                                        <span class="bg-whatsapp text-gray-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center" x-text="chat.unread"></span>
+                                    </template>
+                                    
+                                    <!-- Device Dot -->
+                                    <template x-if="chat.unread === 0">
+                                        <span class="w-2 h-2 rounded-full shrink-0" 
+                                              :style="'background-color:' + (chat.device_color || '#666')"
+                                              :title="chat.device_name"></span>
+                                    </template>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </template>
-                
-                <template x-if="conversations.length === 0 && !isLoadingConversations">
-                    <div class="p-8 text-center text-text-secondary">
-                        <p>Belum ada percakapan</p>
-                    </div>
-                </template>
             </div>
         </div>
 
-        <!-- CONTENT AREA (Right) - flex-1 + min-w-0 CRITICAL for text overflow -->
-        <!-- Chat Conversation (Detail) -->
-        <div :class="activeChat ? 'flex' : 'hidden lg:flex'" class="flex-1 flex-col bg-[#101622] relative pt-20 lg:pt-0 {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
-             <!-- Chat Background Pattern -->
-             <div class="absolute inset-0 z-0 opacity-[0.03]" style="background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');"></div>
+        <!-- COLUMN 2: CHAT AREA (Flex Grow) -->
+        <div :class="activeChat ? 'flex' : 'hidden lg:flex'" class="flex-1 flex-col bg-[#0b141a] relative min-w-0 {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
+            
+            <!-- Chat Background -->
+            <div class="absolute inset-0 z-0 chat-bg"></div>
 
             <template x-if="!activeChat">
-                <!-- EMPTY STATE: Centered content with icon -->
-                <div class="flex-1 flex flex-col items-center justify-center text-center p-8 z-10">
-                    <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mb-6">
-                        <span class="material-symbols-outlined text-5xl text-gray-500">chat</span>
+                <div class="flex-1 flex flex-col items-center justify-center z-10 text-center p-8">
+                    <div class="w-32 h-32 bg-gray-800/50 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm">
+                        <span class="material-symbols-outlined text-6xl text-gray-500">forum</span>
                     </div>
-                    <h3 class="text-xl font-semibold text-white">WhatsApp Inbox</h3>
-                    <p class="text-gray-400 mt-2 max-w-sm">Pilih percakapan dari daftar di sebelah kiri untuk mulai chat dan melihat riwayat pesan.</p>
+                    <h2 class="text-2xl font-bold text-gray-200 mb-2">WhatsApp for Web</h2>
+                    <p class="text-gray-400 max-w-md">Send and receive messages without keeping your phone online.<br>Use WhatsApp on up to 4 linked devices and 1 phone.</p>
+                    <div class="mt-8 flex items-center gap-2 text-xs text-gray-500">
+                        <span class="material-symbols-outlined text-sm">lock</span>
+                        End-to-end encrypted
+                    </div>
                 </div>
             </template>
 
             <template x-if="activeChat">
-                <div class="flex-1 flex flex-row h-full z-10 relative min-w-0">
-                    <div class="flex-1 flex flex-col h-full min-w-0 relative">
-                    <!-- CHAT HEADER (h-16 fixed, flex-shrink-0) -->
-                    <div class="h-16 flex items-center justify-between px-4 bg-gray-900 border-b border-gray-800 flex-shrink-0">
-                        <div class="flex items-center space-x-3 md:space-x-4">
-                            <!-- Back Button (Mobile Only) -->
-                            <button @click="activeChat = null; messages = []" 
-                                    class="md:hidden p-2 -ml-1 hover:bg-white/5 rounded-full text-text-secondary"
-                                    title="Kembali ke daftar chat">
+                <div class="flex-1 flex flex-col h-full z-10 relative">
+                    
+                    <!-- Chat Header -->
+                    <div class="h-16 px-4 py-2 bg-gray-800/90 backdrop-blur-md flex items-center justify-between border-b border-gray-700 shrink-0 z-20">
+                        <div class="flex items-center gap-3">
+                            <button @click="activeChat = null" class="lg:hidden p-1 text-gray-400 hover:text-white">
                                 <span class="material-symbols-outlined">arrow_back</span>
                             </button>
-                            <div class="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold">
+                            <div class="h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold border border-gray-600">
                                 <span x-text="getInitials(activeChat.name)"></span>
                             </div>
                             <div>
-                                <h3 class="font-bold text-white text-sm" x-text="activeChat.name"></h3>
-                                <p class="text-xs text-text-secondary" x-text="activeChat.formatted_phone"></p>
+                                <h3 class="font-semibold text-white text-sm" x-text="activeChat.name"></h3>
+                                <p class="text-xs text-gray-400 flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full" :class="activeChat.status === 'bot_active' ? 'bg-whatsapp' : 'bg-amber-500'"></span>
+                                    <span x-text="activeChat.status === 'bot_active' ? 'Bot Active' : 'Human Support'"></span>
+                                </p>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-1 md:space-x-2">
-                            <!-- Takeover Button (when bot is active) -->
-                            <button x-show="activeChat?.status === 'bot_active'" @click="takeoverChat()"
-                                    class="flex items-center gap-1 px-2 md:px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs md:text-sm font-medium transition-colors">
-                                <span class="material-symbols-outlined text-base">headset_mic</span>
-                                <span class="hidden sm:inline">Ambil Alih</span>
+
+                        <div class="flex items-center gap-2">
+                            <!-- Takeover/Handback Actions -->
+                            <button x-show="activeChat.status === 'bot_active'" @click="takeoverChat()" 
+                                    class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-xs font-medium transition-colors border border-gray-600">
+                                <span class="material-symbols-outlined text-sm">pan_tool</span>
+                                Takeover
                             </button>
-                            <!-- Handback Button (when CS is handling) -->
-                            <button x-show="activeChat?.status !== 'bot_active'" @click="handbackToBot()"
-                                    class="flex items-center gap-1 px-2 md:px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs md:text-sm font-medium transition-colors">
-                                <span class="material-symbols-outlined text-base">replay</span>
-                                <span class="hidden sm:inline">Aktifkan Bot</span>
+                            <button x-show="activeChat.status !== 'bot_active'" @click="handbackToBot()"
+                                    class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-whatsapp hover:bg-whatsapp-dark text-white rounded-md text-xs font-medium transition-colors">
+                                <span class="material-symbols-outlined text-sm">smart_toy</span>
+                                Auto-Reply
                             </button>
-                            <button @click="toggleDetailsPanel()" 
-                                    class="p-2 hover:bg-white/5 rounded-full text-text-secondary transition-colors"
-                                    :class="showDetailsPanel ? 'bg-white/10 text-white' : ''" 
-                                    title="Detail Kontak & CRM">
+                            
+                            <!-- Toggle CRM Panel -->
+                            <button @click="showDetailsPanel = !showDetailsPanel" 
+                                    class="p-2 rounded-lg transition-colors"
+                                    :class="showDetailsPanel ? 'bg-whatsapp text-white' : 'hover:bg-gray-700 text-gray-400'">
                                 <span class="material-symbols-outlined">dock_to_left</span>
                             </button>
                         </div>
                     </div>
-                    
-                    <!-- Agent Handling Banner -->
-                    <div x-show="activeChat?.status !== 'bot_active'" 
-                         class="bg-amber-500/10 border-b border-amber-500/30 px-3 md:px-4 py-2 flex items-center justify-between shrink-0 z-20 flex-wrap gap-2">
-                        <span class="text-xs md:text-sm text-amber-400 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-base">support_agent</span>
-                            <span class="hidden sm:inline">Bot saat ini <strong class="ml-1">nonaktif</strong> untuk percakapan ini.</span>
-                            <span class="sm:hidden">Bot nonaktif</span>
-                            <template x-if="activeChat?.remaining_minutes">
-                                <span class="text-[10px] md:text-xs opacity-75">(<span x-text="activeChat.remaining_minutes"></span>m)</span>
-                            </template>
-                        </span>
-                        <button @click="handbackToBot()" 
-                                class="bg-green-500 hover:bg-green-600 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-lg flex items-center gap-1 transition-colors font-medium">
-                            <span class="material-symbols-outlined text-sm">replay</span>
-                            <span class="hidden sm:inline">Aktifkan Bot Kembali</span>
-                            <span class="sm:hidden">Bot</span>
-                        </button>
-                    </div>
 
                     <!-- Messages Area -->
-                    <div 
-                        class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
-                        id="messages-container"
-                    >
-                        <!-- AI Insight Section -->
-                        <template x-if="aiSummary || isAiLoading">
-                            <div class="mb-4 bg-primary/5 border border-primary/20 rounded-2xl p-4 flex gap-4 transition-all duration-500">
-                                <div class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
-                                    <span class="material-symbols-outlined text-primary" :class="isAiLoading ? 'animate-spin' : ''">
-                                        <template x-if="isAiLoading">sync</template>
-                                        <template x-if="!isAiLoading">auto_awesome</template>
-                                    </span>
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-1 flex items-center gap-2">
-                                        AI Insight 
-                                        <span class="text-[9px] bg-primary text-white px-1.5 py-0.5 rounded">Pro</span>
-                                    </h4>
-                                    <template x-if="isAiLoading">
-                                        <div class="space-y-2">
-                                            <div class="h-2 bg-primary/10 rounded w-full animate-pulse"></div>
-                                            <div class="h-2 bg-primary/10 rounded w-2/3 animate-pulse"></div>
-                                        </div>
-                                    </template>
-                                    <template x-if="!isAiLoading && aiSummary">
-                                        <p class="text-xs text-slate-300 leading-relaxed italic" x-text="'&ldquo;' + aiSummary + '&rdquo;'"></p>
-                                    </template>
-                                </div>
-                                <button @click="fetchAiInsight()" class="p-1 hover:bg-primary/10 rounded-full text-primary/50 hover:text-primary shrink-0" title="Refresh Insight">
-                                    <span class="material-symbols-outlined text-sm">refresh</span>
-                                </button>
-                            </div>
-                        </template>
+                    <div id="messages-container" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
+                        <!-- Loading -->
+                        <div x-show="isLoadingMessages" class="flex justify-center py-8">
+                            <span class="material-symbols-outlined animate-spin text-whatsapp text-3xl">sync</span>
+                        </div>
 
+                        <!-- Messages Loop -->
                         <template x-for="msg in messages" :key="msg.id">
-                            <div class="flex flex-col" :class="msg.direction === 'incoming' ? 'items-start' : 'items-end'">
-                                <div class="max-w-[85%] sm:max-w-[75%] md:max-w-[70%]">
-                                    <!-- Bubble Message -->
-                                    <div 
-                                        class="relative px-4 py-2.5 rounded-2xl shadow-sm"
-                                        :class="msg.direction === 'incoming' 
-                                            ? 'bg-gray-800 text-white rounded-tl-none border border-gray-700' 
-                                            : 'bg-primary text-white rounded-tr-none'"
-                                    >
-                                        <!-- Image content support -->
-                                        <template x-if="msg.type === 'image'">
-                                            <div class="mb-2">
-                                                <img :src="msg.message" class="rounded-lg max-w-full h-auto cursor-pointer" @click="window.open(msg.message, '_blank')">
-                                            </div>
-                                        </template>
-                                        <template x-if="msg.type !== 'image'">
-                                            <p class="text-sm md:text-base whitespace-pre-wrap break-words leading-relaxed" x-text="msg.message"></p>
-                                        </template>
+                            <div class="flex flex-col w-full" :class="msg.is_from_me ? 'items-end' : 'items-start'">
+                                <div class="message-bubble max-w-[85%] sm:max-w-[65%] px-3 py-1.5 shadow-sm text-sm"
+                                     :class="msg.is_from_me ? 'bg-bubble-out text-white message-out' : 'bg-bubble-in text-white message-in'">
+                                    
+                                    <!-- Sender Name (Group context) -->
+                                    <template x-if="!msg.is_from_me && msg.push_name">
+                                        <div class="text-[10px] font-bold text-orange-400 mb-0.5" x-text="msg.push_name"></div>
+                                    </template>
 
-                                        <div class="flex justify-end items-center gap-1 mt-1 opacity-50">
-                                            <span class="text-[9px] font-medium" x-text="msg.time"></span>
-                                            <template x-if="msg.direction === 'outgoing'">
-                                                <span class="material-symbols-outlined text-[14px]" :class="msg.status === 'read' ? 'text-blue-400 filled' : ''" x-text="msg.status === 'read' ? 'done_all' : 'done'"></span>
+                                    <!-- Media -->
+                                    <template x-if="msg.media_url">
+                                        <div class="mb-1 mt-1">
+                                            <template x-if="msg.message_type === 'image'">
+                                                <img :src="msg.media_url" class="rounded-lg max-h-64 object-cover border border-white/10" @click="window.open(msg.media_url, '_blank')">
+                                            </template>
+                                            <template x-if="msg.message_type !== 'image'">
+                                                <a :href="msg.media_url" target="_blank" class="flex items-center gap-2 p-2 bg-black/20 rounded-lg hover:bg-black/30 transition">
+                                                    <span class="material-symbols-outlined">attach_file</span>
+                                                    <span class="truncate">View Attachment</span>
+                                                </a>
                                             </template>
                                         </div>
-                                    </div>
-                                    
-                                    <!-- Bot Badge (under bubble) -->
-                                    <template x-if="msg.is_bot_reply">
-                                        <div class="flex items-center gap-1 mt-1 opacity-40 px-2" :class="msg.direction === 'incoming' ? 'justify-start' : 'justify-end'">
-                                            <span class="material-symbols-outlined text-[10px]">smart_toy</span>
-                                            <span class="text-[9px] uppercase tracking-tighter font-bold">Respon AI</span>
-                                        </div>
                                     </template>
+
+                                    <!-- Text Message -->
+                                    <p class="whitespace-pre-wrap break-words leading-relaxed" x-text="msg.message"></p>
+                                    
+                                    <!-- Metadata -->
+                                    <div class="flex items-center justify-end gap-1 mt-1 select-none opacity-70">
+                                        <span class="text-[10px]" x-text="msg.time"></span>
+                                        <template x-if="msg.is_from_me">
+                                            <span class="material-symbols-outlined text-[12px]" 
+                                                :class="msg.status === 'read' ? 'text-blue-300' : 'text-gray-300'"
+                                                x-text="msg.status === 'read' ? 'done_all' : 'done'">
+                                            </span>
+                                        </template>
+                                    </div>
                                 </div>
+                                
+                                <!-- Bot Reply Indicator -->
+                                <template x-if="msg.is_bot_reply">
+                                    <div class="text-[10px] text-gray-500 mt-0.5 flex items-center gap-1 px-1">
+                                        <span class="material-symbols-outlined text-[10px]">smart_toy</span>
+                                        <span>AI Reply</span>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                         
-                        <!-- Typing Indicator (shown when isTyping is true) -->
-                        <div x-show="isTyping" x-cloak class="flex items-start">
-                            <div class="bg-surface-dark rounded-2xl rounded-tl-none border border-border-dark">
-                                <div class="typing-indicator">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                </div>
-                            </div>
+                        <!-- Typing Indicator -->
+                        <div x-show="isTyping" class="flex items-start">
+                             <div class="bg-bubble-in px-4 py-2 rounded-2xl rounded-tl-none typing-indicator flex gap-1">
+                                 <span class="w-1.5 h-1.5 bg-gray-400 rounded-full block"></span>
+                                 <span class="w-1.5 h-1.5 bg-gray-400 rounded-full block"></span>
+                                 <span class="w-1.5 h-1.5 bg-gray-400 rounded-full block"></span>
+                             </div>
                         </div>
                     </div>
 
                     <!-- Input Area -->
-                    <div class="p-4 bg-surface-dark border-t border-border-dark shrink-0 z-20 pb-safe md:pb-4">
-                        <div class="flex flex-col space-y-3 max-w-4xl mx-auto">
-                            <!-- AI Suggestions -->
-                            <template x-if="aiSuggestions.length > 0">
-                                <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                                    <template x-for="sug in aiSuggestions" :key="sug">
-                                        <button @click="newMessage = sug; aiSuggestions = []" 
-                                                class="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-primary/50 hover:bg-primary/10 text-[11px] text-slate-300 hover:text-primary rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5">
-                                            <span class="material-symbols-outlined text-sm opacity-50">magic_button</span>
-                                            <span x-text="sug"></span>
-                                        </button>
-                                    </template>
-                                </div>
-                            </template>
+                    <div class="min-h-[64px] bg-gray-800/90 backdrop-blur-md px-4 py-3 flex items-end gap-3 border-t border-gray-700 shrink-0 z-20">
+                        <!-- Attachment -->
+                        <button @click="$refs.fileInput.click()" class="p-2 text-gray-400 hover:text-gray-300 rounded-full hover:bg-gray-700 transition-colors mb-0.5">
+                            <span class="material-symbols-outlined text-xl">attach_file</span>
+                        </button>
+                        <input type="file" x-ref="fileInput" class="hidden" @change="selectedFile = $event.target.files[0]">
 
-                            <!-- File Preview -->
+                        <!-- Input Field -->
+                        <div class="flex-1 bg-gray-700/50 rounded-xl flex items-center border border-gray-600 focus-within:border-gray-500 focus-within:bg-gray-700 transition-all">
+                            <!-- Selected File Preview -->
                             <template x-if="selectedFile">
-                                <div class="p-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between gap-3">
-                                    <div class="flex items-center gap-3 overflow-hidden">
-                                        <template x-if="filePreview">
-                                            <img :src="filePreview" class="w-10 h-10 object-cover rounded-lg">
-                                        </template>
-                                        <template x-if="!filePreview">
-                                            <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                                                <span class="material-symbols-outlined text-gray-400">description</span>
-                                            </div>
-                                        </template>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-xs text-white truncate" x-text="selectedFile.name"></p>
-                                            <p class="text-[10px] text-gray-500" x-text="(selectedFile.size / 1024).toFixed(1) + ' KB'"></p>
-                                        </div>
-                                    </div>
-                                    <button @click="clearFile()" class="p-2 hover:bg-white/10 rounded-full text-red-400 transition-colors">
-                                        <span class="material-symbols-outlined">close</span>
+                                <div class="px-3 py-1 flex items-center gap-2 border-r border-gray-600 mr-2">
+                                    <span class="text-xs text-white truncate max-w-[100px]" x-text="selectedFile.name"></span>
+                                    <button @click="clearFile()" class="text-gray-400 hover:text-red-400">
+                                        <span class="material-symbols-outlined text-sm">close</span>
                                     </button>
                                 </div>
                             </template>
-
-                            <div class="flex items-end gap-3 w-full">
-                                <!-- Hidden File Input -->
-                                <input 
-                                    type="file" 
-                                    x-ref="fileInput" 
-                                    class="hidden" 
-                                    @change="handleFileSelect"
-                                    accept="image/*,video/*,application/pdf"
-                                >
-                                
-                                <!-- Attach Button -->
-                                <button 
-                                    @click="$refs.fileInput.click()"
-                                    class="p-3 text-text-secondary hover:text-white rounded-full hover:bg-white/5 transition-colors shrink-0"
-                                    title="Attach File"
-                                >
-                                    <span class="material-symbols-outlined">attach_file</span>
-                                </button>
-                                
-                                <!-- Text Input -->
-                                <div class="flex-1 bg-[#111722] rounded-2xl border border-border-dark focus-within:border-whatsapp transition-colors min-w-0">
-                                    <textarea 
-                                        x-model="newMessage"
-                                        @keydown.enter.prevent="sendMessage()"
-                                        rows="1" 
-                                        placeholder="Ketik pesan..." 
-                                        class="w-full bg-transparent border-none focus:ring-0 text-white placeholder-text-secondary py-3 px-4 text-sm max-h-32 resize-none"
-                                        style="min-height: 48px;"
-                                    ></textarea>
-                                </div>
-                                
-                                <!-- Send Button -->
-                                <button 
-                                    @click="sendMessage()"
-                                    :disabled="(!newMessage.trim() && !selectedFile) || isSending"
-                                    class="p-3 bg-whatsapp text-white rounded-full hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shrink-0 flex items-center justify-center w-12 h-12"
-                                >
-                                    <template x-if="!isSending">
-                                        <span class="material-symbols-outlined filled">send</span>
-                                    </template>
-                                    <template x-if="isSending">
-                                        <span class="material-symbols-outlined animate-spin text-xl">sync</span>
-                                    </template>
-                                </button>
-                            </div>
+                            
+                            <textarea 
+                                x-model="newMessage" 
+                                @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()"
+                                placeholder="Type a message" 
+                                class="w-full bg-transparent border-0 focus:ring-0 text-white placeholder-gray-400 text-sm py-3 px-4 resize-none max-h-32 custom-scrollbar"
+                                rows="1"
+                                style="min-height: 44px;"
+                            ></textarea>
                         </div>
+
+                        <!-- Send Button -->
+                        <button @click="sendMessage()" 
+                                :disabled="!newMessage.trim() && !selectedFile || isSending"
+                                class="p-3 bg-whatsapp hover:bg-whatsapp-dark disabled:opacity-50 disabled:hover:bg-whatsapp text-white rounded-full transition-all shadow-lg mb-0.5 group">
+                            <span x-show="!isSending" class="material-symbols-outlined text-xl group-hover:translate-x-0.5 transition-transform">send</span>
+                            <span x-show="isSending" class="material-symbols-outlined animate-spin text-xl">sync</span>
+                        </button>
                     </div>
+
                 </div>
+            </template>
+        </div>
+
+        <!-- COLUMN 3: CRM / DETAILS PANEL (Right Sidebar) -->
+        <div x-show="activeChat && showDetailsPanel" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="translate-x-full opacity-0"
+             x-transition:enter-end="translate-x-0 opacity-100"
+             class="w-[320px] bg-gray-900 border-l border-gray-800 flex flex-col shrink-0 {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
+             
+             <!-- CRM Header -->
+            <div class="h-16 flex items-center px-4 border-b border-gray-800 shrink-0 bg-gray-900">
+                <span class="font-bold text-gray-200">Contact Info</span>
+                <button @click="showDetailsPanel = false" class="ml-auto text-gray-400 hover:text-white lg:hidden">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
             </div>
 
-            <!-- Right Side: Details Panel -->
-            <div x-show="showDetailsPanel" 
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="translate-x-full"
-                 x-transition:enter-end="translate-x-0"
-                 x-transition:leave="transition ease-in duration-150"
-                 x-transition:leave-start="translate-x-0"
-                 x-transition:leave-end="translate-x-full"
-                 class="w-80 border-l border-gray-800 bg-gray-900 flex flex-col shrink-0 z-30 shadow-xl"
-                 style="display: none;">
-                 
-                <!-- Panel Header -->
-                <div class="h-16 flex items-center justify-between px-4 border-b border-gray-800 bg-gray-900 shrink-0">
-                    <h3 class="font-semibold text-white">Detail Kontak</h3>
-                    <button @click="toggleDetailsPanel()" class="text-gray-400 hover:text-white">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+                
+                <!-- Profile Card -->
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-gray-700 rounded-full mx-auto flex items-center justify-center text-2xl font-bold text-gray-300 mb-3 border-2 border-gray-800">
+                        <span x-text="getInitials(activeChat.name)"></span>
+                    </div>
+                    <h3 class="font-bold text-white text-lg" x-text="activeChat.name"></h3>
+                    <p class="text-gray-400 text-sm" x-text="activeChat.formatted_phone || activeChat.phone_number"></p>
+                    <div class="mt-2 flex justify-center gap-2">
+                         <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-gray-800 border border-gray-700 text-gray-400" x-text="activeChat.device_name"></span>
+                    </div>
                 </div>
 
                 <!-- Tabs -->
-                <div class="flex border-b border-gray-800 shrink-0">
-                    <button @click="activeTab = 'notes'" 
-                            class="flex-1 py-3 text-sm font-medium transition-colors relative"
-                            :class="activeTab === 'notes' ? 'text-blue-400' : 'text-gray-400 hover:text-gray-300'">
-                        Catatan
-                        <div x-show="activeTab === 'notes'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
-                    </button>
-                    <button @click="activeTab = 'tags'" 
-                            class="flex-1 py-3 text-sm font-medium transition-colors relative"
-                            :class="activeTab === 'tags' ? 'text-blue-400' : 'text-gray-400 hover:text-gray-300'">
-                        Label
-                        <div x-show="activeTab === 'tags'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
-                    </button>
-                </div>
-
-                <!-- Panel Content -->
-                <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                    
-                    <!-- NOTES TAB -->
-                    <div x-show="activeTab === 'notes'" class="space-y-4">
-                        <!-- Input Note -->
-                        <div class="space-y-2">
-                            <textarea x-model="newNote" 
-                                      placeholder="Tulis catatan internal..." 
-                                      class="w-full bg-gray-800 border-gray-700 rounded-lg text-sm text-white focus:ring-blue-500 focus:border-blue-500 min-h-[80px] resize-none"></textarea>
-                            <button @click="storeNote()" 
-                                    :disabled="!newNote.trim() || isSubmittingNote"
-                                    class="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2">
-                                <span x-show="isSubmittingNote" class="material-symbols-outlined animate-spin text-sm">sync</span>
-                                Simpan Catatan
-                            </button>
-                        </div>
-
-                        <!-- Notes List -->
-                        <div class="space-y-3">
-                            <template x-if="isLoadingNotes">
-                                <div class="animate-pulse space-y-3">
-                                    <div class="h-20 bg-gray-800 rounded-lg"></div>
-                                    <div class="h-20 bg-gray-800 rounded-lg"></div>
-                                </div>
-                            </template>
-
-                            <template x-for="note in notes" :key="note.id">
-                                <div class="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
-                                    <p class="text-sm text-gray-300 whitespace-pre-wrap" x-text="note.content"></p>
-                                    <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
-                                        <span x-text="note.author_name"></span>
-                                        <span x-text="note.created_at"></span>
-                                    </div>
-                                </div>
-                            </template>
-
-                            <template x-if="!isLoadingNotes && notes.length === 0">
-                                <p class="text-center text-gray-500 text-sm py-4">Belum ada catatan.</p>
-                            </template>
-                        </div>
+                <div x-data="{ tab: 'details' }" class="flex flex-col h-full">
+                    <div class="flex border-b border-gray-800 mb-4">
+                        <button @click="tab = 'details'" :class="tab === 'details' ? 'border-whatsapp text-whatsapp' : 'border-transparent text-gray-400 hover:text-gray-300'" class="flex-1 pb-2 text-xs font-medium border-b-2 transition-colors">Details</button>
+                        <button @click="tab = 'notes'" :class="tab === 'notes' ? 'border-whatsapp text-whatsapp' : 'border-transparent text-gray-400 hover:text-gray-300'" class="flex-1 pb-2 text-xs font-medium border-b-2 transition-colors">Notes</button>
+                        <button @click="tab = 'ai'" :class="tab === 'ai' ? 'border-whatsapp text-whatsapp' : 'border-transparent text-gray-400 hover:text-gray-300'" class="flex-1 pb-2 text-xs font-medium border-b-2 transition-colors">AI Insight</button>
                     </div>
 
-                    <!-- TAGS TAB -->
-                    <div x-show="activeTab === 'tags'" class="space-y-4">
-                        <!-- Active Tags -->
-                        <div class="flex flex-wrap gap-2">
-                            <template x-for="tag in tags" :key="tag.id">
-                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                                    <span x-text="tag.name"></span>
-                                    <button @click="detachTag(tag.id)" class="hover:text-white transition-colors">
-                                        <span class="material-symbols-outlined text-[14px]">close</span>
-                                    </button>
-                                </span>
-                            </template>
-                        </div>
-
-                        <hr class="border-gray-800">
-
-                        <!-- Available Tags -->
-                        <div class="space-y-2">
-                            <h4 class="text-xs font-semibold text-gray-400 uppercase">Tambah Label</h4>
-                            <div class="space-y-1">
-                                <template x-for="tag in availableTags" :key="tag.id">
-                                    <button @click="attachTag(tag.id)" 
-                                            x-show="!tags.find(t => t.id === tag.id)"
-                                            class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800 text-sm text-gray-300 flex items-center gap-2 transition-colors group">
-                                        <span class="material-symbols-outlined text-gray-500 group-hover:text-blue-400 text-lg">label</span>
+                    <!-- DETAILS TAB -->
+                    <div x-show="tab === 'details'" class="space-y-4">
+                        <!-- Tags Section -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs font-bold text-gray-500 uppercase">Tags</h4>
+                                <div class="relative" x-data="{ open: false }">
+                                    <button @click="open = !open" class="text-xs text-whatsapp hover:underline">+ Add</button>
+                                    
+                                    <!-- Tag Dropdown -->
+                                    <div x-show="open" @click.outside="open = false" class="absolute right-0 top-6 w-48 bg-gray-800 border border-gray-700 rounded shadow-lg z-50 p-1">
+                                        <template x-for="tag in availableTags" :key="tag.id">
+                                            <button @click="attachTag(tag.id); open = false" class="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-700 rounded block">
+                                                <span x-text="tag.name"></span>
+                                            </button>
+                                        </template>
+                                        <div x-show="availableTags.length === 0" class="px-3 py-2 text-xs text-gray-500 text-center">No tags available</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="tag in tags" :key="tag.id">
+                                    <span class="px-2 py-1 rounded bg-blue-500/20 text-blue-400 text-xs border border-blue-500/30 flex items-center gap-1">
                                         <span x-text="tag.name"></span>
-                                    </button>
+                                        <button @click="detachTag(tag.id)" class="hover:text-white"><span class="material-symbols-outlined text-[10px]">close</span></button>
+                                    </span>
                                 </template>
+                                <span x-show="tags.length === 0" class="text-xs text-gray-600 italic">No tags assigned</span>
                             </div>
                         </div>
                     </div>
 
+                    <!-- NOTES TAB -->
+                    <div x-show="tab === 'notes'" class="space-y-4">
+                         <div class="space-y-2">
+                             <textarea x-model="newNote" placeholder="Add a note..." class="w-full bg-gray-800 border-gray-700 rounded text-xs text-white p-2 focus:ring-whatsapp focus:border-whatsapp resize-none h-20"></textarea>
+                             <button @click="storeNote()" :disabled="isSubmittingNote || !newNote.trim()" class="w-full py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded text-xs text-white transition-colors">
+                                 Save Note
+                             </button>
+                         </div>
+                         
+                         <div class="space-y-3 mt-4 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                             <template x-if="isLoadingNotes">
+                                 <div class="text-center text-gray-500 text-xs py-2">Loading notes...</div>
+                             </template>
+                             <template x-for="note in notes" :key="note.id">
+                                 <div class="bg-gray-800/50 p-3 rounded border border-gray-800">
+                                     <p class="text-xs text-gray-300 mb-2 whitespace-pre-wrap" x-text="note.content"></p>
+                                     <div class="flex justify-between items-center text-[10px] text-gray-500">
+                                         <span x-text="note.author?.name || 'System'"></span>
+                                         <span x-text="new Date(note.created_at).toLocaleDateString()"></span>
+                                     </div>
+                                 </div>
+                             </template>
+                             <template x-if="!isLoadingNotes && notes.length === 0">
+                                 <div class="text-center text-gray-600 text-xs italic">No notes yet</div>
+                             </template>
+                         </div>
+                    </div>
+
+                    <!-- AI TAB -->
+                    <div x-show="tab === 'ai'" class="space-y-4">
+                        <button @click="fetchAiInsight()" class="w-full py-2 bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 rounded-lg text-xs font-medium border border-indigo-500/30 flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-sm">psychology</span>
+                            Analyze Conversation
+                        </button>
+
+                        <div x-show="isAiLoading" class="text-center py-4">
+                            <span class="material-symbols-outlined animate-spin text-indigo-500">sync</span>
+                        </div>
+
+                        <div x-show="aiSummary" class="bg-gray-800/50 rounded-lg p-3 border border-gray-800">
+                            <h4 class="text-xs font-bold text-gray-400 mb-2 uppercase">Summary</h4>
+                            <p class="text-xs text-gray-300 leading-relaxed" x-text="aiSummary"></p>
+                        </div>
+                        
+                        <div x-show="aiSuggestions.length > 0" class="space-y-2">
+                            <h4 class="text-xs font-bold text-gray-400 uppercase">Suggested Replies</h4>
+                            <template x-for="sug in aiSuggestions">
+                                <button @click="newMessage = sug; $refs.fileInput.focus()" class="w-full text-left p-2 bg-gray-800 hover:bg-gray-700 rounded border border-gray-700 text-xs text-gray-300 transition-colors">
+                                    <span x-text="sug"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
                 </div>
             </div>
-
-            </div>
-            </template>
         </div>
+
     </main>
-    
-    <!-- MODAL: Idle Notification Popup (z-50 highest z-index) -->
-    <div x-show="showIdleWarning" x-cloak
-         class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0">
-        <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 max-w-md mx-4 shadow-2xl"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span class="material-symbols-outlined text-yellow-400 text-2xl">schedule</span>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold text-white">⏰ Peringatan Idle</h3>
-                    <p class="text-sm text-gray-400">Chat belum dibalas</p>
-                </div>
-            </div>
-            <p class="text-gray-400 mb-6">
-                Kamu belum membalas chat dari <strong class="text-white" x-text="idleChat?.name"></strong> 
-                selama <span class="text-yellow-400 font-semibold" x-text="idleMinutes"></span> menit. 
-                Kembalikan ke Bot sekarang atau teruskan secara manual.
-            </p>
-            <div class="flex gap-3">
-                <button @click="handbackIdleChat()" 
-                        class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-lg">replay</span>
-                    Kembalikan ke Bot
-                </button>
-                <button @click="dismissIdleWarning()" 
-                        class="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2.5 rounded-lg font-medium transition-colors">
-                    Lanjutkan
-                </button>
-            </div>
-        </div>
-    </div>
-    
-</div><!-- END ROOT CAGE -->
 
+</div>
+
+<!-- ALPINE JS LOGIC -->
 <script>
     function whatsappInbox() {
         return {
             conversations: [],
-            messages: [],
             activeChat: null,
+            messages: [],
             search: '',
-            newMessage: '',
-            selectedFile: null,
-            filePreview: null,
+            filterDevice: null,
+            activeTab: 'all', // all, unread, human
+            
             isLoadingConversations: false,
             isLoadingMessages: false,
             isSending: false,
             isTyping: false,
-            pollInterval: null,
-            // AI Pro state
-            aiSummary: '',
-            aiSuggestions: [],
-            isAiLoading: false,
-            // Device filter state
-            devices: @json($devices ?? []),
-            filterDevice: null,
-            // Idle notification state
-            showIdleWarning: false,
-            idleChat: null,
-            idleMinutes: 0,
-            idleWarningThreshold: {{ $idleWarning ?? 30 }},
-            takeoverTimeout: {{ $takeoverTimeout ?? 60 }},
-
-            // CRM state
-            showDetailsPanel: false,
-            activeTab: 'notes',
+            
+            newMessage: '',
+            selectedFile: null,
+            
+            // CRM
+            showDetailsPanel: true,
             notes: [],
             newNote: '',
+            isLoadingNotes: false,
             isSubmittingNote: false,
             tags: [],
             availableTags: [],
-            isLoadingNotes: false,
             isLoadingTags: false,
+            
+            // AI
+            aiSummary: '',
+            aiSuggestions: [],
+            isAiLoading: false,
+
+            // Computed
+            get filteredConversations() {
+                let filtered = this.conversations;
+
+                // Search Filter
+                if (this.search) {
+                    const q = this.search.toLowerCase();
+                    filtered = filtered.filter(c => 
+                        c.name.toLowerCase().includes(q) || 
+                        c.phone_number.includes(q) ||
+                        (c.last_message && c.last_message.toLowerCase().includes(q))
+                    );
+                }
+                
+                // Tab Filter
+                if (this.activeTab === 'unread') {
+                    filtered = filtered.filter(c => c.unread > 0);
+                } else if (this.activeTab === 'human') {
+                    filtered = filtered.filter(c => c.status === 'agent_handling' || c.status === 'idle');
+                }
+
+                return filtered;
+            },
+
+            get unreadCount() {
+                return this.conversations.filter(c => c.unread > 0).length;
+            },
 
             init() {
                 this.fetchConversations();
+                this.fetchAvailableTags();
                 
                 // Real-time listener
-                if (window.Echo) {
-                    window.Echo.private('whatsapp.{{ auth()->id() }}')
-                        .listen('.message.received', (e) => {
-                            console.log('Real-time message received:', e.message);
-                            this.handleNewMessage(e.message);
-                        });
-                }
-
-                this.pollInterval = setInterval(() => {
-                    this.fetchConversations(false);
-                    if (this.activeChat) {
-                        this.fetchMessages(this.activeChat.phone_number, false);
-                        // Update active chat status from conversations
-                        const updated = this.conversations.find(c => c.phone_number === this.activeChat.phone_number);
-                        if (updated) {
-                            this.activeChat = {...this.activeChat, ...updated};
-                        }
-                    }
-                    // Check for idle chats
-                    this.checkIdleStatus();
-                }, 5000);
-            },
-
-            handleNewMessage(message) {
-                // Update conversations list
-                const convIndex = this.conversations.findIndex(c => c.phone_number === message.phone_number);
-                if (convIndex > -1) {
-                     const conv = this.conversations[convIndex];
-                     conv.last_message = message.message || (message.has_media ? 'Media' : '');
-                     conv.last_message_time = 'Baru saja';
-                     // Move to top
-                     this.conversations.splice(convIndex, 1);
-                     this.conversations.unshift(conv);
-                } else {
-                     this.fetchConversations(false);
-                }
-
-                // Append to active chat if open
-                if (this.activeChat && this.activeChat.phone_number === message.phone_number) {
-                    // Check if message already exists (prevent duplicates)
-                    if (!this.messages.find(m => m.id === message.id)) {
-                        this.messages.push(message);
-                        this.scrollToBottom();
-                    }
-                }
-            },
-
-            get filteredConversations() {
-                if (!this.search) return this.conversations;
-                const lower = this.search.toLowerCase();
-                return this.conversations.filter(c => 
-                    c.name.toLowerCase().includes(lower) || 
-                    c.phone_number.includes(lower) ||
-                    (c.last_message && c.last_message.toLowerCase().includes(lower))
-                );
-            },
-
-            getInitials(name) {
-                return name ? name.substring(0, 2).toUpperCase() : '?';
-            },
-
-            handleFileSelect(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                this.selectedFile = file;
-                
-                // Create preview for images
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        this.filePreview = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    this.filePreview = null;
-                }
-            },
-
-            clearFile() {
-                this.selectedFile = null;
-                this.filePreview = null;
-                this.$refs.fileInput.value = '';
+                window.Echo.private('whatsapp')
+                    .listen('NewWhatsAppMessage', (e) => {
+                        console.log('New Message:', e.message);
+                        this.handleNewMessage(e.message);
+                    });
             },
 
             async fetchConversations(showLoading = true) {
@@ -814,8 +634,10 @@
                     }
                     const response = await fetch(url);
                     const data = await response.json();
+                    
+                    // Simple diff to avoid redraw if same
                     if (JSON.stringify(this.conversations) !== JSON.stringify(data)) {
-                         this.conversations = data;
+                        this.conversations = data;
                     }
                 } catch (error) {
                     console.error('Error fetching conversations:', error);
@@ -824,36 +646,167 @@
                 }
             },
 
-            async fetchAiInsight() {
-                if (!this.activeChat) return;
-                this.isAiLoading = true;
-                this.aiSummary = '';
-                this.aiSuggestions = [];
-                try {
-                    const response = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/summary`);
-                    const data = await response.json();
-                    this.aiSummary = data.summary;
+            handleNewMessage(msg) {
+                // Ensure is_from_me property exists for UI logic
+                if (msg.direction && typeof msg.is_from_me === 'undefined') {
+                    msg.is_from_me = msg.direction === 'outgoing';
+                }
 
-                    const resSug = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/suggestions`);
-                    const dataSug = await resSug.json();
-                    this.aiSuggestions = dataSug.suggestions || [];
-                } catch (error) {
-                    console.error('Error fetching AI insight:', error);
-                } finally {
-                    this.isAiLoading = false;
+                // 1. Refresh conversations list to update order/last message
+                this.fetchConversations(false);
+                
+                // 2. If chat is open, append message
+                if (this.activeChat && 
+                    (this.activeChat.phone_number === msg.phone_number || 
+                     this.activeChat.session_id === msg.session_id && this.activeChat.phone_number === msg.remote_jid.split('@')[0])) {
+                    
+                    // Check if message already exists
+                    if (!this.messages.find(m => m.id === msg.id || m.wa_message_id === msg.wa_message_id)) {
+                        this.messages.push(msg);
+                        this.scrollToBottom();
+                        
+                        // Mark as read immediately if viewing
+                        // fetch(`/whatsapp/mark-read/${msg.id}`); 
+                    }
                 }
             },
 
-            // CRM Methods
-            async toggleDetailsPanel() {
-                this.showDetailsPanel = !this.showDetailsPanel;
-                if (this.showDetailsPanel && this.activeChat) {
+            getInitials(name) {
+                if (!name) return '?';
+                return name.substring(0, 2).toUpperCase();
+            },
+
+            formatTime(timestamp) {
+                if (!timestamp) return '';
+                const date = new Date(timestamp);
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            },
+
+            // ... (Copy existing methods: selectChat, fetchMessages, sendMessage, etc.)
+            
+            clearFile() {
+                this.selectedFile = null;
+                if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+            },
+
+            async selectChat(chat) {
+                if (this.activeChat?.phone_number === chat.phone_number) return;
+                this.activeChat = chat;
+                this.messages = [];
+                this.clearFile();
+                await this.fetchMessages(chat.phone_number);
+                this.scrollToBottom();
+                
+                // Auto fetch CRM data if panel is open
+                if (this.showDetailsPanel) {
                     this.fetchNotes();
                     this.fetchTags();
                     this.fetchAvailableTags();
                 }
             },
-            
+
+            async fetchMessages(phone, showLoading = true) {
+                if (showLoading) this.isLoadingMessages = true;
+                try {
+                    const response = await fetch(`/whatsapp/api/messages/${phone}`);
+                    const data = await response.json();
+                    this.messages = data;
+                    this.scrollToBottom();
+                } catch (error) {
+                    console.error('Error fetching messages:', error);
+                } finally {
+                    if (showLoading) this.isLoadingMessages = false;
+                }
+            },
+
+            scrollToBottom() {
+                this.$nextTick(() => {
+                    const container = document.getElementById('messages-container');
+                    if (container) {
+                        container.scrollTop = container.scrollHeight;
+                    }
+                });
+            },
+
+            async sendMessage() {
+                if (!this.newMessage.trim() && !this.selectedFile) return;
+                
+                const phone = this.activeChat.phone_number;
+                this.isSending = true;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('phone', phone);
+                    if (this.activeChat.session_id) {
+                        formData.append('session_id', this.activeChat.session_id);
+                    }
+                    
+                    if (this.newMessage.trim()) formData.append('message', this.newMessage);
+                    if (this.selectedFile) formData.append('file', this.selectedFile);
+
+                    const response = await fetch('{{ route("whatsapp.send") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.newMessage = '';
+                        this.clearFile();
+                        await this.fetchMessages(phone, false);
+                        
+                        // Simulate bot typing if active
+                        if (this.activeChat?.status === 'bot_active') {
+                            this.isTyping = true;
+                            setTimeout(() => { this.isTyping = false; }, 3000);
+                        }
+                    } else {
+                        alert('Failed: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error sending:', error);
+                    alert('Error sending message');
+                } finally {
+                    this.isSending = false;
+                }
+            },
+
+            // Takeover / Handback
+            async takeoverChat() {
+                if (!this.activeChat) return;
+                try {
+                    const response = await fetch(`/takeover/wa/${this.activeChat.phone_number}/takeover`, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        this.activeChat.status = 'agent_handling';
+                        this.fetchConversations(false);
+                    }
+                } catch (e) { console.error(e); }
+            },
+
+            async handbackToBot() {
+                if (!this.activeChat) return;
+                try {
+                    const response = await fetch(`/takeover/wa/${this.activeChat.phone_number}/handback`, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        this.activeChat.status = 'bot_active';
+                        this.fetchConversations(false);
+                    }
+                } catch (e) { console.error(e); }
+            },
+
+            // CRM Methods
             async fetchNotes() {
                 if (!this.activeChat) return;
                 this.isLoadingNotes = true;
@@ -886,13 +839,11 @@
             },
 
             async fetchTags() {
-                 if (!this.activeChat) return;
-                 this.isLoadingTags = true;
-                 try {
-                     const response = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/tags`);
-                     this.tags = await response.json();
-                 } catch (e) { console.error(e); }
-                 finally { this.isLoadingTags = false; }
+                if (!this.activeChat) return;
+                try {
+                    const response = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/tags`);
+                    this.tags = await response.json();
+                } catch (e) { console.error(e); }
             },
 
             async fetchAvailableTags() {
@@ -913,16 +864,13 @@
                         },
                         body: JSON.stringify({ tag_id: tagId })
                     });
-                    const data = await response.json();
-                    if (data.success) {
-                        this.fetchTags();
-                    }
+                    if ((await response.json()).success) this.fetchTags();
                 } catch (e) { console.error(e); }
             },
 
             async detachTag(tagId) {
                 if (!this.activeChat) return;
-                 try {
+                try {
                     const response = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/tags`, {
                         method: 'DELETE',
                         headers: {
@@ -931,196 +879,38 @@
                         },
                         body: JSON.stringify({ tag_id: tagId })
                     });
-                    const data = await response.json();
-                    if (data.success) {
-                        this.fetchTags();
-                    }
+                    if ((await response.json()).success) this.fetchTags();
                 } catch (e) { console.error(e); }
             },
-
-            async selectChat(chat) {
-                if (this.activeChat?.phone_number === chat.phone_number) return;
-                this.activeChat = chat;
-                this.messages = [];
-                this.clearFile(); // Clear file when switching chats
-                await this.fetchMessages(chat.phone_number);
-                this.scrollToBottom();
-                this.fetchAiInsight();
-                
-                if (this.showDetailsPanel) {
-                    this.fetchNotes();
-                    this.fetchTags();
-                    this.fetchAvailableTags();
-                }
-            },
-
-            async fetchMessages(phone, showLoading = true) {
-                if (showLoading) this.isLoadingMessages = true;
+            
+            async fetchAiInsight() {
+                if (!this.activeChat) return;
+                this.isAiLoading = true;
+                this.aiSummary = '';
+                this.aiSuggestions = [];
                 try {
-                    const response = await fetch(`/whatsapp/api/messages/${phone}`);
+                    const response = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/summary`);
                     const data = await response.json();
-                    const shouldScroll = this.messages.length !== data.length;
+                    this.aiSummary = data.summary;
                     
-                    if (JSON.stringify(this.messages) !== JSON.stringify(data)) {
-                        this.messages = data;
-                        if (shouldScroll && !showLoading) {
-                            this.scrollToBottom();
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error fetching messages:', error);
-                } finally {
-                    if (showLoading) this.isLoadingMessages = false;
-                }
+                    const resSug = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/suggestions`);
+                    const dataSug = await resSug.json();
+                    this.aiSuggestions = dataSug.suggestions || [];
+                } catch (e) { console.error(e); }
+                finally { this.isAiLoading = false; }
             },
 
-            async sendMessage() {
-                if (!this.newMessage.trim() && !this.selectedFile) return;
-                
-                const phone = this.activeChat.phone_number;
-                this.isSending = true;
-
-                try {
-                    const formData = new FormData();
-                    formData.append('phone', phone);
-                    // Add session_id to route message to correct device
-                    if (this.activeChat.session_id) {
-                        formData.append('session_id', this.activeChat.session_id);
-                    }
-                    
-                    if (this.newMessage.trim()) formData.append('message', this.newMessage);
-                    if (this.selectedFile) formData.append('file', this.selectedFile);
-
-                    const response = await fetch('{{ route("whatsapp.send") }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        body: formData
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        this.newMessage = '';
-                        this.clearFile();
-                        await this.fetchMessages(phone, false);
-                        this.scrollToBottom();
-                        
-                        // Show typing indicator if bot is active (simulating bot response)
-                        if (this.activeChat?.status === 'bot_active') {
-                            this.isTyping = true;
-                            this.scrollToBottom();
-                            // Hide after a few seconds (bot will respond)
-                            setTimeout(() => {
-                                this.isTyping = false;
-                            }, 3000);
-                        }
-                    } else {
-                        alert('Gagal mengirim pesan: ' + (result.error || 'Unknown error'));
-                    }
-                } catch (error) {
-                    console.error('Error sending message:', error);
-                    alert('Terjadi kesalahan saat mengirim pesan');
-                } finally {
-                    this.isSending = false;
-                }
-            },
-
-            scrollToBottom() {
-                this.$nextTick(() => {
-                    const container = document.getElementById('messages-container');
-                    if (container) {
-                        container.scrollTop = container.scrollHeight;
-                    }
+            // Device info for filter
+            get devices() {
+                const uniqueSessions = [...new Set(this.conversations.map(c => c.session_id))];
+                return uniqueSessions.map(sid => {
+                    const c = this.conversations.find(x => x.session_id === sid);
+                    return {
+                        session_id: sid,
+                        device_name: c.device_name || 'Unknown',
+                        color: c.device_color || '#888888'
+                    };
                 });
-            },
-
-            // Takeover Methods
-            async takeoverChat() {
-                if (!this.activeChat) return;
-                try {
-                    const response = await fetch(`/takeover/wa/${this.activeChat.phone_number}/takeover`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        }
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        this.activeChat.status = 'agent_handling';
-                        await this.fetchConversations(false);
-                    } else {
-                        alert('Gagal mengambil alih: ' + (result.error || 'Unknown error'));
-                    }
-                } catch (error) {
-                    console.error('Error taking over:', error);
-                    alert('Terjadi kesalahan saat mengambil alih chat');
-                }
-            },
-
-            async handbackToBot() {
-                if (!this.activeChat) return;
-                try {
-                    const response = await fetch(`/takeover/wa/${this.activeChat.phone_number}/handback`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        }
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        this.activeChat.status = 'bot_active';
-                        await this.fetchConversations(false);
-                    } else {
-                        alert('Gagal mengembalikan ke bot: ' + (result.error || 'Unknown error'));
-                    }
-                } catch (error) {
-                    console.error('Error handing back:', error);
-                    alert('Terjadi kesalahan saat mengembalikan ke bot');
-                }
-            },
-
-            // Idle check
-            checkIdleStatus() {
-                const agentChats = this.conversations.filter(c => c.status === 'agent_handling' || c.status === 'idle');
-                for (const chat of agentChats) {
-                    const warningThreshold = this.takeoverTimeout - this.idleWarningThreshold;
-                    if (chat.remaining_minutes !== null && chat.remaining_minutes <= warningThreshold) {
-                        this.showIdleWarning = true;
-                        this.idleChat = chat;
-                        this.idleMinutes = this.takeoverTimeout - chat.remaining_minutes;
-                        break;
-                    }
-                }
-            },
-
-            async handbackIdleChat() {
-                if (!this.idleChat) return;
-                try {
-                    const response = await fetch(`/takeover/wa/${this.idleChat.phone_number}/handback`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        }
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        await this.fetchConversations(false);
-                        if (this.activeChat?.phone_number === this.idleChat.phone_number) {
-                            this.activeChat.status = 'bot_active';
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error handing back idle chat:', error);
-                }
-                this.showIdleWarning = false;
-                this.idleChat = null;
-            },
-
-            dismissIdleWarning() {
-                this.showIdleWarning = false;
-                this.idleChat = null;
             }
         }
     }

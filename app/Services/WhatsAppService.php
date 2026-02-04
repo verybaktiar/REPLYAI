@@ -215,7 +215,7 @@ class WhatsAppService
                 'message_type' => $data['messageType'] ?? 'text',
                 'status' => 'read',
                 'user_id' => $userId,
-                'wa_timestamp' => isset($data['timestamp']) 
+                'wa_timestamp' => (isset($data['timestamp']) && is_numeric($data['timestamp']))
                     ? \Carbon\Carbon::createFromTimestamp($data['timestamp']) 
                     : now(),
             ]
