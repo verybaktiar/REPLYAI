@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\WaMessage;
 use App\Models\WaSession;
 use App\Models\WaConversation;
+use App\Models\WaConversationNote;
+use App\Models\Tag;
 use App\Models\WhatsAppDevice;
 use App\Models\AiTrainingExample;
 use Illuminate\Http\Request;
@@ -280,6 +282,119 @@ class WhatsAppInboxController extends Controller
             'stop_autofollowup' => $conv->stop_autofollowup,
             'message' => $conv->stop_autofollowup ? 'Auto-Follow Up dinonaktifkan untuk chat ini.' : 'Auto-Follow Up diaktifkan kembali.'
         ]);
+    }
+
+    /**
+     * CRM: Get notes for conversation
+     */
+    public function getNotes(string $phone): JsonResponse
+    {
+        $conversation = WaConversation::where('phone_number', $phone)->firstOrFail();
+        
+        $notes = $conversation->notes()
+            ->with('author:id,name')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($note) {
+                return [
+                    'id' => $note->id,
+                    'content' => $note->content,
+                    'author_name' => $note->author->name ?? 'System',
+                    'created_at' => $note->created_at->diffForHumans(),
+                    'timestamp' => $note->created_at->format('d M Y H:i'),
+                ];
+            });
+
+        return response()->json($notes);
+    }
+
+    /**
+     * CRM: Store a new note
+     */
+    public function storeNote(Request $request, string $phone): JsonResponse
+    {
+        $request->validate([
+            'content' => 'required|string|max:1000',
+        ]);
+
+        $conversation = WaConversation::firstOrCreate(
+            ['phone_number' => $phone],
+            ['user_id' => auth()->id()] // Ensure user_id is set if creating new
+        );
+
+        $note = $conversation->notes()->create([
+            'content' => $request->content,
+            'user_id' => auth()->id(),
+            'is_internal' => true,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'note' => [
+                'id' => $note->id,
+                'content' => $note->content,
+                'author_name' => auth()->user()->name,
+                'created_at' => 'Just now',
+                'timestamp' => now()->format('d M Y H:i'),
+            ]
+        ]);
+    }
+
+    /**
+     * CRM: Get tags for conversation
+     */
+    public function getTags(string $phone): JsonResponse
+    {
+        $conversation = WaConversation::where('phone_number', $phone)->first();
+        
+        if (!$conversation) {
+            return response()->json([]);
+        }
+
+        return response()->json($conversation->tags);
+    }
+
+    /**
+     * CRM: Attach tag to conversation
+     */
+    public function attachTag(Request $request, string $phone): JsonResponse
+    {
+        $request->validate([
+            'tag_id' => 'required|exists:tags,id',
+        ]);
+
+        $conversation = WaConversation::firstOrCreate(
+            ['phone_number' => $phone],
+            ['user_id' => auth()->id()]
+        );
+
+        $conversation->tags()->syncWithoutDetaching([$request->tag_id]);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * CRM: Detach tag from conversation
+     */
+    public function detachTag(Request $request, string $phone): JsonResponse
+    {
+        $request->validate([
+            'tag_id' => 'required|exists:tags,id',
+        ]);
+
+        $conversation = WaConversation::where('phone_number', $phone)->firstOrFail();
+        $conversation->tags()->detach($request->tag_id);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * CRM: Get all available tags for the user
+     */
+    public function getAvailableTags(): JsonResponse
+    {
+        $tags = Tag::orderBy('name')->get();
+        return response()->json($tags);
     }
 }
 

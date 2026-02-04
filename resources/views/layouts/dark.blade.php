@@ -23,26 +23,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#135bec",
-                        whatsapp: "#25D366",
-                        "background-dark": "#101622",
-                        "surface-dark": "#1a2230",
-                        "border-dark": "#232f48",
-                        "text-secondary": "#92a4c9",
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind & App JS -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <style>
         ::-webkit-scrollbar { width: 6px; }

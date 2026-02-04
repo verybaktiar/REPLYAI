@@ -8,6 +8,9 @@ use App\Http\Controllers\Admin\AdminAuthController;
 | Routes untuk Super Admin Panel
 */
 // Auth Routes (tidak perlu middleware)
+Route::get('/', function () {
+    return redirect()->route('admin.login');
+});
 Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
 Route::post('/login', [AdminAuthController::class, 'login']);
 Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
@@ -94,7 +97,7 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/settings', [App\Http\Controllers\Admin\SystemSettingController::class, 'update'])->name('admin.settings.update');
 
     // System Health
-    Route::get('/system-health', [App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('admin.system-health');
+    Route::get('/system-health', [App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('admin.system-health.index');
     Route::post('/system-health/cleanup-orphans', [App\Http\Controllers\Admin\SystemHealthController::class, 'cleanupOrphans'])->name('admin.system-health.cleanup-orphans');
     Route::post('/system-health/service-action', [App\Http\Controllers\Admin\SystemHealthController::class, 'manageService'])->name('admin.system-health.service-action');
     Route::get('/system-health/logs', [App\Http\Controllers\Admin\SystemHealthController::class, 'viewLogs'])->name('admin.system-health.logs');

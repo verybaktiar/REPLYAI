@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skenario Uji Coba QA - REPLYAI</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1e40af;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --sidebar-width: 280px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: white;
+            border-right: 1px solid var(--border-color);
+            padding: 2rem 1.5rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            list-style: none;
+        }
+
+        .nav-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #64748b;
+            display: block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background-color: #eff6ff;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 2rem 3rem;
+            max-width: 1200px;
+        }
+
+        .header {
+            margin-bottom: 3rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #0f172a;
+        }
+
+        .meta-info {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-new { background: #dbeafe; color: #1e40af; }
+        .badge-fixed { background: #d1fae5; color: #065f46; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+
+        section {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .step-box {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            margin: 0.5rem 0;
+            overflow-x: auto;
+        }
+
+        /* Tables */
+        .test-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .test-table th, .test-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .test-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .test-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .test-table td {
+            vertical-align: top;
+        }
+
+        .id-col {
+            font-family: monospace;
+            font-weight: 600;
+            color: #64748b;
+            width: 60px;
+        }
+
+        .scenario-col {
+            width: 20%;
+            font-weight: 600;
+        }
+
+        /* Status Section */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .status-card {
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-card.success {
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+        }
+
+        .status-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .success .status-icon { background: #dcfce7; color: #16a34a; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .main-content { margin-left: 0; padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="logo">✅ QA Report</div>
+        <ul class="nav-links">
+            <li><a href="#setup">🛠️ Persiapan Lingkungan</a></li>
+            <li><a href="#auth">1. Authentication</a></li>
+            <li><a href="#whatsapp">2. WhatsApp Connection</a></li>
+            <li><a href="#messaging">3. Messaging (Queue)</a></li>
+            <li><a href="#crm">4. CRM (Notes & Tags)</a></li>
+            <li><a href="#autorules">5. Auto Reply Rules</a></li>
+            <li><a href="#kb">6. Knowledge Base</a></li>
+            <li><a href="#issues">⚠️ Known Issues</a></li>
+            <li><a href="#status">✅ Status Pengembangan</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <div class="header">
+            <h1>Skenario Uji Coba (QA Test Scenarios)</h1>
+            <div class="meta-info">
+                <span>📅 2026-02-04</span>
+                <span>💻 Environment: Localhost</span>
+                <span class="badge badge-fixed">Status: Updated</span>
+            </div>
+            <p style="margin-top: 1rem; color: #64748b;">
+                Dokumen ini dirancang untuk Quality Assurance (QA) profesional guna memverifikasi fungsionalitas sistem REPLYAI secara menyeluruh.
+            </p>
+        </div>
+
+        <!-- Setup Section -->
+        <section id="setup">
+            <h2>🛠️ Persiapan Lingkungan (Setup)</h2>
+            <p style="margin-bottom: 1rem;">Pastikan lingkungan pengembangan berjalan dengan benar sebelum memulai tes.</p>
+            
+            <div class="step-box">
+                <p><strong>Langkah Otomatis:</strong></p>
+                <div class="code-block">./start-dev.bat</div>
+                <p style="margin-top: 1rem;"><strong>Verifikasi Terminal:</strong></p>
+                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li>✅ Laravel Server (Port 8000)</li>
+                    <li>✅ Queue Worker (Processing Jobs)</li>
+                    <li>✅ Reverb Server (Websockets)</li>
+                    <li>✅ Frontend Build (Vite)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Authentication -->
+        <section id="auth">
+            <h2>1. Authentication & Onboarding</h2>
+            <table class="test-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Skenario</th>
+                        <th>Langkah Pengujian</th>
+                        <th>Ekspektasi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="id-col">A01</td>
+                        <td class="scenario-col">Register Akun Baru</td>
+                        <td>1. Buka <code>/register</code><br>2. Isi form lengkap<br>3. Submit</td>
+                        <td>User berhasil login dan diarahkan ke Dashboard.</td>
+                    </tr>
+                    <tr>
+                        <td class="id-col">A02</td>
+                        <td class="scenario-col">Login</td>
+                        <td>1. Buka <code>/login</code><br>2. Masukkan kredensial valid</td>
+                        <td>Masuk ke Dashboard (<code>/dashboard</code>).</td>
+                    </tr>
+                    <tr>
+                        <td class="id-col">A03</td>
+                        <td class="scenario-col">Session Timeout</td>
+                        <td>1. Login<br>2. Biarkan idle selama 120 menit</td>
+                        <td>Sesi berakhir dan user diminta login kembali.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- WhatsApp Connection -->
+        <section id="whatsapp">
+            <h2>2. WhatsApp Connection</h2>
+            <table class="test-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Skenario</th>
+                        <th>Langkah Pengujian</th>
+                        <th>Ekspektasi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="id-col">W01</td>
+                        <td class="scenario-col">Tambah Device Baru</td>
+                        <td>1. Menu <strong>WhatsApp > Settings</strong><br>2. Klik "Add Device"<br>3. Input nama</td>
+                        <td>QR Code muncul < 5 detik. Status "Scanning".</td>
+                    </tr>
+                    <tr>
+                        <td class="id-col">W02</td>
+                        <td class="scenario-col">Scan QR Code</td>
+                        <td>1. Scan QR dengan HP</td>
+                        <td>Status berubah jadi "Connected". Profil muncul.</td>
+                    </tr>
+                    <tr>
+                        <td class="id-col">W04</td>
+                        <td class="scenario-col">Auto Reconnect <span class="badge badge-fixed">FIXED</span></td>
+                        <td>1. Matikan service Node.js/Internet</td>
+                        <td>Sistem reconnect tanpa batas (<code>Infinity</code>) sampai tersambung.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Messaging -->
+        <section id="messaging">
+            <h2>3. Messaging (Queue & Real-time) <span class="badge badge-new">NEW</span></h2>
+            <table class="test-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Skenario</th>
+                        <th>Langkah Pengujian</th>
+                        <th>Ekspektasi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="id-col">M01</td>
+                        <td class="scenario-col">Kirim Pesan (Text)</td>
+                        <td>1. Buka Inbox<br>2. Kirim pesan</td>
+                        <td>Pesan pending -> antrian -> terkirim (delay 1-4s).</td>
+                    </tr>
+                    <tr>
+                        <td class="id-col">M03</td>
+                        <td class="scenario-col">Terima Pesan (Real-time)</td>
+                        <td>1. Buka Inbox di browser<br>2. Kirim pesan DARI HP luar</td>
+                        <td>Pesan muncul <strong>seketika</strong> tanpa refresh.</td>
+                    </tr>
+                    <tr>
+                        <td class="id-col">M04</td>
+                        <td class="scenario-col">Queue Processing</td>
+                        <td>1. Cek terminal "Queue Worker"</td>
+                        <td>Log: <code>Processing: App\Jobs\SendMessageJob</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- CRM -->
+        <section id="crm">
+            <h2>4. CRM (Notes & Tags) <span class="badge badge-new">NEW</span></h2>
+            <table class="test-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Skenario</th>
+                        <th>Langkah Pengujian</th>
+                        <th>Ekspektasi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="id-col">C01</td>
+                        <td class="scenario-col">Buka Detail Panel</td>
+                        <td>1. Klik ikon "Detail Kontak" di header chat</td>
+                        <td>Panel kanan terbuka (Slide-in). Ada tab Catatan & Label.</td>
+                    </tr>
+                    <tr>
+                        <td class="id-col">C02</td>
+                        <td class="scenario-col">Tambah Catatan</td>
+                        <td>1. Tab "Catatan"<br>2. Ketik & Simpan</td>
+                        <td>Catatan muncul dengan waktu "Just now".</td>
+                    </tr>
+                    <tr>
+                        <td class="id-col">C04</td>
+                        <td class="scenario-col">Pasang Label</td>
+                        <td>1. Tab "Label"<br>2. Klik label tersedia</td>
+                        <td>Label pindah ke "Active Tags".</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Auto Rules -->
+        <section id="autorules">
+            <h2>5. Auto Reply Rules</h2>
+            <table class="test-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Skenario</th>
+                        <th>Langkah Pengujian</th>
+                        <th>Ekspektasi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="id-col">R01</td>
+                        <td class="scenario-col">Buat Rule Baru</td>
+                        <td>1. Menu Rules > Add New<br>2. Set Keyword & Reply</td>
+                        <td>Rule tersimpan aktif.</td>
+                    </tr>
+                    <tr>
+                        <td class="id-col">R02</td>
+                        <td class="scenario-col">Tes Rule</td>
+                        <td>1. Chat keyword dari HP luar</td>
+                        <td>Bot membalas otomatis.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Known Issues -->
+        <section id="issues">
+            <h2>⚠️ Known Issues</h2>
+            <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 1rem;">
+                <p><strong>1. Instagram Inbox</strong></p>
+                <p>Fitur ini ada di menu tapi belum integrasi penuh dengan sistem Queue baru.</p>
+                <p><em>Status: Pending Upgrade</em></p>
+            </div>
+        </section>
+
+        <!-- Status -->
+        <section id="status">
+            <h2>✅ Status Pengembangan</h2>
+            <div class="status-grid">
+                <div class="status-card success">
+                    <div class="status-icon">✓</div>
+                    <div>
+                        <strong>CRM UI (Notes & Tags)</strong>
+                        <div style="font-size: 0.85rem; color: #64748b;">Backend & Frontend Selesai</div>
+                    </div>
+                </div>
+                <div class="status-card success">
+                    <div class="status-icon">✓</div>
+                    <div>
+                        <strong>WhatsApp Stability</strong>
+                        <div style="font-size: 0.85rem; color: #64748b;">Auto-reconnect Fixed</div>
+                    </div>
+                </div>
+                <div class="status-card success">
+                    <div class="status-icon">✓</div>
+                    <div>
+                        <strong>Queue & Real-time</strong>
+                        <div style="font-size: 0.85rem; color: #64748b;">Berjalan Normal</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Smooth scrolling for sidebar links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Active link switching on scroll
+        window.addEventListener('scroll', () => {
+            let current = '';
+            document.querySelectorAll('section').forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            document.querySelectorAll('.nav-links a').forEach(li => {
+                li.classList.remove('active');
+                if (li.getAttribute('href').includes(current)) {
+                    li.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

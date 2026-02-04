@@ -186,12 +186,29 @@ class WhatsAppService
         $device = WhatsAppDevice::withoutGlobalScopes()->where('session_id', $sessionId)->first();
         $userId = $device?->user_id;
 
+        $phoneNumber = $data['from'];
+
+        // Fix: Normalize LID to Phone Number if possible to prevent duplicate conversations
+        // Heuristic: If phone number is >= 15 digits (LID usually 15), try to find matching conversation
+        if (strlen($phoneNumber) >= 15 && !str_contains($phoneNumber, '-') && !empty($data['pushName'])) {
+             $existing = \App\Models\WaConversation::withoutGlobalScopes()
+                ->where('user_id', $userId)
+                ->where('display_name', $data['pushName'])
+                ->whereRaw('LENGTH(phone_number) < 15')
+                ->first();
+                
+             if ($existing) {
+                 $phoneNumber = $existing->phone_number;
+                 Log::info("Normalized LID {$data['from']} to {$phoneNumber} for user {$userId}");
+             }
+        }
+
         $message = WaMessage::updateOrCreate(
             ['wa_message_id' => $data['messageId']],
             [
                 'session_id' => $sessionId,
                 'remote_jid' => $data['fromJid'],
-                'phone_number' => $data['from'],
+                'phone_number' => $phoneNumber,
                 'push_name' => $data['pushName'] ?? null,
                 'direction' => 'incoming',
                 'message' => $data['message'],

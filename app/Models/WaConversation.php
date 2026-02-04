@@ -47,6 +47,22 @@ class WaConversation extends Model
     const STATUS_IDLE = 'idle';
 
     /**
+     * Get the tags for the conversation.
+     */
+    public function tags(): \Illuminate\Database\Eloquent\Relations\MorphToMany
+    {
+        return $this->morphToMany(Tag::class, 'taggable');
+    }
+
+    /**
+     * Get the notes for the conversation.
+     */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(WaConversationNote::class, 'wa_conversation_id');
+    }
+
+    /**
      * Check if bot is active
      */
     public function isBotActive(): bool

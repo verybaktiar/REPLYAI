@@ -149,8 +149,9 @@ class Payment extends Model
         $year = date('Y');
         $prefix = "INV-{$year}-";
         
-        // Cari invoice terakhir yang menggunakan prefix tahun ini
-        $lastPayment = self::where('invoice_number', 'LIKE', $prefix . '%')
+        // Cari invoice terakhir yang menggunakan prefix tahun ini (GLOBAL, abaikan scope user)
+        $lastPayment = self::withoutGlobalScopes()
+                          ->where('invoice_number', 'LIKE', $prefix . '%')
                           ->orderBy('invoice_number', 'desc')
                           ->first();
         

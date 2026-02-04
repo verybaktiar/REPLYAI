@@ -1,6 +1,9 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
+import collapse from '@alpinejs/collapse';
 import ApexCharts from 'apexcharts';
+
+Alpine.plugin(collapse);
 
 // flatpickr
 import flatpickr from 'flatpickr';

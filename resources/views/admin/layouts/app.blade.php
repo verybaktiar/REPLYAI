@@ -145,8 +145,8 @@
                     <span class="font-medium">Activity Logs</span>
                 </a>
 
-                <a href="{{ route('admin.system-health') }}" 
-                   class="sidebar-link flex items-center gap-3 px-5 py-3 mx-2 rounded-lg {{ request()->routeIs('admin.system-health') ? 'active text-primary' : 'text-slate-300' }}">
+                <a href="{{ route('admin.system-health.index') }}" 
+                   class="sidebar-link flex items-center gap-3 px-5 py-3 mx-2 rounded-lg {{ request()->routeIs('admin.system-health.*') ? 'active text-primary' : 'text-slate-300' }}">
                     <span class="material-symbols-outlined text-xl">monitor_heart</span>
                     <span class="font-medium">System Health</span>
                 </a>

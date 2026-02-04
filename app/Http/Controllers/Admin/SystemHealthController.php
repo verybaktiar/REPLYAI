@@ -62,6 +62,15 @@ class SystemHealthController extends Controller
         $pm2Status = $this->healthService->getPm2Status();
         $systemPorts = $this->healthService->getSystemPorts();
 
+        // 5. Check Queue Worker & WA Service Status
+        $queueStatus = collect($pm2Status)->contains(function ($service) {
+            return $service['name'] === 'laravel-queue' && $service['status'] === 'online';
+        });
+
+        $waServiceStatus = collect($pm2Status)->contains(function ($service) {
+            return $service['name'] === 'wa-service' && $service['status'] === 'online';
+        });
+
         return view('admin.system-health', compact(
             'disconnectedWa', 
             'disconnectedIg', 
@@ -71,7 +80,9 @@ class SystemHealthController extends Controller
             'diskUsedPercent',
             'activeUsers24h',
             'pm2Status',
-            'systemPorts'
+            'systemPorts',
+            'queueStatus',
+            'waServiceStatus'
         ));
     }
 

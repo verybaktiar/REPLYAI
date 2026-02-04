@@ -14,7 +14,7 @@ export const config = {
 
     // Auto-reconnect settings
     reconnectInterval: 5000, // 5 seconds
-    maxReconnectAttempts: 5,
+    maxReconnectAttempts: Infinity, // Unlimited attempts to auto-heal connection
 
     // Message settings
     typingDelay: 1000, // Delay before sending (simulate typing)

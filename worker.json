@@ -1,0 +1,11 @@
+{
+    "apps": [
+        {
+            "name": "replyai-worker",
+            "script": "artisan",
+            "args": "queue:work --tries=3 --backoff=5",
+            "interpreter": "C:\\laragon\\bin\\php\\php-8.4.10-nts-Win32-vs17-x64\\php.exe",
+            "max_memory_restart": "200M"
+        }
+    ]
+}

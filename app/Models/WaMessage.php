@@ -12,6 +12,7 @@ class WaMessage extends Model
     
     protected $fillable = [
         'session_id',
+        'user_id',
         'wa_message_id',
         'remote_jid',
         'phone_number',

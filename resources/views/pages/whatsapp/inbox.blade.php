@@ -20,6 +20,7 @@
     <!-- Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
@@ -263,7 +264,7 @@
 
         <!-- CONTENT AREA (Right) - flex-1 + min-w-0 CRITICAL for text overflow -->
         <!-- Chat Conversation (Detail) -->
-        <div :class="activeChat ? 'flex' : 'hidden lg:flex'" class="flex-1 flex-col bg-[#101622] pt-20 lg:pt-0 {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
+        <div :class="activeChat ? 'flex' : 'hidden lg:flex'" class="flex-1 flex-col bg-[#101622] relative pt-20 lg:pt-0 {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
              <!-- Chat Background Pattern -->
              <div class="absolute inset-0 z-0 opacity-[0.03]" style="background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');"></div>
 
@@ -279,7 +280,8 @@
             </template>
 
             <template x-if="activeChat">
-                <div class="flex-1 flex flex-col h-full z-10 relative min-w-0">
+                <div class="flex-1 flex flex-row h-full z-10 relative min-w-0">
+                    <div class="flex-1 flex flex-col h-full min-w-0 relative">
                     <!-- CHAT HEADER (h-16 fixed, flex-shrink-0) -->
                     <div class="h-16 flex items-center justify-between px-4 bg-gray-900 border-b border-gray-800 flex-shrink-0">
                         <div class="flex items-center space-x-3 md:space-x-4">
@@ -310,8 +312,11 @@
                                 <span class="material-symbols-outlined text-base">replay</span>
                                 <span class="hidden sm:inline">Aktifkan Bot</span>
                             </button>
-                            <button class="p-2 hover:bg-white/5 rounded-full text-text-secondary">
-                                <span class="material-symbols-outlined">more_vert</span>
+                            <button @click="toggleDetailsPanel()" 
+                                    class="p-2 hover:bg-white/5 rounded-full text-text-secondary transition-colors"
+                                    :class="showDetailsPanel ? 'bg-white/10 text-white' : ''" 
+                                    title="Detail Kontak & CRM">
+                                <span class="material-symbols-outlined">dock_to_left</span>
                             </button>
                         </div>
                     </div>
@@ -508,6 +513,122 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Right Side: Details Panel -->
+            <div x-show="showDetailsPanel" 
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="translate-x-full"
+                 x-transition:enter-end="translate-x-0"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="translate-x-0"
+                 x-transition:leave-end="translate-x-full"
+                 class="w-80 border-l border-gray-800 bg-gray-900 flex flex-col shrink-0 z-30 shadow-xl"
+                 style="display: none;">
+                 
+                <!-- Panel Header -->
+                <div class="h-16 flex items-center justify-between px-4 border-b border-gray-800 bg-gray-900 shrink-0">
+                    <h3 class="font-semibold text-white">Detail Kontak</h3>
+                    <button @click="toggleDetailsPanel()" class="text-gray-400 hover:text-white">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex border-b border-gray-800 shrink-0">
+                    <button @click="activeTab = 'notes'" 
+                            class="flex-1 py-3 text-sm font-medium transition-colors relative"
+                            :class="activeTab === 'notes' ? 'text-blue-400' : 'text-gray-400 hover:text-gray-300'">
+                        Catatan
+                        <div x-show="activeTab === 'notes'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
+                    </button>
+                    <button @click="activeTab = 'tags'" 
+                            class="flex-1 py-3 text-sm font-medium transition-colors relative"
+                            :class="activeTab === 'tags' ? 'text-blue-400' : 'text-gray-400 hover:text-gray-300'">
+                        Label
+                        <div x-show="activeTab === 'tags'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
+                    </button>
+                </div>
+
+                <!-- Panel Content -->
+                <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                    
+                    <!-- NOTES TAB -->
+                    <div x-show="activeTab === 'notes'" class="space-y-4">
+                        <!-- Input Note -->
+                        <div class="space-y-2">
+                            <textarea x-model="newNote" 
+                                      placeholder="Tulis catatan internal..." 
+                                      class="w-full bg-gray-800 border-gray-700 rounded-lg text-sm text-white focus:ring-blue-500 focus:border-blue-500 min-h-[80px] resize-none"></textarea>
+                            <button @click="storeNote()" 
+                                    :disabled="!newNote.trim() || isSubmittingNote"
+                                    class="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2">
+                                <span x-show="isSubmittingNote" class="material-symbols-outlined animate-spin text-sm">sync</span>
+                                Simpan Catatan
+                            </button>
+                        </div>
+
+                        <!-- Notes List -->
+                        <div class="space-y-3">
+                            <template x-if="isLoadingNotes">
+                                <div class="animate-pulse space-y-3">
+                                    <div class="h-20 bg-gray-800 rounded-lg"></div>
+                                    <div class="h-20 bg-gray-800 rounded-lg"></div>
+                                </div>
+                            </template>
+
+                            <template x-for="note in notes" :key="note.id">
+                                <div class="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
+                                    <p class="text-sm text-gray-300 whitespace-pre-wrap" x-text="note.content"></p>
+                                    <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
+                                        <span x-text="note.author_name"></span>
+                                        <span x-text="note.created_at"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template x-if="!isLoadingNotes && notes.length === 0">
+                                <p class="text-center text-gray-500 text-sm py-4">Belum ada catatan.</p>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- TAGS TAB -->
+                    <div x-show="activeTab === 'tags'" class="space-y-4">
+                        <!-- Active Tags -->
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="tag in tags" :key="tag.id">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                                    <span x-text="tag.name"></span>
+                                    <button @click="detachTag(tag.id)" class="hover:text-white transition-colors">
+                                        <span class="material-symbols-outlined text-[14px]">close</span>
+                                    </button>
+                                </span>
+                            </template>
+                        </div>
+
+                        <hr class="border-gray-800">
+
+                        <!-- Available Tags -->
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-semibold text-gray-400 uppercase">Tambah Label</h4>
+                            <div class="space-y-1">
+                                <template x-for="tag in availableTags" :key="tag.id">
+                                    <button @click="attachTag(tag.id)" 
+                                            x-show="!tags.find(t => t.id === tag.id)"
+                                            class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800 text-sm text-gray-300 flex items-center gap-2 transition-colors group">
+                                        <span class="material-symbols-outlined text-gray-500 group-hover:text-blue-400 text-lg">label</span>
+                                        <span x-text="tag.name"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            </div>
             </template>
         </div>
     </main>
@@ -584,8 +705,29 @@
             idleWarningThreshold: {{ $idleWarning ?? 30 }},
             takeoverTimeout: {{ $takeoverTimeout ?? 60 }},
 
+            // CRM state
+            showDetailsPanel: false,
+            activeTab: 'notes',
+            notes: [],
+            newNote: '',
+            isSubmittingNote: false,
+            tags: [],
+            availableTags: [],
+            isLoadingNotes: false,
+            isLoadingTags: false,
+
             init() {
                 this.fetchConversations();
+                
+                // Real-time listener
+                if (window.Echo) {
+                    window.Echo.private('whatsapp.{{ auth()->id() }}')
+                        .listen('.message.received', (e) => {
+                            console.log('Real-time message received:', e.message);
+                            this.handleNewMessage(e.message);
+                        });
+                }
+
                 this.pollInterval = setInterval(() => {
                     this.fetchConversations(false);
                     if (this.activeChat) {
@@ -599,6 +741,30 @@
                     // Check for idle chats
                     this.checkIdleStatus();
                 }, 5000);
+            },
+
+            handleNewMessage(message) {
+                // Update conversations list
+                const convIndex = this.conversations.findIndex(c => c.phone_number === message.phone_number);
+                if (convIndex > -1) {
+                     const conv = this.conversations[convIndex];
+                     conv.last_message = message.message || (message.has_media ? 'Media' : '');
+                     conv.last_message_time = 'Baru saja';
+                     // Move to top
+                     this.conversations.splice(convIndex, 1);
+                     this.conversations.unshift(conv);
+                } else {
+                     this.fetchConversations(false);
+                }
+
+                // Append to active chat if open
+                if (this.activeChat && this.activeChat.phone_number === message.phone_number) {
+                    // Check if message already exists (prevent duplicates)
+                    if (!this.messages.find(m => m.id === message.id)) {
+                        this.messages.push(message);
+                        this.scrollToBottom();
+                    }
+                }
             },
 
             get filteredConversations() {
@@ -678,6 +844,100 @@
                 }
             },
 
+            // CRM Methods
+            async toggleDetailsPanel() {
+                this.showDetailsPanel = !this.showDetailsPanel;
+                if (this.showDetailsPanel && this.activeChat) {
+                    this.fetchNotes();
+                    this.fetchTags();
+                    this.fetchAvailableTags();
+                }
+            },
+            
+            async fetchNotes() {
+                if (!this.activeChat) return;
+                this.isLoadingNotes = true;
+                try {
+                    const response = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/notes`);
+                    this.notes = await response.json();
+                } catch (e) { console.error(e); }
+                finally { this.isLoadingNotes = false; }
+            },
+
+            async storeNote() {
+                if (!this.newNote.trim() || !this.activeChat) return;
+                this.isSubmittingNote = true;
+                try {
+                    const response = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/notes`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({ content: this.newNote })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.notes.unshift(data.note);
+                        this.newNote = '';
+                    }
+                } catch (e) { console.error(e); }
+                finally { this.isSubmittingNote = false; }
+            },
+
+            async fetchTags() {
+                 if (!this.activeChat) return;
+                 this.isLoadingTags = true;
+                 try {
+                     const response = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/tags`);
+                     this.tags = await response.json();
+                 } catch (e) { console.error(e); }
+                 finally { this.isLoadingTags = false; }
+            },
+
+            async fetchAvailableTags() {
+                try {
+                    const response = await fetch('{{ route("whatsapp.api.tags.index") }}');
+                    this.availableTags = await response.json();
+                } catch (e) { console.error(e); }
+            },
+
+            async attachTag(tagId) {
+                if (!this.activeChat) return;
+                try {
+                    const response = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/tags`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({ tag_id: tagId })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.fetchTags();
+                    }
+                } catch (e) { console.error(e); }
+            },
+
+            async detachTag(tagId) {
+                if (!this.activeChat) return;
+                 try {
+                    const response = await fetch(`/whatsapp/api/conversations/${this.activeChat.phone_number}/tags`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({ tag_id: tagId })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.fetchTags();
+                    }
+                } catch (e) { console.error(e); }
+            },
+
             async selectChat(chat) {
                 if (this.activeChat?.phone_number === chat.phone_number) return;
                 this.activeChat = chat;
@@ -686,6 +946,12 @@
                 await this.fetchMessages(chat.phone_number);
                 this.scrollToBottom();
                 this.fetchAiInsight();
+                
+                if (this.showDetailsPanel) {
+                    this.fetchNotes();
+                    this.fetchTags();
+                    this.fetchAvailableTags();
+                }
             },
 
             async fetchMessages(phone, showLoading = true) {
@@ -717,6 +983,11 @@
                 try {
                     const formData = new FormData();
                     formData.append('phone', phone);
+                    // Add session_id to route message to correct device
+                    if (this.activeChat.session_id) {
+                        formData.append('session_id', this.activeChat.session_id);
+                    }
+                    
                     if (this.newMessage.trim()) formData.append('message', this.newMessage);
                     if (this.selectedFile) formData.append('file', this.selectedFile);
 

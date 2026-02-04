@@ -323,6 +323,15 @@ Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
         Route::get('/api/conversations/{phone}/suggestions', [WhatsAppInboxController::class, 'getSuggestions'])->name('api.conversations.suggestions');
         Route::post('/api/messages/rate', [WhatsAppInboxController::class, 'rateMessage'])->name('api.messages.rate');
         Route::post('/api/conversations/{phone}/toggle-followup', [WhatsAppInboxController::class, 'toggleFollowup'])->name('api.conversations.toggle-followup');
+        
+        // CRM Routes (Notes & Tags)
+        Route::get('/api/conversations/{phone}/notes', [WhatsAppInboxController::class, 'getNotes'])->name('api.conversations.notes.index');
+        Route::post('/api/conversations/{phone}/notes', [WhatsAppInboxController::class, 'storeNote'])->name('api.conversations.notes.store');
+        Route::get('/api/conversations/{phone}/tags', [WhatsAppInboxController::class, 'getTags'])->name('api.conversations.tags.index');
+        Route::post('/api/conversations/{phone}/tags', [WhatsAppInboxController::class, 'attachTag'])->name('api.conversations.tags.attach');
+        Route::delete('/api/conversations/{phone}/tags', [WhatsAppInboxController::class, 'detachTag'])->name('api.conversations.tags.detach');
+        Route::get('/api/tags', [WhatsAppInboxController::class, 'getAvailableTags'])->name('api.tags.index');
+
         Route::get('/api/training/export/csv', [\App\Http\Controllers\AiTrainingExportController::class, 'exportCSV'])->name('api.training.export.csv');
         Route::get('/api/training/export/json', [\App\Http\Controllers\AiTrainingExportController::class, 'exportJSON'])->name('api.training.export.json');
         Route::get('/settings', [WhatsAppController::class, 'settings'])->name('settings');

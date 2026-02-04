@@ -7,6 +7,7 @@ use App\Services\AutoReplyEngine;
 use App\Models\WaMessage;
 use App\Models\WaConversation;
 use App\Models\WhatsAppDevice;
+use App\Events\NewWhatsAppMessage;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -38,6 +39,9 @@ class WhatsAppWebhookController extends Controller
 
         // Save message to database
         $message = $this->waService->handleIncomingMessage($data);
+        
+        // Broadcast event for real-time updates
+        broadcast(new NewWhatsAppMessage($message));
         
         // Get Session ID from webhook data
         $sessionId = $data['sessionId'] ?? null;

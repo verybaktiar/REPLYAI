@@ -53,13 +53,24 @@
         <p class="text-sm font-bold text-white">{{ $activeUsers24h }} ACTIVE</p>
     </div>
 
-    <div class="bg-surface-dark rounded-xl p-4 border border-slate-800">
-        <div class="flex items-center gap-3 mb-2">
-            <div class="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">PHP Version</span>
-        </div>
-        <p class="text-sm font-bold text-white">{{ PHP_VERSION }}</p>
+
+<!-- Queue Worker Status -->
+<div class="bg-surface-dark rounded-xl p-4 border border-slate-800">
+    <div class="flex items-center gap-3 mb-2">
+        <div class="w-2.5 h-2.5 rounded-full {{ $queueStatus ? 'bg-green-500' : 'bg-red-500' }}"></div>
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Queue Worker</span>
     </div>
+    <p class="text-sm font-bold text-white">{{ $queueStatus ? 'RUNNING' : 'STOPPED' }}</p>
+</div>
+
+<!-- WA Service Status -->
+<div class="bg-surface-dark rounded-xl p-4 border border-slate-800">
+    <div class="flex items-center gap-3 mb-2">
+        <div class="w-2.5 h-2.5 rounded-full {{ $waServiceStatus ? 'bg-green-500' : 'bg-red-500' }}"></div>
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">WA Service</span>
+    </div>
+    <p class="text-sm font-bold text-white">{{ $waServiceStatus ? 'RUNNING' : 'STOPPED' }}</p>
+</div>
 
     <!-- System Ports Status -->
     @foreach($systemPorts as $port)

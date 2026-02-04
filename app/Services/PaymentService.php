@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Exception;
 
 /**
@@ -80,38 +81,36 @@ class PaymentService
 
         $total = max(0, $amount - $discount);
 
-        // Generate payment dalam transaction dengan locking untuk mencegah duplicate
-        return DB::transaction(function () use ($user, $plan, $amount, $discount, $total, $durationMonths, $promoCodeModel) {
+        // Gunakan Atomic Lock untuk mencegah race condition (duplicate invoice number)
+        // Lock akan menunggu maksimal 5 detik
+        return Cache::lock('invoice_generation', 5)->block(5, function () use ($user, $plan, $amount, $discount, $total, $durationMonths, $promoCodeModel) {
             
-            // Lock table/rows untuk memastikan urutan invoice
-            // Kita lock row terakhir untuk mencegah race condition pada generateInvoiceNumber
-            // Note: generateInvoiceNumber akan dipanggil di dalam transaction ini
-            // Namun agar aman, kita lock dulu record terakhir secara eksplisit
-            $lockQuery = Payment::orderBy('invoice_number', 'desc')->lockForUpdate()->first();
-            
-            $invoiceNumber = Payment::generateInvoiceNumber();
+            return DB::transaction(function () use ($user, $plan, $amount, $discount, $total, $durationMonths, $promoCodeModel) {
+                
+                $invoiceNumber = Payment::generateInvoiceNumber();
 
-            // Buat payment record
-            $payment = Payment::create([
-                'invoice_number' => $invoiceNumber,
-                'user_id' => $user->id,
-                'plan_id' => $plan->id,
-                'amount' => $amount,
-                'discount' => $discount,
-                'total' => $total,
-                'payment_method' => Payment::METHOD_MANUAL,
-                'status' => Payment::STATUS_PENDING,
-                'duration_months' => $durationMonths,
-                'promo_code' => $promoCodeModel?->code,
-                'expires_at' => now()->addHours(24),
-                'metadata' => [
-                    'plan_name' => $plan->name,
-                    'plan_slug' => $plan->slug,
-                    'created_from' => 'checkout',
-                ],
-            ]);
+                // Buat payment record
+                $payment = Payment::create([
+                    'invoice_number' => $invoiceNumber,
+                    'user_id' => $user->id,
+                    'plan_id' => $plan->id,
+                    'amount' => $amount,
+                    'discount' => $discount,
+                    'total' => $total,
+                    'payment_method' => Payment::METHOD_MANUAL,
+                    'status' => Payment::STATUS_PENDING,
+                    'duration_months' => $durationMonths,
+                    'promo_code' => $promoCodeModel?->code,
+                    'expires_at' => now()->addHours(24),
+                    'metadata' => [
+                        'plan_name' => $plan->name,
+                        'plan_slug' => $plan->slug,
+                        'created_from' => 'checkout',
+                    ],
+                ]);
 
-            return $payment;
+                return $payment;
+            });
         });
     }
 

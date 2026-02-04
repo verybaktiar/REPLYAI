@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use App\Services\ActivityLogService;
+use App\Jobs\SendMessageJob;
 
 class WhatsAppController extends Controller
 {
@@ -194,14 +195,19 @@ class WhatsAppController extends Controller
     public function send(Request $request): JsonResponse
     {
         $request->validate([
-            'device_id' => 'required|exists:whatsapp_devices,id', // or session_id
+            'device_id' => 'nullable|required_without:session_id|exists:whatsapp_devices,id',
+            'session_id' => 'nullable|required_without:device_id|exists:whatsapp_devices,session_id',
             'phone' => 'required|string',
             'message' => 'nullable|string', 
             'file' => 'nullable|file|max:10240', 
         ]);
         
-        $device = WhatsAppDevice::findOrFail($request->input('device_id'));
-        $sessionId = $device->session_id;
+        if ($request->has('device_id') && $request->input('device_id')) {
+            $device = WhatsAppDevice::findOrFail($request->input('device_id'));
+            $sessionId = $device->session_id;
+        } else {
+            $sessionId = $request->input('session_id');
+        }
 
         $phone = $request->input('phone');
         $message = $request->input('message') ?? '';
@@ -229,14 +235,20 @@ class WhatsAppController extends Controller
         }
 
         try {
-            $result = $this->waService->sendMessage(
+            // Use Queue for sending messages to prevent blocking and add "human-like" delay
+            SendMessageJob::dispatch(
                 $sessionId,
                 $phone,
                 $message,
                 $mediaUrl,
                 $mediaType
-            );
-            return response()->json($result);
+            )->delay(now()->addSeconds(rand(1, 4))); // Random delay 1-4 seconds
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Message queued for sending',
+                'status' => 'queued'
+            ]);
         } catch (\Exception $e) {
              return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }

@@ -6,6 +6,7 @@
     <title>REPLYAI - {{ __('inbox.title') }}</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
@@ -147,11 +148,12 @@
      class="h-[100dvh] bg-gray-950 flex overflow-hidden">
 
     <!-- SIDEBAR (Left) - flex-shrink-0, integrates with Root Cage flexbox -->
-    <main :class="activeChat ? 'hidden lg:flex' : 'flex'" class="flex flex-col w-full lg:w-96 bg-background-dark border-r border-white/5 shrink-0 z-10 pt-20 lg:pt-0 {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
+    <main :class="activeChat ? 'hidden lg:flex' : 'flex'" class="flex flex-col w-full lg:w-auto bg-background-dark border-r border-white/5 shrink-0 z-10 pt-20 lg:pt-0 {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
         @include('components.sidebar')
+    </main>
     
     <!-- MAIN WRAPPER - flex-1 + min-w-0 for proper flex behavior -->
-    <main class="flex-1 min-w-0 flex flex-row h-full overflow-hidden">
+    <main class="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
         <!-- Top Header for Inbox -->
     <header class="h-14 border-b border-white/5 bg-[#111722] flex items-center justify-between px-6 z-20 shrink-0">
         <div class="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-widest">
@@ -168,8 +170,8 @@
     </header>
 
     <div class="flex flex-1 overflow-hidden h-full">
-    @if($hasInstagramAccount ?? false)
     <!-- Conversation List (Middle Column) -->
+    @if($hasInstagramAccount ?? false)
     <div class="w-full md:w-[340px] lg:w-[360px] flex flex-col border-r border-white/5 bg-[#111722] shrink-0 h-full z-10 {{ $selectedId ? 'hidden md:flex' : 'flex' }}">
         <!-- Header -->
         <div class="p-5 pb-2">
@@ -300,6 +302,7 @@
             @endforelse
         </div>
     </div>
+    @endif
 
     <!-- MAIN CHAT AREA (Right) -->
     <main :class="activeChat ? 'flex' : 'hidden lg:flex'" class="flex-1 flex flex-col h-full bg-[#101622] relative border-l border-white/5 min-w-0 pt-20 lg:pt-0 {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }} {{ $selectedId ? 'flex' : 'hidden md:flex' }}">
@@ -692,47 +695,9 @@
     </aside>
     @endif
     
-@else
-    <!-- Full Screen Disconnected State (Inside Main) -->
-    <div class="w-full h-full flex flex-col items-center justify-center bg-[#101622] text-center p-8 relative overflow-hidden">
-        <!-- Background Effects -->
-        <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute top-[20%] left-[20%] w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
-            <div class="absolute bottom-[20%] right-[20%] w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
-        </div>
 
-        <div class="relative z-10 max-w-lg w-full bg-[#1e2634]/50 backdrop-blur-xl rounded-3xl border border-white/5 p-12 shadow-2xl flex flex-col items-center">
-            
-            <div class="w-24 h-24 mb-8 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center shadow-lg shadow-pink-500/30 ring-4 ring-white/5">
-                <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                </svg>
-            </div>
-            
-            <h1 class="text-3xl font-bold text-white mb-4">{{ __('inbox.connect_title') }}</h1>
-            <p class="text-slate-400 text-base mb-10 max-w-sm mx-auto leading-relaxed">
-                {{ __('inbox.connect_text') }}
-            </p>
-            
-            <a href="{{ route('instagram.connect') }}" class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-pink-500/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
-                <span class="material-symbols-outlined">add_link</span>
-                <span>{{ __('inbox.connect_button') }}</span>
-            </a>
-            
-            <div class="mt-8 flex items-center justify-center gap-6 text-slate-500 text-xs font-medium">
-                <span class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-sm">lock</span> {{ __('common.secure_encrypted', ['default' => 'Secure & Encrypted']) }}
-                </span>
-                <span class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-sm">verified</span> {{ __('common.meta_official_partner', ['default' => 'Meta Official Partner']) }}
-                </span>
-            </div>
-            
-        </div>
-    </div>
-@endif
-    </div>
 </main>
+</div>
 
 <script>
     // Simple Search Filter

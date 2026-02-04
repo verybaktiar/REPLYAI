@@ -156,7 +156,7 @@
                 <span class="material-symbols-outlined text-red-500 mb-2 group-hover:scale-110 transition">error</span>
                 <div class="text-xs font-bold text-white uppercase">Failed Jobs</div>
             </a>
-            <a href="{{ route('admin.system-health') }}" class="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl hover:bg-blue-500/20 transition group">
+            <a href="{{ route('admin.system-health.index') }}" class="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl hover:bg-blue-500/20 transition group">
                 <span class="material-symbols-outlined text-blue-500 mb-2 group-hover:scale-110 transition">monitor_heart</span>
                 <div class="text-xs font-bold text-white uppercase">Health</div>
             </a>
