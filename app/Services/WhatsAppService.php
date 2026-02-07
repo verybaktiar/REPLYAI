@@ -190,6 +190,8 @@ class WhatsAppService
 
         // Fix: Normalize LID to Phone Number if possible to prevent duplicate conversations
         // Heuristic: If phone number is >= 15 digits (LID usually 15), try to find matching conversation
+        // DISABLED TEMPORARILY: This logic causes identity swapping if pushName is common/duplicated.
+        /*
         if (strlen($phoneNumber) >= 15 && !str_contains($phoneNumber, '-') && !empty($data['pushName'])) {
              $existing = \App\Models\WaConversation::withoutGlobalScopes()
                 ->where('user_id', $userId)
@@ -202,6 +204,7 @@ class WhatsAppService
                  Log::info("Normalized LID {$data['from']} to {$phoneNumber} for user {$userId}");
              }
         }
+        */
 
         $message = WaMessage::updateOrCreate(
             ['wa_message_id' => $data['messageId']],
@@ -286,12 +289,20 @@ class WhatsAppService
     }
 
     /**
-     * Check if auto-reply is enabled
+     * Check if auto-reply is enabled for a specific session
      */
-    public function isAutoReplyEnabled(): bool
+    public function isAutoReplyEnabled(string $sessionId = 'default'): bool
     {
-        $session = \App\Models\WaSession::where('session_id', 'default')->first();
-        return $session->auto_reply_enabled ?? true;
+        // First check WaSession table (legacy/default)
+        $session = \App\Models\WaSession::where('session_id', $sessionId)->first();
+        if ($session) {
+            return $session->auto_reply_enabled ?? true;
+        }
+
+        // If not found in WaSession, check WhatsAppDevice (new structure)
+        // Ideally we should move auto_reply_enabled to WhatsAppDevice table if not already there
+        // For now, assume true if device exists, or default to true
+        return true; 
     }
 
     /**

@@ -40,19 +40,8 @@ class WhatsAppInboxController extends Controller
     {
         $deviceFilter = $request->query('device');
         
-        // Subquery to get the latest valid push_name for each phone number
-        $latestNameQuery = WaMessage::select('push_name')
-            ->whereColumn('phone_number', 'wa_messages.phone_number')
-            ->whereNotNull('push_name')
-            ->where('push_name', '!=', '')
-            ->where('push_name', '!=', 'Unknown') // Exclude literal "Unknown"
-            ->where('push_name', '!=', 'unknown')
-            ->orderBy('id', 'desc')
-            ->limit(1);
-
         // Build base query - simplified filters
         $query = WaMessage::select('phone_number', 'push_name', 'remote_jid', 'created_at', 'message', 'status', 'session_id')
-            ->addSelect(['display_name' => $latestNameQuery]) // Add dynamic column
             ->where('remote_jid', 'not like', '%@g.us')
             ->where('remote_jid', 'not like', '%@newsletter')
             ->where('remote_jid', 'not like', '%@broadcast')
@@ -94,8 +83,15 @@ class WhatsAppInboxController extends Controller
                 // Format phone number
                 $formattedPhone = '+' . $msg->phone_number;
                 
-                // Prioritize the subquery result (display_name), then the row's push_name
-                $displayName = $msg->display_name ?? $msg->push_name;
+                // Get conversation status
+                $waConversation = WaConversation::where('phone_number', $msg->phone_number)->first();
+
+                // Name Logic: WaConversation display_name > Message push_name > Phone Number
+                $displayName = $waConversation?->display_name;
+                
+                if (empty($displayName) || $displayName === 'Unknown' || $displayName === 'unknown') {
+                    $displayName = $msg->push_name;
+                }
                 
                 // Allow "Unknown" ONLY if we fail to find anything else, but prefer formatted phone over "Unknown"
                 if (empty($displayName) || 
@@ -105,8 +101,6 @@ class WhatsAppInboxController extends Controller
                     $displayName = $formattedPhone;
                 }
 
-                // Get conversation status
-                $waConversation = WaConversation::where('phone_number', $msg->phone_number)->first();
                 $status = $waConversation?->status ?? 'bot_active';
                 $remainingMinutes = $waConversation?->remaining_minutes;
                 $idleMinutes = $waConversation?->idle_minutes;

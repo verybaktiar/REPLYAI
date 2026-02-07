@@ -24,10 +24,17 @@ class BusinessProfile extends Model
         'enable_autofollowup',
         'followup_message',
         'enable_daily_summary',
+        'instagram_handle',
+        'website_url',
+        'address_map_url',
+        'strict_mode',
+        'primary_language',
+        'ai_msg_daily_limit',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'strict_mode' => 'boolean',
         'terminology' => 'array',
         'notification_settings' => 'array',
     ];

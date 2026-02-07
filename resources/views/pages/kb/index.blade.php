@@ -33,6 +33,7 @@
         }
     </script>
     <style>
+        [x-cloak] { display: none !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #111722; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #324467; border-radius: 10px; }

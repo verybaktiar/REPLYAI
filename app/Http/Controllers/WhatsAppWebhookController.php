@@ -11,6 +11,7 @@ use App\Events\NewWhatsAppMessage;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 
 class WhatsAppWebhookController extends Controller
 {
@@ -58,8 +59,20 @@ class WhatsAppWebhookController extends Controller
             ['display_name' => $message->push_name, 'session_status' => WaConversation::SESSION_ACTIVE]
         );
         
-        // Update last user reply time
-        $waConversation->update(['last_user_reply_at' => now()]);
+        // Update display name if it changed (and is valid) to keep Inbox fresh
+        if (!empty($message->push_name) && 
+            $message->push_name !== 'Unknown' && 
+            $message->push_name !== $message->phone_number &&
+            $waConversation->display_name !== $message->push_name) {
+            $waConversation->update(['display_name' => $message->push_name]);
+        }
+        
+        // Update last user reply time AND last message preview
+        $waConversation->update([
+            'last_user_reply_at' => now(),
+            'last_message' => $message->message, // Update preview with incoming message
+            'last_message_at' => now(),
+        ]);
 
         // Check if user is responding to session follow-up
         $lowerMessage = strtolower(trim($message->message));
@@ -87,8 +100,20 @@ class WhatsAppWebhookController extends Controller
         $isAgentHandling = $waConversation && !$waConversation->isBotActive();
 
         // Check if auto-reply is enabled AND not being handled by CS
-        if ($this->waService->isAutoReplyEnabled() && !$isAgentHandling) {
-            $this->processAutoReply($message, $sessionId);
+        if ($this->waService->isAutoReplyEnabled($sessionId) && !$isAgentHandling) {
+            // Rate Limiting: Prevent spam/loops (Max 15 messages per minute per user)
+            $rateLimitKey = "wa_autoreply:{$sessionId}:{$message->phone_number}";
+
+            if (RateLimiter::tooManyAttempts($rateLimitKey, 15)) {
+                Log::warning('WhatsApp Auto-Reply Rate Limit Exceeded', [
+                    'phone' => $message->phone_number,
+                    'session' => $sessionId
+                ]);
+                // Stop processing to save AI costs and prevent loops
+            } else {
+                RateLimiter::hit($rateLimitKey, 60); // Decay in 60 seconds
+                $this->processAutoReply($message, $sessionId);
+            }
         } elseif ($isAgentHandling) {
             Log::info('WhatsApp Auto-Reply Skipped - Agent Handling', [
                 'phone' => $message->phone_number,
@@ -151,12 +176,37 @@ class WhatsAppWebhookController extends Controller
     protected function processAutoReply(WaMessage $message, string $sessionId): void
     {
         try {
+            // 1. DEDUPLICATION CHECK: If message already has a bot reply, skip!
+            if (!empty($message->bot_reply)) {
+                Log::info('WhatsApp Auto-Reply Skipped - Already Replied', ['message_id' => $message->id]);
+                return;
+            }
+
             // Fetch device to get its assigned business profile
             $device = WhatsAppDevice::with('businessProfile')
                 ->where('session_id', $sessionId)
                 ->first();
             
+            Log::info('Debug AutoReply Context', [
+                'session_id' => $sessionId,
+                'device_id' => $device?->id,
+                'device_user_id' => $device?->user_id,
+                'message_from' => $message->phone_number
+            ]);
+
             $businessProfile = $device?->businessProfile;
+
+            // Fallback: If device has no profile assigned, try to find one for the device's owner
+            if (!$businessProfile && $device && $device->user_id) {
+                 $businessProfile = \App\Models\BusinessProfile::withoutGlobalScopes()
+                    ->where('user_id', $device->user_id)
+                    ->where('is_active', true)
+                    ->first();
+                 
+                 if ($businessProfile) {
+                     Log::info('Found BusinessProfile via UserID fallback', ['user_id' => $device->user_id, 'profile_id' => $businessProfile->id]);
+                 }
+            }
             
             // Ambil history percakapan dari database (6 pesan terakhir)
             $recentMessages = WaMessage::where('remote_jid', $message->remote_jid)
@@ -188,7 +238,19 @@ class WhatsAppWebhookController extends Controller
             
             // Use WhatsApp-specific AI method for smarter, more conversational responses
             $aiService = app(\App\Services\AiAnswerService::class);
-            $aiResult = $aiService->answerWhatsApp($message->message, $conversationHistory, $businessProfile);
+            // Explicitly pass user_id from device to ensure correct tenant isolation for KB search
+            $aiResult = $aiService->answerWhatsApp(
+                $message->message, 
+                $conversationHistory, 
+                $businessProfile,
+                $device?->user_id
+            );
+
+            Log::info('Debug AI Result', [
+                'has_answer' => !empty($aiResult['answer']),
+                'source' => $aiResult['source'] ?? 'unknown',
+                'user_id_used' => $device?->user_id
+            ]);
             
             if ($aiResult && !empty($aiResult['answer'])) {
                 $reply = $aiResult['answer'];
@@ -207,6 +269,14 @@ class WhatsAppWebhookController extends Controller
                     // Update the original message with bot reply
                     $message->update(['bot_reply' => $reply]);
                     
+                    // UPDATE CONVERSATION PREVIEW WITH BOT REPLY
+                    WaConversation::where('phone_number', $message->phone_number)
+                        ->where('user_id', $message->user_id)
+                        ->update([
+                            'last_message' => "CS: " . Str::limit($reply, 50), // Prefix with CS: for clarity
+                            'last_message_at' => now(),
+                        ]);
+
                     Log::info('WhatsApp Auto-Reply Sent', [
                         'to' => $message->phone_number,
                         'original' => $message->message,

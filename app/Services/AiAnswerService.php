@@ -145,14 +145,44 @@ class AiAnswerService
     }
 
     /**
+     * Helper to format response and log interaction
+     */
+    private function formatResponse(string $answer, float $confidence, string $source, ?BusinessProfile $profile, ?int $userId, string $question, array $contextIds = [], ?string $sentiment = null, ?string $imageUrl = null): array
+    {
+        // Log AI Interaction
+        if ($profile) {
+             \App\Models\AiLog::create([
+                 'business_profile_id' => $profile->id,
+                 'user_id' => $userId,
+                 'user_message' => $question,
+                 'answer' => $answer,
+                 'confidence' => $confidence,
+                 'source' => $source,
+                 'context_used' => $contextIds,
+                 'input_tokens' => 0,
+                 'output_tokens' => 0,
+             ]);
+        }
+
+        return [
+            'answer' => $answer,
+            'confidence' => $confidence,
+            'source' => $source,
+            'sentiment' => $sentiment ?? 'neutral',
+            'image_url' => $imageUrl,
+        ];
+    }
+
+    /**
      * WhatsApp-specific AI answer dengan kemampuan percakapan natural
      * Handle sapaan, pertanyaan umum, dan keluhan pasien
      * 
      * @param string $question The user's question
      * @param array|null $conversationHistory Previous messages for context
      * @param BusinessProfile|null $profile Optional profile to use (overrides default)
+     * @param int|null $userId Optional user ID (context) for multi-tenant KB search
      */
-    public function answerWhatsApp(string $question, ?array $conversationHistory = [], ?BusinessProfile $profile = null): ?array
+    public function answerWhatsApp(string $question, ?array $conversationHistory = [], ?BusinessProfile $profile = null, ?int $userId = null): ?array
     {
         $question = trim($question);
         if ($question === '') return null;
@@ -176,23 +206,43 @@ class AiAnswerService
 
         // 3) Jika sapaan sederhana, balas ramah tanpa perlu KB
         if ($isSimpleGreeting) {
-            $greetingResponses = [
-                "Halo! Ada yang bisa saya bantu?",
-                "Halo kak, ada yang bisa dibantu?",
-                "Hai, silakan mau tanya apa?",
-                "Halo, ada yang perlu saya bantu? 😊",
-            ];
+            $industry = $profile?->getIndustryLabel() ?? 'kami';
             
-            return [
-                'answer' => $greetingResponses[array_rand($greetingResponses)],
-                'confidence' => 0.95,
-                'source' => 'greeting',
+            // DYNAMIC GREETING: Cek apakah ada promo aktif di KB
+            $profileId = $profile?->id;
+            $searchUserId = $userId ?? $profile?->user_id;
+            $hasPromo = $this->hasActivePromo($profileId, $searchUserId);
+
+            // Default greetings (SAFE - No Promo Promise)
+            $greetingResponses = [
+                "Halo kak! Mau tanya tentang menu {$industry} atau rekomendasi best seller? ☕",
+                "Hai kak! Ada yang bisa kami bantu seputar {$industry}? 😊",
+                "Hai kak, salam kenal! Mau cari apa hari ini? Kami siap bantu. ✨",
+                "Selamat datang di {$profile?->business_name}! Silakan tanya-tanya menu atau jam buka ya kak. 🙏"
             ];
+
+            // Only add promo greetings IF promo exists in KB
+            if ($hasPromo) {
+                $greetingResponses[] = "Halo! Selamat datang di {$profile?->business_name}. Mau info produk atau promo terbaru?";
+                $greetingResponses[] = "Hai kak! Jangan lewatkan promo spesial hari ini ya. Mau info lengkapnya? 🎁";
+            }
+            
+            return $this->formatResponse(
+                $greetingResponses[array_rand($greetingResponses)],
+                0.95,
+                'greeting',
+                $profile,
+                $userId,
+                $question
+            );
         }
 
         // 4) Coba cari di Knowledge Base dulu (filter by profile if provided)
         $profileId = $profile?->id;
-        $articles = $this->searchRelevantArticles($question, 4, $profileId);
+        // Prioritize passed userId, then profile's userId
+        $searchUserId = $userId ?? $profile?->user_id;
+        
+        $articles = $this->searchRelevantArticles($question, 4, $profileId, $searchUserId);
         
         $imagePath = null;
         if (!$articles->isEmpty()) {
@@ -213,6 +263,55 @@ class AiAnswerService
         $context = '';
         if (!$articles->isEmpty()) {
             $context = $this->buildContext($articles, $question);
+
+            // --- STRICT PROMO VALIDATION & HALLUCINATION CORRECTION ---
+            // Mencegah halusinasi promo fiktif (Beli 1 Gratis 1, dsb)
+            $promoKeywords = ['promo', 'diskon', 'discount', 'sale', 'potongan', 'cashback', 'gratis', 'bonus', 'free', 'hadiah', 'voucher'];
+            $isPromoQuery = Str::contains($lower, $promoKeywords);
+            
+            if ($isPromoQuery) {
+                $hasPromoInKb = false;
+                foreach ($articles as $article) {
+                    if (Str::contains(Str::lower($article->title . ' ' . $article->content), $promoKeywords)) {
+                        $hasPromoInKb = true;
+                        break;
+                    }
+                }
+                
+                if (!$hasPromoInKb) {
+                    // Check for HALLUCINATION CHALLENGE (User complaining about previous false info)
+                    // Keywords: "tadi", "katanya", "bilang", "sebelumnya", "kok", "loh"
+                    $challengeKeywords = ['tadi', 'katanya', 'bilang', 'sebelumnya', 'kok', 'loh', 'kemarin', 'bapak', 'ibu', 'mbak', 'mas', 'bohong'];
+                    $isChallenge = Str::contains($lower, $challengeKeywords);
+
+                    $industry = $profile?->getIndustryLabel() ?? 'kami';
+                    
+                    if ($isChallenge) {
+                        Log::warning('⚠️ HALLUCINATION CHALLENGE DETECTED', ['query' => $question]);
+                        $msg = __('ai.hallucination_correction', ['industry' => $industry]);
+                        return $this->formatResponse($msg, 1.0, 'system_hallucination_correction', $profile, $userId, $question);
+                    }
+
+                    Log::warning('🛑 BLOCKED PROMO HALLUCINATION', ['query' => $question]);
+                    
+                    $msg = __('ai.promo_block', ['industry' => $industry]);
+                    return $this->formatResponse($msg, 1.0, 'system_promo_block', $profile, $userId, $question);
+                }
+            }
+            // ------------------------------------
+
+        } else {
+             // ANTI-HALLUCINATION: If KB is empty, check if question is specific (price, schedule, etc)
+             // If specific and no KB -> Return standard "I don't know" immediately without calling AI
+             // This saves cost and prevents hallucination
+             $specificKeywords = ['harga', 'biaya', 'tarif', 'bayar', 'jadwal', 'buka', 'tutup', 'dokter', 'poli', 'lokasi', 'alamat', 'syarat', 'cara'];
+             $isSpecific = Str::contains($lower, $specificKeywords);
+             
+             if ($isSpecific) {
+                 $industry = $profile?->getIndustryLabel() ?? 'bisnis';
+                 $msg = __('ai.specific_no_data', ['industry' => $industry]);
+                 return $this->formatResponse($msg, 1.0, 'system_no_data', $profile, $userId, $question);
+             }
         }
 
         // 6) Panggil AI dengan prompt khusus WhatsApp
@@ -224,12 +323,7 @@ class AiAnswerService
             $fallbackProfile = $profile ?? BusinessProfile::getActive();
             $fallbackMsg = $fallbackProfile ? $fallbackProfile->kb_fallback_message : "Mohon maaf, layanan sedang gangguan.";
 
-            return [
-                'answer' => $fallbackMsg,
-                'confidence' => 0.5,
-                'source' => 'fallback',
-                'image_url' => $imagePath,
-            ];
+            return $this->formatResponse($fallbackMsg, 0.5, 'fallback', $profile, $userId, $question, [], null, $imagePath);
         }
 
         // 7) Deteksi sentimen user
@@ -239,20 +333,20 @@ class AiAnswerService
         
         if (!$res || empty($res['answer'])) {
             // Jika AI tidak bisa jawab, berikan respons yang lebih natural
-            return [
-                'answer' => "Hmm, bisa dijelaskan lebih detail kak?",
-                'confidence' => 0.4,
-                'source' => 'clarification',
-            ];
+            return $this->formatResponse(__('ai.clarification'), 0.4, 'clarification', $profile, $userId, $question);
         }
-
-        return [
-            'answer' => (string)($res['answer'] ?? ''),
-            'confidence' => (float)($res['confidence'] ?? 0.8),
-            'source' => !$articles->isEmpty() ? 'kb' : 'ai',
-            'sentiment' => $sentiment['sentiment'] ?? 'neutral',
-            'image_url' => $imagePath,
-        ];
+        
+        return $this->formatResponse(
+            (string)($res['answer'] ?? ''),
+            (float)($res['confidence'] ?? 0.8),
+            !$articles->isEmpty() ? 'kb' : 'ai',
+            $profile,
+            $userId,
+            $question,
+            $articles->pluck('id')->toArray(),
+            $sentiment['sentiment'] ?? 'neutral',
+            $imagePath
+        );
     }
 
     /**
@@ -274,7 +368,12 @@ class AiAnswerService
         $contextSection = $context ? "\n\nKONTEKS KNOWLEDGE BASE:\n{$context}" : "\n\n(Tidak ada data spesifik di Knowledge Base untuk pertanyaan ini)";
 
         // USE PROVIDED PROFILE OR FALLBACK TO ACTIVE
-        $profile = $profile ?? BusinessProfile::getActive();
+        // Only fallback to getActive() if we have an authenticated user context (Dashboard/Test)
+        // In Webhook (unauthenticated), we rely strictly on the provided $profile
+        if (!$profile && \Illuminate\Support\Facades\Auth::check()) {
+            $profile = BusinessProfile::getActive();
+        }
+        
         if (!$profile) {
             Log::warning('⚠️ No active BusinessProfile found, using fallback.');
             $systemPrompt = "Kamu adalah asisten virtual yang membantu. Jawab pertanyaan user dengan sopan.";
@@ -285,6 +384,10 @@ class AiAnswerService
                 [$profile->business_name, $now, $now, $tomorrow], 
                 $profile->system_prompt_template
             );
+            
+            // INJECT BUSINESS CATEGORY & IDENTITY
+            $industryLabel = $profile->getIndustryLabel();
+            $systemPrompt .= "\n\nIDENTITAS BISNIS:\n- Nama: {$profile->business_name}\n- Kategori: {$industryLabel}\n- TUGAS: Hanya menjawab pertanyaan seputar {$industryLabel} di {$profile->business_name}.";
         }
 
         // 8) ADD AI TRAINING EXAMPLES (STYLE LEARNING)
@@ -301,6 +404,46 @@ class AiAnswerService
                 $systemPrompt .= "\nUser: {$ex->user_query}\nCS: {$ex->assistant_response}";
             }
             $systemPrompt .= "\n\nGunakan gaya bahasa, nada, dan keramahan yang sama seperti contoh CS di atas.";
+        }
+
+        $systemPrompt .= "\n\nATURAN KERAS (ANTI-HALUSINASI & ISOLASI TENANT):
+1. KAMU ADALAH 'CLOSED SYSTEM AI'. Kamu HANYA boleh menjawab berdasarkan teks di bagian 'KONTEKS KNOWLEDGE BASE' di bawah.
+2. JANGAN PERNAH MENGARANG JAWABAN. Jika informasi tidak ada di Konteks, JANGAN gunakan pengetahuan umum.
+3. JIKA INFO TIDAK ADA:
+   - JANGAN bilang 'Saya tidak tahu' atau 'Info tidak tersedia' saja.
+   - Jawab: 'Mohon maaf kak, untuk info detailnya bisa langsung hubungi Admin kami via WA ya, atau cek sosial media {$profile->business_name} untuk update terbaru. Ada yang lain yang bisa saya bantu? 😊'
+   - Tetap ramah dan tawarkan bantuan lain.
+4. VALIDASI KATEGORI: Jika user bertanya tentang produk/topik di luar kategori '{$industryLabel}' (misal toko kopi ditanya skincare), JANGAN JAWAB. Alihkan kembali ke topik bisnis ini.
+5. OUT-OF-SCOPE / TOXIC: Jika user berkata kasar atau aneh, tetap ramah: 'Maaf kak kalau ada yang kurang berkenan 😊 Bisa dijelaskan kendalanya? Kami siap bantu~'
+6. DILARANG beralih ke topik lain selain bisnis {$profile->business_name}.
+7. VARIASI STYLE: Jangan gunakan kalimat yang kaku. Gunakan bahasa yang natural, ramah, dan sesekali gunakan emoji yang relevan.
+8. FORMAT OUTPUT WAJIB JSON.
+Format: {\"answer\": \"Jawaban kamu disini\", \"confidence\": 0.9}
+
+ATURAN KHUSUS PROMO & DISKON (SANGAT PENTING):
+- HANYA sebutkan promo jika TERTULIS JELAS di Konteks.
+- JANGAN PERNAH mengarang promo 'Beli 1 Gratis 1' atau diskon apapun jika tidak ada datanya.
+- Jika user tanya promo dan TIDAK ADA di konteks, jawab: 'Mohon maaf kak, saat ini belum ada promo aktif. Tapi harga reguler kami sangat terjangkau kok! 😊'
+- DILARANG MENJANJIKAN bonus/hadiah yang tidak ada di KB.
+
+ATURAN KONSISTENSI & KEJUJURAN:
+- JANGAN BOHONG atau ngeles jika user menangkap basah kesalahanmu.
+- Jika user bilang 'katanya tadi ada promo', dan nyatanya TIDAK ADA di KB:
+  1. AKUI KESALAHAN: 'Maaf kak, saya salah info sebelumnya.'
+  2. KOREKSI: 'Yang benar belum ada promo saat ini.'
+  3. JANGAN DENIAL: Jangan bilang 'Saya tidak pernah bilang begitu'.";
+
+        // ATURAN GREETING (CONTEXT AWARE)
+        // Jika ada history (percakapan berlanjut), JANGAN greeting berlebihan.
+        if (!empty($history)) {
+            $systemPrompt .= "\n\nATURAN GREETING (PENTING):";
+            $systemPrompt .= "\n- INI ADALAH LANJUTAN PERCAKAPAN. JANGAN gunakan kata sapaan seperti 'Halo', 'Hai', 'Selamat pagi' lagi.";
+            $systemPrompt .= "\n- Langsung jawab ke inti pertanyaan user.";
+            $systemPrompt .= "\n- Contoh Salah: 'Halo kak! Untuk harga kopi...'";
+            $systemPrompt .= "\n- Contoh Benar: 'Untuk harga kopi susu Rp18.000 kak...'";
+        } else {
+            $systemPrompt .= "\n\nATURAN GREETING:";
+            $systemPrompt .= "\n- Karena ini awal percakapan, SAPA user dengan ramah (Halo/Hai).";
         }
 
         // Tambahkan instruksi konteks percakapan
@@ -375,7 +518,7 @@ class AiAnswerService
 
         // Pastikan pesan terakhir di history BUKAN user (karena kita akan append pesan user baru)
         // Jika terakhir adalah User, merge dengan pesan baru
-        $finalUserMsg = "Pertanyaan user:{$contextSection}\n\nPERTANYAAN:\n{$question}";
+        $finalUserMsg = "Pertanyaan user:{$contextSection}\n\nPERTANYAAN:\n{$question}\n\n(PENTING: Jawab hanya berdasarkan konteks di atas. Jika tidak ada info, jawab tidak tahu. Format JSON wajib.)";
 
         if (!empty($messages)) {
             $lastIdx = count($messages) - 1;
@@ -399,7 +542,7 @@ class AiAnswerService
 
         $payload = [
             "model" => $model,
-            "temperature" => 0.3, // Sedikit lebih kreatif untuk natural conversation
+            "temperature" => 0.1, // SANGAT RENDAH agar jawaban konsisten dan tidak kreatif/mengarang
             "messages" => $messages,
         ];
 
@@ -443,9 +586,22 @@ class AiAnswerService
         }
     }
 
-    protected function searchRelevantArticles(string $question, int $limit = 4, ?int $profileId = null)
+    protected function searchRelevantArticles(string $question, int $limit = 4, ?int $profileId = null, ?int $userId = null)
     {
         $q = Str::lower($question);
+        
+        // 0. LOAD BUSINESS PROFILE TYPE IF AVAILABLE
+        $businessType = 'common';
+        if ($profileId) {
+            $profile = BusinessProfile::find($profileId);
+            $businessType = $profile ? $profile->business_type : 'common';
+        }
+
+        // 1. EXPAND SYNONYMS / INTENTS (CONFIGURABLE)
+        $synonymsCommon = config('ai_synonyms.common', []);
+        $synonymsIndustry = config("ai_synonyms.{$businessType}", config('ai_synonyms.general', []));
+        
+        $synonymMap = array_merge($synonymsCommon, $synonymsIndustry);
 
         // Stopwords Indonesia - kata yang tidak penting untuk pencarian
         $stopwords = [
@@ -459,13 +615,32 @@ class AiAnswerService
         $keywords = collect(preg_split('/\s+/u', $q))
             ->map(fn($k) => trim($k))
             ->filter(fn($k) => mb_strlen($k) >= 3)
-            ->filter(fn($k) => !in_array($k, $stopwords, true)) // filter stopwords
-            ->unique()
-            ->values();
+            ->filter(fn($k) => !in_array($k, $stopwords, true)); // Keep collection to allow expansion
+
+        // Expand keywords with synonyms
+        $expandedKeywords = collect($keywords->all());
+        foreach ($keywords as $k) {
+            if (isset($synonymMap[$k])) {
+                $expandedKeywords = $expandedKeywords->merge($synonymMap[$k]);
+            }
+        }
+        
+        $keywords = $expandedKeywords->unique()->values();
 
         // Build query with profile filter
         // Include articles that: match profile OR have no profile (global)
         $query = KbArticle::where('is_active', 1);
+
+        // IMPORTANT: Multi-tenant filtering
+        if ($userId) {
+             // If we know the user, STRICTLY filter by user
+             $query->withoutGlobalScopes()->where('user_id', $userId);
+        } elseif (!\Illuminate\Support\Facades\Auth::check()) {
+             // If no user context (webhook) and no userId provided -> RETURN EMPTY to prevent data leak
+             Log::warning('⚠️ searchRelevantArticles called without UserID in webhook context. Returning empty.');
+             return collect([]);
+        }
+
         if ($profileId) {
             $query->where(function ($q) use ($profileId) {
                 $q->whereNull('business_profile_id')
@@ -477,14 +652,28 @@ class AiAnswerService
         $scored = $articles->map(function ($a) use ($keywords) {
                 $hay = Str::lower(($a->title ?? '') . " " . ($a->content ?? '') . " " . ($a->tags ?? ''));
 
-                $score = 0;
+                $matchedCount = 0;
+                $totalKeywords = $keywords->count();
+
+                if ($totalKeywords === 0) return [$a, 0];
+
                 foreach ($keywords as $kw) {
-                    if (Str::contains($hay, $kw)) $score++;
+                    if (Str::contains($hay, $kw)) $matchedCount++;
                 }
+
+                // Calculate Match Percentage (Similarity Score)
+                // Bonus weight for title match
+                $titleMatch = Str::contains(Str::lower($a->title), $keywords->first()) ? 0.3 : 0; // Increased bonus
+                
+                // If expanded keywords are many, we should not require ALL to match.
+                // Adjusted formula: (matches / (totalKeywords * 0.8)) + titleMatch
+                // This makes it lenient for synonym-heavy searches
+                $denominator = max(1, $totalKeywords * 0.7); 
+                $score = ($matchedCount / $denominator) + $titleMatch;
 
                 return [$a, $score];
             })
-            ->filter(fn($pair) => $pair[1] > 0)
+            ->filter(fn($pair) => $pair[1] >= 0.35) // LOWERED THRESHOLD: 0.35 to catch expanded synonyms
             ->sortByDesc(fn($pair) => $pair[1])
             ->take($limit)
             ->map(fn($pair) => $pair[0]);
@@ -514,11 +703,11 @@ class AiAnswerService
             $fullContent = preg_replace('/([a-zA-Z])(\d{2}:\d{2})/', '$1 $2', $fullContent);
             
             // Jika konten panjang dan ada keyword penting, cari bagian relevan
-            if (mb_strlen($fullContent) > 2000 && !empty($importantKeywords)) {
-                $relevantParts = $this->extractRelevantParts($fullContent, $importantKeywords, 1500);
-                $content = $relevantParts ?: Str::limit($fullContent, 1200);
+            if (mb_strlen($fullContent) > 3000 && !empty($importantKeywords)) {
+                $relevantParts = $this->extractRelevantParts($fullContent, $importantKeywords, 2500);
+                $content = $relevantParts ?: Str::limit($fullContent, 3000);
             } else {
-                $content = Str::limit($fullContent, 1200);
+                $content = Str::limit($fullContent, 3000);
             }
 
             $chunks[] = "### {$title}\nSumber: {$src}\nIsi:\n{$content}";
@@ -855,5 +1044,36 @@ ATURAN KETAT:
         }
 
         return $text;
+    }
+
+    /**
+     * Check if active promo exists in KB
+     */
+    protected function hasActivePromo(?int $profileId, ?int $userId): bool
+    {
+        // Cek cepat apakah ada artikel aktif yang judulnya mengandung "promo" atau "diskon"
+        $query = KbArticle::where('is_active', 1)
+            ->where(function($q) {
+                $q->where('title', 'like', '%promo%')
+                  ->orWhere('title', 'like', '%diskon%')
+                  ->orWhere('tags', 'like', '%promo%');
+            });
+
+        // Multi-tenant filter
+        if ($userId) {
+             $query->withoutGlobalScopes()->where('user_id', $userId);
+        } elseif (!\Illuminate\Support\Facades\Auth::check()) {
+             // Safety: if we don't know the user, be conservative and return false
+             return false; 
+        }
+
+        if ($profileId) {
+            $query->where(function ($q) use ($profileId) {
+                $q->whereNull('business_profile_id')
+                  ->orWhere('business_profile_id', $profileId);
+            });
+        }
+        
+        return $query->exists();
     }
 }
