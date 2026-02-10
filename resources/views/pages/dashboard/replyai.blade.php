@@ -78,7 +78,7 @@
                     <h1 class="text-xl font-extrabold tracking-tight text-white uppercase italic">Dashboard</h1>
                     <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
                         <div class="size-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                        <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Sistem Aktif</span>
+                        <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Sistem Aktif v1.1</span>
                     </div>
                 </div>
                 
@@ -130,11 +130,25 @@
                                     </div>
                                     @endforeach
                                 </div>
-                            </div>
 
                             <div class="flex flex-col gap-3 min-w-[220px] w-full lg:w-auto">
-                                <a href="{{ route('whatsapp.settings') }}" class="flex items-center justify-center gap-3 px-8 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-2xl shadow-indigo-950/60">
-                                    Mulai Sekarang
+                                @php
+                                    $nextRoute = route('whatsapp.settings');
+                                    $ctaLabel = 'Mulai Sekarang';
+                                    
+                                    if ($onboarding['wa_connected'] && !$onboarding['kb_added']) {
+                                        $nextRoute = route('kb.index');
+                                        $ctaLabel = 'Setup Knowledge Base';
+                                    } elseif ($onboarding['kb_added'] && !$onboarding['chat_tested']) {
+                                        $nextRoute = route('simulator.index'); // Asumsi route simulator/test chat
+                                        $ctaLabel = 'Test Chatbot';
+                                    } elseif ($onboarding['chat_tested'] && !$onboarding['ai_active']) {
+                                        $nextRoute = route('settings.index'); // Asumsi settings AI
+                                        $ctaLabel = 'Aktifkan AI';
+                                    }
+                                @endphp
+                                <a href="{{ $nextRoute }}" class="flex items-center justify-center gap-3 px-8 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-2xl shadow-indigo-950/60">
+                                    {{ $ctaLabel }}
                                     <span class="material-symbols-outlined text-[20px]">bolt</span>
                                 </a>
                                 <button class="text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest transition-colors text-center">Lewati Dulu</button>
@@ -144,6 +158,7 @@
                     @endif
 
                     <!-- HIGH PERFORMANCE STATS -->
+                    <!-- DEBUG: wa_connected = {{ json_encode($onboarding['wa_connected']) }} -->
                     <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                         
                         <!-- 1. TOTAL MESSAGES -->
@@ -161,9 +176,13 @@
                                     </div>
                                     @endif
                                 </div>
-                                @if($stats['total_messages'] > 0)
+                                
+                                @if($onboarding['wa_connected'])
                                     <h3 class="text-4xl font-black tracking-tighter text-white">{{ number_format($stats['total_messages'], 0, ',', '.') }}</h3>
                                     <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Total Pesan Masuk</p>
+                                    @if($stats['total_messages'] == 0)
+                                        <p class="text-[9px] text-gray-600 mt-2 italic">Belum ada pesan hari ini</p>
+                                    @endif
                                 @else
                                     <h3 class="text-lg font-semibold text-gray-300">Hubungkan</h3>
                                     <p class="text-xs text-gray-500 mt-1">Aktifkan WhatsApp untuk menerima pesan</p>
@@ -187,7 +206,7 @@
                                     </div>
                                     @endif
                                 </div>
-                                @if($stats['ai_responses'] > 0)
+                                @if($stats['ai_responses'] > 0 || $onboarding['ai_active'])
                                     <h3 class="text-4xl font-black tracking-tighter text-white">{{ number_format($stats['ai_responses'], 0, ',', '.') }}</h3>
                                     <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Direspon AI</p>
                                 @else
@@ -262,12 +281,17 @@
                                     <div class="w-24 h-24 rounded-[2rem] bg-gray-800 flex items-center justify-center mb-8 border border-gray-700 shadow-2xl">
                                         <span class="material-symbols-outlined text-gray-600 text-[48px] animate-pulse">analytics</span>
                                     </div>
-                                    <h4 class="text-xl font-black text-gray-400 uppercase tracking-tight">Menunggu Data Pertama</h4>
-                                    <p class="text-xs text-gray-600 max-w-xs mt-3 font-medium uppercase tracking-widest">Hubungkan WhatsApp Anda untuk melihat visualisasi AI secara real-time.</p>
-                                    <a href="{{ route('whatsapp.settings') }}" class="mt-6 flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">
-                                        <span class="material-symbols-outlined text-[18px]">add</span>
-                                        Hubungkan WhatsApp
-                                    </a>
+                                    @if($onboarding['wa_connected'])
+                                        <h4 class="text-xl font-black text-gray-400 uppercase tracking-tight">Belum Ada Data</h4>
+                                        <p class="text-xs text-gray-600 max-w-xs mt-3 font-medium uppercase tracking-widest">Data percakapan akan muncul di sini setelah ada pesan masuk.</p>
+                                    @else
+                                        <h4 class="text-xl font-black text-gray-400 uppercase tracking-tight">Menunggu Data Pertama</h4>
+                                        <p class="text-xs text-gray-600 max-w-xs mt-3 font-medium uppercase tracking-widest">Hubungkan WhatsApp Anda untuk melihat visualisasi AI secara real-time.</p>
+                                        <a href="{{ route('whatsapp.settings') }}" class="mt-6 flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                                            <span class="material-symbols-outlined text-[18px]">add</span>
+                                            Hubungkan WhatsApp
+                                        </a>
+                                    @endif
                                 </div>
                                 @else
                                 <canvas id="mainDashboardChart"></canvas>
@@ -305,6 +329,12 @@
                                             <span class="material-symbols-outlined text-gray-500 group-hover:text-white">business_center</span>
                                         </div>
                                         <span class="text-[10px] font-black text-gray-500 group-hover:text-white uppercase tracking-widest">PROFIL</span>
+                                    </a>
+                                    <a href="{{ route('dashboard.roadmap') }}" class="col-span-2 flex flex-row items-center justify-center gap-4 p-4 bg-gray-950 border border-gray-800 rounded-3xl hover:border-green-500/30 hover:bg-green-500/5 transition-all group">
+                                        <div class="size-10 rounded-xl bg-gray-900 flex items-center justify-center group-hover:scale-110 group-hover:bg-green-600/10 transition-all">
+                                            <span class="material-symbols-outlined text-gray-500 group-hover:text-green-400">checklist</span>
+                                        </div>
+                                        <span class="text-[10px] font-black text-gray-500 group-hover:text-white uppercase tracking-widest">PLAN PERBAIKAN</span>
                                     </a>
                                 </div>
                             </div>

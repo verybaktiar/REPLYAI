@@ -27,6 +27,14 @@ class WhatsAppDevice extends Model
         'user_id',
     ];
 
+    /**
+     * Check if the device is currently connected.
+     */
+    public function isConnected(): bool
+    {
+        return strtolower($this->status) === self::STATUS_CONNECTED;
+    }
+
     protected $casts = [
         'is_active' => 'boolean',
         'last_connected_at' => 'datetime',

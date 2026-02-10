@@ -3,7 +3,7 @@
 @php
     $hasKb = \App\Models\KbArticle::where('user_id', $user->id)->exists();
     $hasRules = \App\Models\AutoReplyRule::where('user_id', $user->id)->exists();
-    $hasWa = \App\Models\WaSession::where('user_id', $user->id)->where('status', 'connected')->exists();
+    $hasWa = \App\Models\WhatsAppDevice::where('user_id', $user->id)->where('status', 'connected')->exists();
     $hasIg = \App\Models\InstagramAccount::where('user_id', $user->id)->where('is_active', true)->exists();
     $hasProfile = \App\Models\BusinessProfile::where('user_id', $user->id)->exists();
     

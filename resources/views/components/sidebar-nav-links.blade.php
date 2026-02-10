@@ -61,7 +61,7 @@
 
 {{-- 3. LAPORAN (Grouped) --}}
 @php
-    $isReportActive = request()->routeIs('analytics*') || request()->routeIs('logs*');
+    $isReportActive = request()->routeIs('analytics*') || request()->routeIs('logs*') || request()->routeIs('admin.analytics*');
 @endphp
 <div x-data="{ open: {{ $isReportActive ? 'true' : 'false' }} }" class="space-y-1">
     <button @click="open = !open" 
@@ -72,7 +72,8 @@
     </button>
     
     <div x-show="open" x-collapse class="ml-4 border-l border-gray-800 pl-4 space-y-1">
-        <a class="block py-2 text-xs {{ request()->routeIs('analytics*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('analytics.index') }}">Statistik</a>
+        <a class="block py-2 text-xs {{ request()->routeIs('admin.analytics*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('admin.analytics.index') }}">🤖 AI Analytics</a>
+        <a class="block py-2 text-xs {{ request()->routeIs('analytics*') && !request()->routeIs('admin.analytics*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('analytics.index') }}">Statistik</a>
         <a class="block py-2 text-xs {{ request()->routeIs('logs*') ? 'text-white font-bold' : 'text-gray-500 hover:text-white' }}" href="{{ route('logs.index') }}">Riwayat Aktivitas</a>
     </div>
 </div>

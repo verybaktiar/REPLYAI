@@ -439,6 +439,13 @@ class AdminUserController extends Controller
      */
     public function impersonate(User $user): RedirectResponse
     {
+        // DEBUG LOG
+        \Log::info("Impersonate Request", [
+            'target_user_id' => $user->id,
+            'target_user_email' => $user->email,
+            'admin_id' => Auth::guard('admin')->id()
+        ]);
+
         // Get admin ID before switching auth
         $adminId = Auth::guard('admin')->id();
         
@@ -454,12 +461,23 @@ class AdminUserController extends Controller
         // Log to ActivityLogService as well
         ActivityLogService::log(ActivityLog::ACTION_IMPERSONATION_START, "Admin started impersonating user #{$user->id}", $user);
 
+        // Explicitly logout any existing web user to prevent session pollution
+        if (Auth::guard('web')->check()) {
+            Auth::guard('web')->logout();
+        }
+
         // Login sebagai user
-        Auth::login($user);
+        Auth::guard('web')->login($user);
         
         // IMPORTANT: Set session AFTER login to prevent session regeneration from losing it
         session()->put('impersonating_from_admin', $adminId);
         session()->save();
+
+        // DEBUG: Verify login success
+        \Log::info("Impersonate Success Verification", [
+            'logged_in_id' => Auth::guard('web')->id(),
+            'expected_id' => $user->id
+        ]);
 
         return redirect('/dashboard')->with('info', "Anda sekarang login sebagai {$user->name}. Klik 'Kembali ke Admin' untuk keluar.");
     }

@@ -305,7 +305,23 @@ class KbArticleController extends Controller
         $targetHtml = $main ?? $html;
 
         $text = strip_tags($targetHtml);
+        
+        // Decode HTML entities LENGKAP
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = html_entity_decode($text); // Double decode untuk entities nested
+        
+        // Fix bullet/harga separator (PRIORITAS: harga dulu, baru bullet)
+        $bullets = ['•', '·', '∙', '⋅', '\xE2\x80\xA2', '\xC2\xB7', '\xE2\x88\x99', '\xE2\x8B\x85'];
+        $text = str_replace($bullets, '---BULLET---', $text);
+        
+        // Fix harga dengan ---BULLET--- marker
+        $text = preg_replace('/Rp\s*(\d+)\s*---BULLET---\s*(\d+)(?:\s*---BULLET---\s*(\d+))?/i', 'Rp $1.$2.$3', $text);
+        $text = preg_replace('/(\d+)\s*---BULLET---\s*(\d+)(?:\s*---BULLET---\s*(\d+))?/', '$1.$2.$3', $text);
+        
+        // Sisa bullet jadi normal bullet
+        $text = str_replace('---BULLET---', ' • ', $text);
+        
+        // Clean up whitespace
         $text = preg_replace('/\s+/', ' ', $text);
         $text = trim($text);
 
@@ -321,32 +337,132 @@ class KbArticleController extends Controller
         $text = preg_replace('/\s+/', ' ', $text);
         $text = trim($text);
 
-        // delimiter layanan
-        $delims = [
-            'Rawat Jalan','Rawat Inap','Layanan Unggulan','Fasilitas Umum','Fasilitas Penunjang',
-            'Poliklinik Eksekutif','Poliklinik Reguler','Kamar Kelas I','Kamar Kelas II','Kamar Kelas III',
-            'Kamar VIP','Suite Room','IGD 24 Jam','Instalasi Bedah Sentral','Instalasi Farmasi',
-            'Instalasi Laboratorium','Instalasi Radiologi','Rehabilitasi Medik',
-        ];
-        foreach ($delims as $d) {
-            $text = preg_replace('/\b' . preg_quote($d, '/') . '\b/u', "\n" . $d, $text);
+        // SMART STRUCTURING: Deteksi dan format harga/paket
+        $text = $this->smartStructurePricing($text);
+
+        return trim($text);
+    }
+    
+    /**
+     * Smart structure untuk teks yang mengandung harga/paket
+     * Format otomatis menjadi struktur yang rapi untuk AI
+     */
+    private function smartStructurePricing(string $text): string
+    {
+        // Deteksi pola harga
+        $hasPricing = preg_match('/Rp\s*[\d\.]+/', $text) || 
+                      preg_match('/\d+\.\d{3}/', $text);
+        
+        if (!$hasPricing) {
+            // Kalau tidak ada harga, return teks asli tapi terstruktur
+            return $this->basicStructure($text);
         }
-
-        // split + dedup
-        $parts = preg_split('/[\.\n\r•\-]+/u', $text);
-        $parts = array_map(fn($p) => trim($p), $parts);
-        $parts = array_filter($parts);
-
-        $unique = [];
-        $seen = [];
-        foreach ($parts as $p) {
-            $key = mb_strtolower($p);
-            if (isset($seen[$key])) continue;
-            $seen[$key] = true;
-            $unique[] = $p;
+        
+        // Format harga yang konsisten
+        $text = preg_replace('/Rp\s+(\d+)[\.\s]*(\d{3})[\.\s]*(\d{3})/i', 'Rp $1.$2.$3', $text);
+        $text = preg_replace('/Rp\s+(\d+)[\.\s]*(\d{3})/i', 'Rp $1.$2', $text);
+        
+        // Split ke paragraf
+        $paragraphs = preg_split('/(?=[A-Z][a-z]+\s*[:\-])/u', $text);
+        if ($paragraphs === false) {
+            $paragraphs = [$text];
         }
-
-        return trim("• " . implode("\n• ", $unique));
+        $paragraphs = array_map('trim', $paragraphs);
+        $paragraphs = array_values(array_filter($paragraphs, fn($p) => strlen($p) > 20));
+        
+        // Group berdasarkan konteks
+        $structured = [];
+        $currentSection = '';
+        
+        foreach ($paragraphs as $p) {
+            // Deteksi section header (Paket, Harga, Fitur, dll)
+            if (preg_match('/^(Paket|Harga|Plan|Pro|Business|Enterprise|Starter|Basic|Premium)/i', $p)) {
+                if ($currentSection) {
+                    $structured[] = $currentSection;
+                }
+                $currentSection = $p;
+            } else {
+                $currentSection .= "\n" . $p;
+            }
+        }
+        
+        if ($currentSection) {
+            $structured[] = $currentSection;
+        }
+        
+        // Jika tidak ada struktur yang terdeteksi, gunakan struktur dasar
+        if (empty($structured)) {
+            return $this->basicStructure($text);
+        }
+        
+        // Format final dengan pemisah jelas
+        $result = [];
+        foreach ($structured as $section) {
+            $lines = explode("\n", $section);
+            $lines = array_map('trim', $lines);
+            $lines = array_values(array_filter($lines)); // Reindex array
+            
+            if (!empty($lines) && isset($lines[0])) {
+                // Header paket
+                $result[] = '📦 ' . $lines[0];
+                // Detail
+                foreach (array_slice($lines, 1) as $line) {
+                    $result[] = '   • ' . $line;
+                }
+                $result[] = ''; // Empty line separator
+            }
+        }
+        
+        return implode("\n", $result);
+    }
+    
+    /**
+     * Struktur dasar untuk teks tanpa harga
+     */
+    private function basicStructure(string $text): string
+    {
+        // Split berdasarkan kalimat panjang atau bullet points
+        $sentences = preg_split('/(?<=[.!?])\s+(?=[A-Z])/u', $text);
+        if ($sentences === false) {
+            return trim($text);
+        }
+        $sentences = array_map('trim', $sentences);
+        $sentences = array_values(array_filter($sentences, fn($s) => strlen($s) > 10));
+        
+        // Group berdasarkan topik
+        $paragraphs = [];
+        $current = '';
+        
+        foreach ($sentences as $sentence) {
+            if (strlen($current) > 300) {
+                $paragraphs[] = trim($current);
+                $current = $sentence;
+            } else {
+                $current .= ' ' . $sentence;
+            }
+        }
+        
+        if ($current) {
+            $paragraphs[] = trim($current);
+        }
+        
+        // Format dengan bullet points untuk poin-poin penting
+        $result = [];
+        foreach ($paragraphs as $i => $para) {
+            if ($i === 0) {
+                // Paragraf pertama tanpa bullet
+                $result[] = $para;
+            } else {
+                // Paragraf berikutnya dengan bullet jika pendek
+                if (strlen($para) < 150) {
+                    $result[] = '• ' . $para;
+                } else {
+                    $result[] = $para;
+                }
+            }
+        }
+        
+        return implode("\n\n", $result);
     }
 
     private function guessTitleFromHtml(string $html): ?string

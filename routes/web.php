@@ -67,9 +67,7 @@ Route::get('/', function () {
 })->name('home');
 
 // Dashboard (untuk user yang sudah login DAN punya active subscription)
-Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified', 'has_subscription', 'suspended'])
-    ->name('dashboard');
+// Note: Definisi route dashboard dipindahkan ke dalam group 'PROTECTED USER FEATURES' di bawah untuk menghindari duplikasi
 
 // Suspended Page
 Route::get('/suspended', function () {
@@ -77,23 +75,8 @@ Route::get('/suspended', function () {
 })->name('suspended');
 
 // ============================
-// ONBOARDING WIZARD
+// PRICING PAGE
 // ============================
-Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
-    Route::get('/onboarding', [OnboardingController::class, 'index'])->name('onboarding');
-    Route::post('/onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');
-    Route::get('/onboarding/skip', [OnboardingController::class, 'skip'])->name('onboarding.skip');
-});
-
-// ============================
-// SESSION MANAGEMENT
-// ============================
-Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
-    Route::get('/account/sessions', [\App\Http\Controllers\SessionController::class, 'index'])->name('sessions.index');
-    Route::delete('/account/sessions/{session}', [\App\Http\Controllers\SessionController::class, 'destroy'])->name('sessions.destroy');
-    Route::delete('/account/sessions', [\App\Http\Controllers\SessionController::class, 'destroyAll'])->name('sessions.destroy-all');
-});
-
 // Pricing Page dengan Plan Selection
 Route::get('/pricing', function (Illuminate\Http\Request $request) {
     $planSlug = $request->get('plan');
@@ -128,50 +111,16 @@ Route::get('/pricing', function (Illuminate\Http\Request $request) {
     return view('pages.pricing.index', compact('plans', 'pendingPayment'));
 })->name('pricing');
 
-// Upgrade Required Page (ketika user tidak punya akses ke fitur)
-Route::get('/upgrade', function (Illuminate\Http\Request $request) {
-    $feature = $request->get('feature');
-    
-    // Mapping feature key ke nama yang user-friendly
-    $featureNames = [
-        'broadcasts' => 'Broadcast Messages',
-        'broadcast' => 'Broadcast Messages',
-        'sequences' => 'Drip Sequences',
-        'web_widgets' => 'Web Chat Widget',
-        'api_access' => 'Akses API',
-        'analytics_export' => 'Export Laporan',
-        'remove_branding' => 'Hapus Branding',
-    ];
-    
-    $featureName = $featureNames[$feature] ?? ucwords(str_replace('_', ' ', $feature ?? 'ini'));
-    
-    return view('pages.upgrade-required', compact('feature', 'featureName'));
-})->middleware(['auth'])->name('upgrade');
-
-// Subscription Pending Page
-Route::get('/subscription/pending', function () {
-    return view('subscription.pending');
-})->middleware(['auth'])->name('subscription.pending');
-
-// My Account Page
-Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
-    Route::get('/account', function () {
-        return view('account.index');
-    })->name('account.index');
-    
-    // Announcements
-    Route::post('/announcements/{announcement}/read', [App\Http\Controllers\UserAnnouncementController::class, 'markAsRead'])->name('announcements.read');
-});
-
 // ============================
 // PROTECTED USER FEATURES (Auth + Verified + Not Suspended)
 // ============================
 Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
     
     // Dashboard
-    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
-        ->middleware(['has_subscription'])
-        ->name('dashboard');
+    Route::controller(App\Http\Controllers\DashboardController::class)->group(function () {
+        Route::get('/dashboard', 'index')->middleware(['has_subscription'])->name('dashboard');
+        Route::get('/dashboard/roadmap', 'roadmap')->name('dashboard.roadmap');
+    });
 
     // My Account & Profile
     Route::get('/account', function () {
@@ -251,6 +200,14 @@ Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
     // Analytics & CSAT
     Route::get('/analytics', [App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics.index');
     Route::get('/analytics/export', [App\Http\Controllers\AnalyticsController::class, 'export'])->name('analytics.export');
+    
+    // AI Analytics Dashboard
+    Route::prefix('admin/analytics')->name('admin.analytics.')->middleware(['auth'])->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AnalyticsController::class, 'index'])->name('index');
+        Route::get('/chart-data', [App\Http\Controllers\Admin\AnalyticsController::class, 'getChartData'])->name('chart-data');
+        Route::patch('/missed-query/{query}/resolve', [App\Http\Controllers\Admin\AnalyticsController::class, 'resolveMissedQuery'])->name('missed-query.resolve');
+        Route::patch('/missed-query/{query}/ignore', [App\Http\Controllers\Admin\AnalyticsController::class, 'ignoreMissedQuery'])->name('missed-query.ignore');
+    });
     Route::get('/contacts', [App\Http\Controllers\ContactController::class, 'index'])->name('contacts.index');
     Route::get('/contacts/export', [App\Http\Controllers\ContactController::class, 'export'])->name('contacts.export');
     
@@ -277,38 +234,42 @@ Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
         ->name('simulator.send');
 
     // Inbox
-    Route::middleware(['global_feature:enable_instagram'])->group(function () {
-        Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
-        Route::get('/inbox/enterprise', function () {
+    Route::middleware(['global_feature:enable_instagram'])->controller(InboxController::class)->prefix('inbox')->name('inbox')->group(function () {
+        Route::get('/', 'index'); // name: inbox
+        Route::get('/enterprise', function () {
             return view('pages.inbox.enterprise');
-        })->name('inbox.enterprise');
-        Route::post('/inbox/send', [InboxController::class, 'send'])->name('inbox.send');
-        Route::get('/inbox/poll-messages', [InboxController::class, 'pollMessages'])->name('inbox.poll.messages');
-        Route::get('/inbox/poll-conversations', [InboxController::class, 'pollConversations'])->name('inbox.poll.conversations');
-        Route::get('/inbox/check-latest', [InboxController::class, 'checkLatest'])->name('inbox.checkLatest');
-        Route::get('/inbox/check-new', [InboxController::class, 'checkNew'])->name('inbox.checkNew');
-        Route::post('/inbox/{conversation}/handback', [InboxController::class, 'handbackToBot'])->name('inbox.handback');
+        })->name('.enterprise'); // inbox.enterprise
+        Route::post('/send', 'send')->name('.send');
+        Route::get('/poll-messages', 'pollMessages')->name('.poll.messages');
+        Route::get('/poll-conversations', 'pollConversations')->name('.poll.conversations');
+        Route::get('/check-latest', 'checkLatest')->name('.checkLatest');
+        Route::get('/check-new', 'checkNew')->name('.checkNew');
+        Route::post('/{conversation}/handback', 'handbackToBot')->name('.handback');
     });
 
     // Rules
-    Route::get('/rules', [AutoReplyRuleController::class, 'index'])->name('rules.index');
-    Route::post('/rules', [AutoReplyRuleController::class, 'storeAjax'])->middleware(['quota:auto_reply_rules'])->name('rules.store');
-    Route::patch('/rules/{rule}', [AutoReplyRuleController::class, 'updateAjax'])->name('rules.update');
-    Route::delete('/rules/{rule}', [AutoReplyRuleController::class, 'destroyAjax'])->name('rules.destroy');
-    Route::patch('/rules/{rule}/toggle', [AutoReplyRuleController::class, 'toggleAjax'])->name('rules.toggle');
-    Route::post('/rules/test', [AutoReplyRuleController::class, 'testAjax'])->name('rules.test');
+    Route::controller(AutoReplyRuleController::class)->prefix('rules')->name('rules.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'storeAjax')->middleware(['quota:auto_reply_rules'])->name('store');
+        Route::patch('/{rule}', 'updateAjax')->name('update');
+        Route::delete('/{rule}', 'destroyAjax')->name('destroy');
+        Route::patch('/{rule}/toggle', 'toggleAjax')->name('toggle');
+        Route::post('/test', 'testAjax')->name('test');
+    });
     Route::get('/logs', [AutoReplyLogController::class, 'index'])->name('logs.index');
 
     // KB
-    Route::get('/kb', [KbArticleController::class, 'index'])->name('kb.index');
-    Route::post('/kb', [KbArticleController::class, 'store'])->middleware(['quota:kb_articles'])->name('kb.store');
-    Route::post('/kb/import-url', [KbArticleController::class, 'importUrl'])->middleware(['quota:kb_articles'])->name('kb.importUrl');
-    Route::post('/kb/import-file', [KbArticleController::class, 'importFile'])->middleware(['quota:kb_articles'])->name('kb.importFile');
-    Route::patch('/kb/{kb}/toggle', [KbArticleController::class, 'toggle'])->name('kb.toggle');
-    Route::patch('/kb/{kb}/profile', [KbArticleController::class, 'updateProfile'])->name('kb.updateProfile');
-    Route::post('/kb/{kb}/update', [KbArticleController::class, 'update'])->name('kb.update');
-    Route::delete('/kb/{kb}', [KbArticleController::class, 'destroy'])->name('kb.destroy');
-    Route::post('/kb/test-ai', [KbArticleController::class, 'testAi'])->name('kb.testAi');
+    Route::controller(KbArticleController::class)->prefix('kb')->name('kb.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->middleware(['quota:kb_articles'])->name('store');
+        Route::post('/import-url', 'importUrl')->middleware(['quota:kb_articles'])->name('importUrl');
+        Route::post('/import-file', 'importFile')->middleware(['quota:kb_articles'])->name('importFile');
+        Route::patch('/{kb}/toggle', 'toggle')->name('toggle');
+        Route::patch('/{kb}/profile', 'updateProfile')->name('updateProfile');
+        Route::post('/{kb}/update', 'update')->name('update');
+        Route::delete('/{kb}', 'destroy')->name('destroy');
+        Route::post('/test-ai', 'testAi')->name('testAi');
+    });
 
     // WhatsApp
     Route::prefix('whatsapp')->name('whatsapp.')->middleware(['global_feature:enable_whatsapp'])->group(function () {
@@ -316,98 +277,109 @@ Route::middleware(['auth', 'verified', 'suspended'])->group(function () {
         Route::middleware(['feature:broadcasts', 'global_feature:enable_broadcasts'])->group(function () {
             Route::resource('/broadcast', WhatsAppBroadcastController::class)->only(['index', 'create', 'store', 'show']);
         });
-        Route::get('/inbox', [WhatsAppInboxController::class, 'index'])->name('inbox');
-        Route::get('/api/conversations', [WhatsAppInboxController::class, 'getConversations'])->name('api.conversations');
-        Route::get('/api/messages/{phone}', [WhatsAppInboxController::class, 'getMessages'])->name('api.messages');
-        Route::get('/api/conversations/{phone}/summary', [WhatsAppInboxController::class, 'getSummary'])->name('api.conversations.summary');
-        Route::get('/api/conversations/{phone}/suggestions', [WhatsAppInboxController::class, 'getSuggestions'])->name('api.conversations.suggestions');
-        Route::post('/api/messages/rate', [WhatsAppInboxController::class, 'rateMessage'])->name('api.messages.rate');
-        Route::post('/api/conversations/{phone}/toggle-followup', [WhatsAppInboxController::class, 'toggleFollowup'])->name('api.conversations.toggle-followup');
-        
-        // CRM Routes (Notes & Tags)
-        Route::get('/api/conversations/{phone}/notes', [WhatsAppInboxController::class, 'getNotes'])->name('api.conversations.notes.index');
-        Route::post('/api/conversations/{phone}/notes', [WhatsAppInboxController::class, 'storeNote'])->name('api.conversations.notes.store');
-        Route::get('/api/conversations/{phone}/tags', [WhatsAppInboxController::class, 'getTags'])->name('api.conversations.tags.index');
-        Route::post('/api/conversations/{phone}/tags', [WhatsAppInboxController::class, 'attachTag'])->name('api.conversations.tags.attach');
-        Route::delete('/api/conversations/{phone}/tags', [WhatsAppInboxController::class, 'detachTag'])->name('api.conversations.tags.detach');
-        Route::get('/api/tags', [WhatsAppInboxController::class, 'getAvailableTags'])->name('api.tags.index');
+
+        Route::controller(WhatsAppInboxController::class)->group(function() {
+            Route::get('/inbox', 'index')->name('inbox');
+            
+            // API Routes
+            Route::prefix('api')->name('api.')->group(function() {
+                Route::get('/conversations', 'getConversations')->name('conversations');
+                Route::get('/messages/{phone}', 'getMessages')->name('messages');
+                Route::get('/conversations/{phone}/summary', 'getSummary')->name('conversations.summary');
+                Route::get('/conversations/{phone}/suggestions', 'getSuggestions')->name('conversations.suggestions');
+                Route::post('/messages/rate', 'rateMessage')->name('messages.rate');
+                Route::post('/conversations/{phone}/toggle-followup', 'toggleFollowup')->name('conversations.toggle-followup');
+                
+                // CRM Routes
+                Route::get('/conversations/{phone}/notes', 'getNotes')->name('conversations.notes.index');
+                Route::post('/conversations/{phone}/notes', 'storeNote')->name('conversations.notes.store');
+                Route::get('/conversations/{phone}/tags', 'getTags')->name('conversations.tags.index');
+                Route::post('/conversations/{phone}/tags', 'attachTag')->name('conversations.tags.attach');
+                Route::delete('/conversations/{phone}/tags', 'detachTag')->name('conversations.tags.detach');
+                Route::get('/tags', 'getAvailableTags')->name('tags.index');
+            });
+        });
+
+        Route::controller(WhatsAppController::class)->group(function() {
+            Route::get('/settings', 'settings')->name('settings');
+            Route::post('/store', 'store')->name('store');
+            Route::delete('/device/{sessionId}', 'destroy')->name('destroy');
+            Route::get('/status/{sessionId}', 'status')->name('status');
+            Route::get('/qr/{sessionId}', 'qr')->name('qr');
+            Route::post('/device/{sessionId}/reconnect', 'reconnect')->name('reconnect');
+            Route::put('/device/{sessionId}/profile', 'updateProfile')->name('updateProfile');
+            Route::post('/send', 'send')->middleware(['quota:ai_messages'])->name('send');
+            Route::post('/toggle-auto-reply', 'toggleAutoReply')->name('toggle-auto-reply');
+            Route::get('/messages', 'messages')->name('messages');
+        });
 
         Route::get('/api/training/export/csv', [\App\Http\Controllers\AiTrainingExportController::class, 'exportCSV'])->name('api.training.export.csv');
         Route::get('/api/training/export/json', [\App\Http\Controllers\AiTrainingExportController::class, 'exportJSON'])->name('api.training.export.json');
-        Route::get('/settings', [WhatsAppController::class, 'settings'])->name('settings');
-        Route::post('/store', [WhatsAppController::class, 'store'])->name('store');
-        Route::delete('/device/{sessionId}', [WhatsAppController::class, 'destroy'])->name('destroy');
-        Route::get('/status/{sessionId}', [WhatsAppController::class, 'status'])->name('status');
-        Route::get('/qr/{sessionId}', [WhatsAppController::class, 'qr'])->name('qr');
-        Route::post('/device/{sessionId}/reconnect', [WhatsAppController::class, 'reconnect'])->name('reconnect');
-        Route::put('/device/{sessionId}/profile', [WhatsAppController::class, 'updateProfile'])->name('updateProfile');
-        Route::post('/send', [WhatsAppController::class, 'send'])->middleware(['quota:ai_messages'])->name('send');
-        Route::post('/toggle-auto-reply', [WhatsAppController::class, 'toggleAutoReply'])->name('toggle-auto-reply');
-        Route::get('/messages', [WhatsAppController::class, 'messages'])->name('messages');
     });
 
     // Takeover
-    Route::prefix('takeover')->name('takeover.')->group(function () {
-        Route::post('/wa/{phone}/takeover', [TakeoverController::class, 'takeoverWa'])->name('wa.takeover');
-        Route::post('/wa/{phone}/handback', [TakeoverController::class, 'handbackWa'])->name('wa.handback');
-        Route::get('/wa/{phone}/status', [TakeoverController::class, 'getWaConversationStatus'])->name('wa.status');
-        Route::post('/ig/{id}/takeover', [TakeoverController::class, 'takeoverIg'])->name('ig.takeover');
-        Route::post('/ig/{id}/handback', [TakeoverController::class, 'handbackIg'])->name('ig.handback');
-        Route::get('/logs', [TakeoverController::class, 'logsPage'])->name('logs');
-        Route::get('/logs/data', [TakeoverController::class, 'getLogs'])->name('logs.data');
-        Route::get('/settings', [TakeoverController::class, 'getSettings'])->name('settings.get');
-        Route::post('/settings', [TakeoverController::class, 'updateSettings'])->name('settings.update');
+    Route::controller(TakeoverController::class)->prefix('takeover')->name('takeover.')->group(function () {
+        Route::post('/wa/{phone}/takeover', 'takeoverWa')->name('wa.takeover');
+        Route::post('/wa/{phone}/handback', 'handbackWa')->name('wa.handback');
+        Route::get('/wa/{phone}/status', 'getWaConversationStatus')->name('wa.status');
+        Route::post('/ig/{id}/takeover', 'takeoverIg')->name('ig.takeover');
+        Route::post('/ig/{id}/handback', 'handbackIg')->name('ig.handback');
+        Route::get('/logs', 'logsPage')->name('logs');
+        Route::get('/logs/data', 'getLogs')->name('logs.data');
+        Route::get('/settings', 'getSettings')->name('settings.get');
+        Route::post('/settings', 'updateSettings')->name('settings.update');
     });
 
     // Web Widgets
-    Route::prefix('web-widgets')->name('web-widgets.')->group(function () {
-        Route::get('/', [WebWidgetController::class, 'index'])->name('index');
-        Route::get('/create', [WebWidgetController::class, 'create'])->name('create');
-        Route::post('/', [WebWidgetController::class, 'store'])->name('store');
-        Route::get('/{webWidget}/edit', [WebWidgetController::class, 'edit'])->name('edit');
-        Route::put('/{webWidget}', [WebWidgetController::class, 'update'])->name('update');
-        Route::delete('/{webWidget}', [WebWidgetController::class, 'destroy'])->name('destroy');
-        Route::patch('/{webWidget}/toggle', [WebWidgetController::class, 'toggle'])->name('toggle');
-        Route::post('/{webWidget}/regenerate-key', [WebWidgetController::class, 'regenerateKey'])->name('regenerate-key');
-        Route::get('/{webWidget}/embed-code', [WebWidgetController::class, 'getEmbedCode'])->name('embed-code');
+    Route::controller(WebWidgetController::class)->prefix('web-widgets')->name('web-widgets.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{webWidget}/edit', 'edit')->name('edit');
+        Route::put('/{webWidget}', 'update')->name('update');
+        Route::delete('/{webWidget}', 'destroy')->name('destroy');
+        Route::patch('/{webWidget}/toggle', 'toggle')->name('toggle');
+        Route::post('/{webWidget}/regenerate-key', 'regenerateKey')->name('regenerate-key');
+        Route::get('/{webWidget}/embed-code', 'getEmbedCode')->name('embed-code');
     });
 
     // Sequences
-    Route::prefix('sequences')->name('sequences.')->group(function () {
-        Route::get('/', [SequenceController::class, 'index'])->name('index');
-        Route::get('/create', [SequenceController::class, 'create'])->name('create');
-        Route::post('/', [SequenceController::class, 'store'])->name('store');
-        Route::get('/{sequence}/edit', [SequenceController::class, 'edit'])->name('edit');
-        Route::put('/{sequence}', [SequenceController::class, 'update'])->name('update');
-        Route::delete('/{sequence}', [SequenceController::class, 'destroy'])->name('destroy');
-        Route::patch('/{sequence}/toggle', [SequenceController::class, 'toggle'])->name('toggle');
-        Route::get('/{sequence}/enrollments', [SequenceController::class, 'enrollments'])->name('enrollments');
-        Route::post('/{sequence}/enroll', [SequenceController::class, 'manualEnroll'])->name('enroll');
-        Route::post('/enrollments/{enrollment}/cancel', [SequenceController::class, 'cancelEnrollment'])->name('enrollment.cancel');
+    Route::controller(SequenceController::class)->prefix('sequences')->name('sequences.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{sequence}/edit', 'edit')->name('edit');
+        Route::put('/{sequence}', 'update')->name('update');
+        Route::delete('/{sequence}', 'destroy')->name('destroy');
+        Route::patch('/{sequence}/toggle', 'toggle')->name('toggle');
+        Route::get('/{sequence}/enrollments', 'enrollments')->name('enrollments');
+        Route::post('/{sequence}/enroll', 'manualEnroll')->name('enroll');
+        Route::post('/enrollments/{enrollment}/cancel', 'cancelEnrollment')->name('enrollment.cancel');
     });
 
     // Subscription Management
-    Route::prefix('subscription')->name('subscription.')->group(function () {
-        Route::get('/', [SubscriptionController::class, 'index'])->name('index');
-        Route::get('/upgrade', [SubscriptionController::class, 'upgrade'])->name('upgrade');
-        Route::post('/cancel', [SubscriptionController::class, 'cancel'])->name('cancel');
-        Route::post('/reactivate', [SubscriptionController::class, 'reactivate'])->name('reactivate');
+    Route::controller(SubscriptionController::class)->prefix('subscription')->name('subscription.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/upgrade', 'upgrade')->name('upgrade');
+        Route::post('/cancel', 'cancel')->name('cancel');
+        Route::post('/reactivate', 'reactivate')->name('reactivate');
     });
 
     // Support
-    Route::prefix('support')->name('support.')->group(function () {
-        Route::get('/', [SupportController::class, 'index'])->name('index');
-        Route::get('/create', [SupportController::class, 'create'])->name('create');
-        Route::post('/', [SupportController::class, 'store'])->name('store');
-        Route::get('/{ticket}', [SupportController::class, 'show'])->name('show');
-        Route::post('/{ticket}/reply', [SupportController::class, 'reply'])->name('reply');
-        Route::post('/{ticket}/rate', [SupportController::class, 'rate'])->name('rate');
-        Route::post('/{ticket}/reopen', [SupportController::class, 'reopen'])->name('reopen');
+    Route::controller(SupportController::class)->prefix('support')->name('support.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{ticket}', 'show')->name('show');
+        Route::post('/{ticket}/reply', 'reply')->name('reply');
+        Route::post('/{ticket}/rate', 'rate')->name('rate');
+        Route::post('/{ticket}/reopen', 'reopen')->name('reopen');
     });
 
     // Documentation
     Route::get('/docs', [App\Http\Controllers\DocumentationController::class, 'index'])->name('documentation.index');
 
 });
+
 
 

@@ -5,9 +5,13 @@ namespace App\Services;
 use App\Models\KbArticle;
 use App\Models\BusinessProfile;
 use App\Models\AiTrainingExample;
+use App\Models\KbMissedQuery;
+use App\Models\AiTrainingSuggestion;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Cache;
 
 class AiAnswerService
 {
@@ -90,12 +94,14 @@ class AiAnswerService
         ];
     }
 
-    public function answerFromKb(string $question): ?array
+    public function answerFromKb(string $question, ?BusinessProfile $profile = null): ?array
     {
         $question = trim($question);
         if ($question === '') return null;
+        
+        $profile = $profile ?? BusinessProfile::getActive();
 
-        $articles = $this->searchRelevantArticles($question, 4);
+        $articles = $this->searchRelevantArticles($question, 4, $profile?->id, $profile?->user_id, $profile);
         if ($articles->isEmpty()) {
             Log::info('📚 KB candidates empty', ['question' => $question]);
             return null;
@@ -145,35 +151,6 @@ class AiAnswerService
     }
 
     /**
-     * Helper to format response and log interaction
-     */
-    private function formatResponse(string $answer, float $confidence, string $source, ?BusinessProfile $profile, ?int $userId, string $question, array $contextIds = [], ?string $sentiment = null, ?string $imageUrl = null): array
-    {
-        // Log AI Interaction
-        if ($profile) {
-             \App\Models\AiLog::create([
-                 'business_profile_id' => $profile->id,
-                 'user_id' => $userId,
-                 'user_message' => $question,
-                 'answer' => $answer,
-                 'confidence' => $confidence,
-                 'source' => $source,
-                 'context_used' => $contextIds,
-                 'input_tokens' => 0,
-                 'output_tokens' => 0,
-             ]);
-        }
-
-        return [
-            'answer' => $answer,
-            'confidence' => $confidence,
-            'source' => $source,
-            'sentiment' => $sentiment ?? 'neutral',
-            'image_url' => $imageUrl,
-        ];
-    }
-
-    /**
      * WhatsApp-specific AI answer dengan kemampuan percakapan natural
      * Handle sapaan, pertanyaan umum, dan keluhan pasien
      * 
@@ -186,6 +163,39 @@ class AiAnswerService
     {
         $question = trim($question);
         if ($question === '') return null;
+        
+        Log::info('🤖 AI AnswerWhatsApp START', [
+            'question' => $question,
+            'user_id' => $userId,
+            'profile_id' => $profile?->id,
+        ]);
+        
+        // RATE LIMITING: Check if user has exceeded AI request limit
+        $rateLimitKey = 'ai_rate_limit:' . ($userId ?? 'guest');
+        $rateLimitMax = $profile?->ai_rate_limit_per_hour ?? 100;
+        $currentCount = (int) Cache::get($rateLimitKey, 0);
+        
+        Log::debug('🤖 Rate limit check', [
+            'key' => $rateLimitKey,
+            'current' => $currentCount,
+            'max' => $rateLimitMax,
+        ]);
+        
+        if ($currentCount >= $rateLimitMax) {
+            Log::warning('🚫 AI Rate limit exceeded', [
+                'user_id' => $userId,
+                'count' => $currentCount,
+                'limit' => $rateLimitMax,
+            ]);
+            return [
+                'answer' => "Mohon maaf, layanan AI sementara tidak tersedia karena batas penggunaan tercapai. Silakan hubungi Admin kami ya.",
+                'confidence' => 0.5,
+                'source' => 'rate_limited',
+            ];
+        }
+        
+        // Increment rate limit counter
+        Cache::put($rateLimitKey, $currentCount + 1, now()->addHour());
 
         $lower = Str::lower($question);
         
@@ -207,34 +217,67 @@ class AiAnswerService
         // 3) Jika sapaan sederhana, balas ramah tanpa perlu KB
         if ($isSimpleGreeting) {
             $industry = $profile?->getIndustryLabel() ?? 'kami';
+            $businessName = $profile?->business_name ?? 'Replai';
             
             // DYNAMIC GREETING: Cek apakah ada promo aktif di KB
             $profileId = $profile?->id;
             $searchUserId = $userId ?? $profile?->user_id;
+            
+            Log::debug('🎭 GREETING CHECK', [
+                'profileId' => $profileId,
+                'searchUserId' => $searchUserId,
+                'businessName' => $businessName,
+                'industry' => $industry,
+            ]);
+            
             $hasPromo = $this->hasActivePromo($profileId, $searchUserId);
+            
+            // Cek apakah ada konten produk/menu di KB
+            $hasProductData = $this->hasProductContent($profileId, $searchUserId);
+            
+            Log::debug('🎭 GREETING DECISION', [
+                'hasProductData' => $hasProductData,
+                'hasPromo' => $hasPromo,
+            ]);
 
-            // Default greetings (SAFE - No Promo Promise)
-            $greetingResponses = [
-                "Halo kak! Mau tanya tentang menu {$industry} atau rekomendasi best seller? ☕",
-                "Hai kak! Ada yang bisa kami bantu seputar {$industry}? 😊",
-                "Hai kak, salam kenal! Mau cari apa hari ini? Kami siap bantu. ✨",
-                "Selamat datang di {$profile?->business_name}! Silakan tanya-tanya menu atau jam buka ya kak. 🙏"
-            ];
+            // SAFE greetings - tidak menjanjikan apa yang tidak ada di KB
+            if ($hasProductData) {
+                // Jika ada data produk, boleh tawarkan menu/best seller
+                $greetingResponses = [
+                    "Halo kak! Ada yang bisa kami bantu seputar {$businessName}? 😊",
+                    "Hai kak! Selamat datang. Ada yang bisa dibantu hari ini? ✨",
+                    "Halo! Selamat datang di {$businessName}. Silakan tanya-tanya ya kak. 🙏",
+                    "Hai kak, salam kenal! Ada yang bisa kami bantu? 😊"
+                ];
+            } else {
+                // Jika TIDAK ada data produk, greeting netral tanpa janji
+                $greetingResponses = [
+                    "Halo kak! Selamat datang di {$businessName}. Ada yang bisa kami bantu? 😊",
+                    "Hai kak! Selamat datang. Ada yang bisa dibantu hari ini? ✨",
+                    "Halo! Selamat datang di {$businessName}. Silakan tanya-tanya ya kak. 🙏",
+                    "Hai kak, salam kenal! Ada yang bisa kami bantu? 😊"
+                ];
+            }
 
             // Only add promo greetings IF promo exists in KB
             if ($hasPromo) {
-                $greetingResponses[] = "Halo! Selamat datang di {$profile?->business_name}. Mau info produk atau promo terbaru?";
+                $greetingResponses[] = "Halo! Selamat datang di {$businessName}. Mau info produk atau promo terbaru?";
                 $greetingResponses[] = "Hai kak! Jangan lewatkan promo spesial hari ini ya. Mau info lengkapnya? 🎁";
             }
             
-            return $this->formatResponse(
-                $greetingResponses[array_rand($greetingResponses)],
-                0.95,
-                'greeting',
-                $profile,
-                $userId,
-                $question
-            );
+            $selectedGreeting = $greetingResponses[array_rand($greetingResponses)];
+            
+            Log::info('🎭 GREETING SENT', [
+                'greeting' => $selectedGreeting,
+                'hasProductData' => $hasProductData,
+                'hasPromo' => $hasPromo,
+            ]);
+            
+            return [
+                'answer' => $selectedGreeting,
+                'confidence' => 0.95,
+                'source' => 'greeting',
+            ];
         }
 
         // 4) Coba cari di Knowledge Base dulu (filter by profile if provided)
@@ -242,7 +285,7 @@ class AiAnswerService
         // Prioritize passed userId, then profile's userId
         $searchUserId = $userId ?? $profile?->user_id;
         
-        $articles = $this->searchRelevantArticles($question, 4, $profileId, $searchUserId);
+        $articles = $this->searchRelevantArticles($question, 4, $profileId, $searchUserId, $profile);
         
         $imagePath = null;
         if (!$articles->isEmpty()) {
@@ -288,14 +331,20 @@ class AiAnswerService
                     
                     if ($isChallenge) {
                         Log::warning('⚠️ HALLUCINATION CHALLENGE DETECTED', ['query' => $question]);
-                        $msg = __('ai.hallucination_correction', ['industry' => $industry]);
-                        return $this->formatResponse($msg, 1.0, 'system_hallucination_correction', $profile, $userId, $question);
+                        return [
+                            'answer' => "Mohon maaf sekali kak 🙏 Sepertinya saya salah memberikan informasi sebelumnya. \n\nSetelah saya cek ulang sistem, saat ini MEMANG BELUM ADA promo aktif. Mohon abaikan info yang salah tadi ya kak. \n\nSebagai gantinya, mau saya rekomendasikan menu {$industry} yang paling worth it? 😊",
+                            'confidence' => 1.0,
+                            'source' => 'system_hallucination_correction'
+                        ];
                     }
 
                     Log::warning('🛑 BLOCKED PROMO HALLUCINATION', ['query' => $question]);
                     
-                    $msg = __('ai.promo_block', ['industry' => $industry]);
-                    return $this->formatResponse($msg, 1.0, 'system_promo_block', $profile, $userId, $question);
+                    return [
+                        'answer' => "Mohon maaf kak, saat ini belum ada promo aktif. 🙏\n\nTapi kami punya menu {$industry} favorit yang best seller lho! Mau lihat menunya? 😊",
+                        'confidence' => 1.0,
+                        'source' => 'system_promo_block'
+                    ];
                 }
             }
             // ------------------------------------
@@ -309,8 +358,11 @@ class AiAnswerService
              
              if ($isSpecific) {
                  $industry = $profile?->getIndustryLabel() ?? 'bisnis';
-                 $msg = __('ai.specific_no_data', ['industry' => $industry]);
-                 return $this->formatResponse($msg, 1.0, 'system_no_data', $profile, $userId, $question);
+                 return [
+                     'answer' => "Maaf kak, maksudnya tanya tentang {$industry}? Kami bisa bantu info menu, harga, atau cara pesan. Mau yang mana? 😊",
+                     'confidence' => 1.0,
+                     'source' => 'system_no_data'
+                 ];
              }
         }
 
@@ -323,7 +375,12 @@ class AiAnswerService
             $fallbackProfile = $profile ?? BusinessProfile::getActive();
             $fallbackMsg = $fallbackProfile ? $fallbackProfile->kb_fallback_message : "Mohon maaf, layanan sedang gangguan.";
 
-            return $this->formatResponse($fallbackMsg, 0.5, 'fallback', $profile, $userId, $question, [], null, $imagePath);
+            return [
+                'answer' => $fallbackMsg,
+                'confidence' => 0.5,
+                'source' => 'fallback',
+                'image_url' => $imagePath,
+            ];
         }
 
         // 7) Deteksi sentimen user
@@ -332,21 +389,47 @@ class AiAnswerService
         $res = $this->callWhatsAppAI($question, $context, $conversationHistory, $profile, $sentiment);
         
         if (!$res || empty($res['answer'])) {
+            // Track missed query
+            $this->trackMissedQuery($question, $userId, $profile?->id);
+            
+            // Smart Fallback dengan suggestions jika enabled
+            if ($profile?->enable_smart_fallback) {
+                $fallback = $this->getSmartFallback($question, $profile, $userId);
+                if ($fallback) {
+                    return $fallback;
+                }
+            }
+            
             // Jika AI tidak bisa jawab, berikan respons yang lebih natural
-            return $this->formatResponse(__('ai.clarification'), 0.4, 'clarification', $profile, $userId, $question);
+            return [
+                'answer' => "Hmm, bisa dijelaskan lebih detail kak?",
+                'confidence' => 0.4,
+                'source' => 'clarification',
+            ];
         }
         
-        return $this->formatResponse(
-            (string)($res['answer'] ?? ''),
-            (float)($res['confidence'] ?? 0.8),
-            !$articles->isEmpty() ? 'kb' : 'ai',
-            $profile,
-            $userId,
-            $question,
-            $articles->pluck('id')->toArray(),
-            $sentiment['sentiment'] ?? 'neutral',
-            $imagePath
-        );
+        $confidence = (float)($res['confidence'] ?? 0.8);
+        
+        // Track missed query jika confidence terlalu rendah
+        if ($confidence < ($profile?->kb_match_threshold ?? 0.35)) {
+            $this->trackMissedQuery($question, $userId, $profile?->id);
+            
+            // Smart Fallback dengan suggestions jika enabled
+            if ($profile?->enable_smart_fallback) {
+                $fallback = $this->getSmartFallback($question, $profile, $userId);
+                if ($fallback) {
+                    return $fallback;
+                }
+            }
+        }
+
+        return [
+            'answer' => (string)($res['answer'] ?? ''),
+            'confidence' => $confidence,
+            'source' => !$articles->isEmpty() ? 'kb' : 'ai',
+            'sentiment' => $sentiment['sentiment'] ?? 'neutral',
+            'image_url' => $imagePath,
+        ];
     }
 
     /**
@@ -480,7 +563,8 @@ ATURAN KONSISTENSI & KEJUJURAN:
         // Tambah history jika ada (untuk konteks percakapan)
         // Normalisasi history agar strictly alternating User-Assistant-User
         $cleanHistory = [];
-        $rawHistory = array_slice($history, -4); // Ambil 4 terakhir
+        $memoryLimit = $profile?->conversation_memory_limit ?? 10;
+        $rawHistory = array_slice($history, -$memoryLimit); // Ambil N terakhir sesuai konfigurasi
 
         foreach ($rawHistory as $h) {
             // Validasi dasar
@@ -586,22 +670,88 @@ ATURAN KONSISTENSI & KEJUJURAN:
         }
     }
 
-    protected function searchRelevantArticles(string $question, int $limit = 4, ?int $profileId = null, ?int $userId = null)
+    protected function searchRelevantArticles(string $question, int $limit = 4, ?int $profileId = null, ?int $userId = null, ?BusinessProfile $profile = null)
     {
         $q = Str::lower($question);
         
-        // 0. LOAD BUSINESS PROFILE TYPE IF AVAILABLE
-        $businessType = 'common';
-        if ($profileId) {
-            $profile = BusinessProfile::find($profileId);
-            $businessType = $profile ? $profile->business_type : 'common';
-        }
+        // Get configurable threshold from profile or use default
+        $threshold = $profile?->kb_match_threshold ?? 0.35;
 
-        // 1. EXPAND SYNONYMS / INTENTS (CONFIGURABLE)
-        $synonymsCommon = config('ai_synonyms.common', []);
-        $synonymsIndustry = config("ai_synonyms.{$businessType}", config('ai_synonyms.general', []));
-        
-        $synonymMap = array_merge($synonymsCommon, $synonymsIndustry);
+        // 1. EXPAND SYNONYMS / INTENTS
+        // Map common intents to keywords that might appear in KB articles
+        // NOTE: This is a comprehensive default list for multi-tenant SaaS.
+        // TODO: Make this configurable per business_profile for better accuracy.
+        $synonymMap = [
+            // === PRODUK & JUAL BELI (All Industries) ===
+            'jualan'  => ['produk', 'menu', 'katalog', 'harga', 'layanan', 'daftar', 'item', 'barang'],
+            'jual'    => ['produk', 'menu', 'katalog', 'harga', 'layanan', 'tersedia', 'stok'],
+            'beli'    => ['cara pesan', 'order', 'pembayaran', 'cara order', 'cara beli'],
+            'order'   => ['cara pesan', 'pembayaran', 'rekening', 'checkout', 'pesan'],
+            'pesan'   => ['cara pesan', 'pembayaran', 'booking', 'order', 'pemesanan'],
+            'info'    => ['produk', 'menu', 'layanan', 'tentang', 'profil', 'detail', 'keterangan'],
+            'detail'  => ['info', 'keterangan', 'spesifikasi', 'deskripsi'],
+            
+            // === HARGA & PEMBAYARAN ===
+            'biaya'   => ['harga', 'tarif', 'price', 'ongkir', 'cost', 'bayar'],
+            'murah'   => ['harga', 'promo', 'diskon', 'hemat', 'economy'],
+            'mahal'   => ['harga', 'premium', 'kualitas', 'eksklusif', 'luxury'],
+            'promo'   => ['diskon', 'sale', 'potongan', 'bonus', 'free', 'gratis', 'cashback', 'voucher'],
+            'diskon'  => ['promo', 'sale', 'potongan', 'hemat', 'murah'],
+            'bayar'   => ['pembayaran', 'payment', 'transfer', 'qris', 'cash', 'tunai', 'kartu', 'debit', 'kredit'],
+            
+            // === PAKET & SUBSCRIPTION (SaaS, Gym, etc) ===
+            'paket'   => ['plan', 'harga', 'layanan', 'produk', 'subscription', 'berlangganan', 'paket'],
+            'plan'    => ['paket', 'harga', 'layanan', 'subscription', 'berlangganan'],
+            
+            // === LOKASI & OPERASIONAL ===
+            'lokasi'  => ['alamat', 'map', 'tempat', 'cabang', 'kota', 'lokasi', 'where'],
+            'dimana'  => ['alamat', 'map', 'tempat', 'cabang', 'lokasi'],
+            'buka'    => ['jam', 'jadwal', 'operasional', 'jam buka', 'waktu'],
+            'tutup'   => ['jam', 'jadwal', 'operasional', 'jam tutup', 'waktu'],
+            'jam'     => ['jadwal', 'operasional', 'waktu', 'buka', 'tutup'],
+            
+            // === F&B (Restoran, Kafe, Catering) ===
+            'menu'    => ['makanan', 'minuman', 'daftar', 'katalog', 'harga'],
+            'makanan' => ['menu', 'masakan', 'hidangan', 'food'],
+            'minuman' => ['menu', 'drink', 'beverage', 'es', 'kopi', 'tea'],
+            'catering'=> ['pesan', 'paket', 'nasi box', 'prasmanan'],
+            
+            // === KESEHATAN (Klinik, Rumah Sakit, Apotek) ===
+            'dokter'  => ['dokter', 'poli', 'spesialis', 'jadwal dokter', 'praktek'],
+            'poli'    => ['dokter', 'spesialis', 'klinik', 'layanan'],
+            'obat'    => ['apotek', 'resep', 'farmasi', 'medication'],
+            'janji'   => ['booking', 'reservasi', 'janji temu', 'appointment'],
+            
+            // === E-COMMERCE & RETAIL ===
+            'stok'    => ['tersedia', 'ready', 'habis', 'available', 'inventory'],
+            'ukuran'  => ['size', 's', 'm', 'l', 'xl', 'dimensi', 'besar', 'kecil'],
+            'warna'   => ['color', 'putih', 'hitam', 'merah', 'biru', 'varian'],
+            'pengiriman'=> ['kirim', 'delivery', 'expedisi', 'jne', 'jnt', 'sicepat', 'ongkir'],
+            
+            // === JASA & SERVIS ===
+            'servis'  => ['perbaikan', 'repair', 'service', 'garansi', 'maintenance'],
+            'garansi' => ['warranty', 'claim', 'service', 'perbaikan gratis'],
+            
+            // === PENDIDIKAN & KURSUS ===
+            'kursus'  => ['kelas', 'course', 'pelatihan', 'training', 'materi'],
+            'kelas'   => ['kursus', 'jadwal', 'materi', 'pelajaran', 'lesson'],
+            'ujian'   => ['test', 'evaluasi', 'assessment', 'sertifikasi'],
+            
+            // === REAL ESTATE & PROPERTY ===
+            'properti'=> ['rumah', 'apartemen', 'ruko', 'tanah', 'property'],
+            'sewa'    => ['rent', 'kontrak', 'lease', 'bulanan', 'tahunan'],
+            'jual'    => ['beli', 'property', 'rumah', 'investasi'],
+            
+            // === FASILITAS & LAINNYA ===
+            'wifi'    => ['fasilitas', 'internet', 'koneksi', 'password'],
+            'parkir'  => ['fasilitas', 'lokasi', 'tempat', 'mobil', 'motor'],
+            'booking' => ['reservasi', 'pesan tempat', 'meja', 'acara', 'meeting'],
+            'reservasi'=> ['booking', 'pesan tempat', 'meja', 'janji'],
+            'member'  => ['loyalty', 'poin', 'reward', 'daftar', 'membership'],
+            'cara'    => ['tutorial', 'panduan', 'guide', 'how to', 'langkah', 'step'],
+            'syarat'  => ['ketentuan', 'terms', 'rules', 'peraturan', 's&k'],
+            'faq'     => ['pertanyaan', 'question', 'help', 'bantuan', 'cara'],
+        ];
 
         // Stopwords Indonesia - kata yang tidak penting untuk pencarian
         $stopwords = [
@@ -649,13 +799,13 @@ ATURAN KONSISTENSI & KEJUJURAN:
         }
         $articles = $query->get();
 
-        $scored = $articles->map(function ($a) use ($keywords) {
+        $scoredPairs = $articles->map(function ($a) use ($keywords) {
                 $hay = Str::lower(($a->title ?? '') . " " . ($a->content ?? '') . " " . ($a->tags ?? ''));
 
                 $matchedCount = 0;
                 $totalKeywords = $keywords->count();
 
-                if ($totalKeywords === 0) return [$a, 0];
+                if ($totalKeywords === 0) return ['article' => $a, 'score' => 0];
 
                 foreach ($keywords as $kw) {
                     if (Str::contains($hay, $kw)) $matchedCount++;
@@ -671,14 +821,31 @@ ATURAN KONSISTENSI & KEJUJURAN:
                 $denominator = max(1, $totalKeywords * 0.7); 
                 $score = ($matchedCount / $denominator) + $titleMatch;
 
-                return [$a, $score];
+                return ['article' => $a, 'score' => $score];
             })
-            ->filter(fn($pair) => $pair[1] >= 0.35) // LOWERED THRESHOLD: 0.35 to catch expanded synonyms
-            ->sortByDesc(fn($pair) => $pair[1])
-            ->take($limit)
-            ->map(fn($pair) => $pair[0]);
+            ->filter(fn($item) => $item['score'] >= $threshold)
+            ->sortByDesc(fn($item) => $item['score'])
+            ->take($limit);
 
-        return $scored->values();
+        $result = $scoredPairs->map(fn($item) => $item['article'])->values();
+        
+        // LOGGING: Track KB search results
+        Log::debug('🔍 KB SEARCH RESULT', [
+            'question' => $question,
+            'profile_id' => $profileId,
+            'user_id' => $userId,
+            'threshold' => $threshold,
+            'keywords' => $keywords->toArray(),
+            'total_articles_checked' => $articles->count(),
+            'articles_found' => $result->count(),
+            'articles' => $scoredPairs->map(fn($item) => [
+                'id' => $item['article']->id,
+                'title' => $item['article']->title,
+                'score' => $item['score'],
+            ])->toArray(),
+        ]);
+
+        return $result;
     }
 
     protected function buildContext($articles, string $question = ''): string
@@ -1075,5 +1242,218 @@ ATURAN KETAT:
         }
         
         return $query->exists();
+    }
+
+    /**
+     * Check if product/menu/content exists in KB
+     * Used for adaptive greeting - tidak menjanjikan jika tidak ada datanya
+     * NOTE: Comprehensive keywords for multi-tenant SaaS (various industries)
+     */
+    protected function hasProductContent(?int $profileId, ?int $userId): bool
+    {
+        // Cek apakah ada artikel aktif yang mengandung kata-kata terkait produk/layanan
+        // Keywords mencakup berbagai industri: F&B, Retail, Jasa, Kesehatan, Pendidikan, dll
+        $productKeywords = [
+            // Umum
+            'produk', 'product', 'layanan', 'service', 'jual', 'jualan', 'harga', 'price',
+            // F&B
+            'menu', 'makanan', 'minuman', 'katalog', 'item',
+            // Kesehatan
+            'dokter', 'poli', 'obat', 'treatment', 'perawatan',
+            // Jasa
+            'servis', 'repair', 'kursus', 'kelas', 'course',
+            // Real Estate
+            'properti', 'rumah', 'apartemen', 'sewa',
+            // Detail
+            'katalog', 'daftar', 'pilihan', 'varian'
+        ];
+        
+        $query = KbArticle::where('is_active', 1);
+        
+        // Build OR query for product keywords
+        $query->where(function($q) use ($productKeywords) {
+            foreach ($productKeywords as $keyword) {
+                $q->orWhere('title', 'like', "%{$keyword}%")
+                  ->orWhere('content', 'like', "%{$keyword}%")
+                  ->orWhere('tags', 'like', "%{$keyword}%");
+            }
+        });
+
+        // Multi-tenant filter - sama dengan hasActivePromo
+        if ($userId) {
+             $query->withoutGlobalScopes()->where('user_id', $userId);
+        } elseif (!\Illuminate\Support\Facades\Auth::check()) {
+             // Safety: if we don't know the user, be conservative and return false
+             return false; 
+        }
+
+        if ($profileId) {
+            $query->where(function ($q) use ($profileId) {
+                $q->whereNull('business_profile_id')
+                  ->orWhere('business_profile_id', $profileId);
+            });
+        }
+        
+        return $query->exists();
+    }
+
+    /**
+     * Track missed query untuk analytics
+     * Catat pertanyaan yang tidak terjawab oleh AI/KB
+     */
+    protected function trackMissedQuery(string $question, ?int $userId, ?int $profileId): void
+    {
+        if (!$userId) return;
+        
+        try {
+            $missed = KbMissedQuery::firstOrCreate(
+                [
+                    'user_id' => $userId,
+                    'business_profile_id' => $profileId,
+                    'question' => $question,
+                ],
+                ['status' => 'pending']
+            );
+            
+            $missed->incrementCount();
+            
+            Log::info('📊 Missed query tracked', [
+                'question' => $question,
+                'user_id' => $userId,
+                'profile_id' => $profileId,
+                'count' => $missed->count,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('❌ Failed to track missed query', ['err' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Smart Fallback dengan suggestions
+     * Jika tidak ketemu di KB, suggest artikel yang mirip
+     */
+    protected function getSmartFallback(string $question, ?BusinessProfile $profile, ?int $userId): ?array
+    {
+        if (!$profile || !$userId) return null;
+        
+        try {
+            // Cari artikel yang mirip (tanpa threshold tinggi)
+            $articles = KbArticle::where('is_active', 1)
+                ->where('user_id', $userId)
+                ->where(function ($q) use ($profile) {
+                    $q->whereNull('business_profile_id')
+                      ->orWhere('business_profile_id', $profile->id);
+                })
+                ->limit(5)
+                ->get();
+            
+            if ($articles->isEmpty()) return null;
+            
+            // Hitung similarity sederhana berdasarkan keyword
+            $questionLower = Str::lower($question);
+            $questionWords = collect(preg_split('/\s+/u', $questionLower))
+                ->filter(fn($w) => mb_strlen($w) >= 3)
+                ->values();
+            
+            $suggestions = $articles->map(function ($article) use ($questionWords) {
+                $content = Str::lower($article->title . ' ' . $article->content . ' ' . $article->tags);
+                $matchCount = 0;
+                
+                foreach ($questionWords as $word) {
+                    if (Str::contains($content, $word)) {
+                        $matchCount++;
+                    }
+                }
+                
+                $score = $questionWords->count() > 0 
+                    ? $matchCount / $questionWords->count() 
+                    : 0;
+                
+                return [
+                    'article' => $article,
+                    'score' => $score,
+                ];
+            })
+            ->filter(fn($item) => $item['score'] > 0.1) // Minimal 10% match
+            ->sortByDesc('score')
+            ->take(3);
+            
+            if ($suggestions->isEmpty()) return null;
+            
+            // Build fallback response dengan suggestions
+            $businessName = $profile->business_name ?? 'Kami';
+            $fallbackMsg = "Mohon maaf kak, saya tidak menemukan info spesifik tentang pertanyaan tersebut.\n\n";
+            $fallbackMsg .= "Mungkin yang Anda cari:\n";
+            
+            foreach ($suggestions as $i => $item) {
+                $num = $i + 1;
+                $title = $item['article']->title;
+                $fallbackMsg .= "{$num}. {$title}\n";
+            }
+            
+            $fallbackMsg .= "\nAtau bisa langsung hubungi Admin {$businessName} ya. 😊";
+            
+            Log::info('💡 Smart fallback triggered', [
+                'question' => $question,
+                'suggestions' => $suggestions->pluck('article.title')->toArray(),
+            ]);
+            
+            return [
+                'answer' => $fallbackMsg,
+                'confidence' => 0.6,
+                'source' => 'smart_fallback',
+                'suggestions' => $suggestions->pluck('article.id')->toArray(),
+            ];
+            
+        } catch (\Throwable $e) {
+            Log::error('❌ Smart fallback error', ['err' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * Create training suggestion dari chat CS manusia
+     * Dipanggil ketika CS menjawab pertanyaan yang AI tidak bisa jawab
+     */
+    public function createTrainingSuggestion(int $userId, int $conversationId, string $question, string $csAnswer, ?int $profileId = null): ?AiTrainingSuggestion
+    {
+        try {
+            $suggestion = AiTrainingSuggestion::create([
+                'user_id' => $userId,
+                'business_profile_id' => $profileId,
+                'conversation_id' => $conversationId,
+                'question' => $question,
+                'cs_answer' => $csAnswer,
+                'status' => 'pending',
+            ]);
+            
+            Log::info('🎓 Training suggestion created', [
+                'suggestion_id' => $suggestion->id,
+                'user_id' => $userId,
+                'question' => $question,
+            ]);
+            
+            return $suggestion;
+            
+        } catch (\Throwable $e) {
+            Log::error('❌ Failed to create training suggestion', ['err' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * Get top missed queries untuk dashboard analytics
+     */
+    public function getTopMissedQueries(int $userId, ?int $profileId = null, int $limit = 10): \Illuminate\Support\Collection
+    {
+        $query = KbMissedQuery::where('user_id', $userId)
+            ->where('status', 'pending')
+            ->orderByDesc('count');
+            
+        if ($profileId) {
+            $query->where('business_profile_id', $profileId);
+        }
+        
+        return $query->limit($limit)->get();
     }
 }

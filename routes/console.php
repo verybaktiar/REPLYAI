@@ -109,4 +109,24 @@ app()->booted(function () {
         ->everyFiveMinutes()
         ->withoutOverlapping();
 
+    // ==========================================
+    // WHATSAPP SESSION MONITORING
+    // ==========================================
+    
+    // Check WhatsApp sessions every 2 minutes
+    $schedule->command('whatsapp:check-sessions')
+        ->everyTwoMinutes()
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/whatsapp-session-check.log'));
+
+    // ==========================================
+    // CLEANUP JOBS
+    // ==========================================
+    
+    // Cleanup old logs and data - daily at 03:00
+    $schedule->command('system:cleanup')
+        ->dailyAt('03:00')
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/cleanup.log'));
+
 });

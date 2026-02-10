@@ -24,19 +24,23 @@ class BusinessProfile extends Model
         'enable_autofollowup',
         'followup_message',
         'enable_daily_summary',
-        'instagram_handle',
-        'website_url',
-        'address_map_url',
-        'strict_mode',
-        'primary_language',
-        'ai_msg_daily_limit',
+        // AI Configuration
+        'kb_match_threshold',
+        'ai_rate_limit_per_hour',
+        'custom_synonyms',
+        'enable_smart_fallback',
+        'conversation_memory_limit',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'strict_mode' => 'boolean',
         'terminology' => 'array',
         'notification_settings' => 'array',
+        'custom_synonyms' => 'array',
+        'kb_match_threshold' => 'float',
+        'ai_rate_limit_per_hour' => 'integer',
+        'enable_smart_fallback' => 'boolean',
+        'conversation_memory_limit' => 'integer',
     ];
 
     /**
@@ -565,5 +569,29 @@ Output HARUS JSON valid:
 }
 EOT,
         ];
+    }
+
+    /**
+     * Relasi ke KB Articles
+     */
+    public function kbArticles()
+    {
+        return $this->hasMany(KbArticle::class, 'business_profile_id');
+    }
+
+    /**
+     * Relasi ke Missed Queries
+     */
+    public function missedQueries()
+    {
+        return $this->hasMany(KbMissedQuery::class, 'business_profile_id');
+    }
+
+    /**
+     * Relasi ke WhatsApp Devices
+     */
+    public function whatsappDevices()
+    {
+        return $this->hasMany(WhatsAppDevice::class, 'business_profile_id');
     }
 }

@@ -186,7 +186,17 @@ class WhatsAppService
         $device = WhatsAppDevice::withoutGlobalScopes()->where('session_id', $sessionId)->first();
         $userId = $device?->user_id;
 
-        $phoneNumber = $data['from'];
+        // Extract phone number from 'from' or 'fromJid'
+        $phoneNumber = $data['from'] ?? null;
+        if (!$phoneNumber && !empty($data['fromJid'])) {
+            $phoneNumber = $this->extractPhoneFromJid($data['fromJid']);
+        }
+        
+        // Fallback if still null (should not happen usually)
+        if (!$phoneNumber) {
+             Log::warning('WhatsAppService: Could not determine phone number from payload', $data);
+             $phoneNumber = 'unknown';
+        }
 
         // Fix: Normalize LID to Phone Number if possible to prevent duplicate conversations
         // Heuristic: If phone number is >= 15 digits (LID usually 15), try to find matching conversation
@@ -213,7 +223,7 @@ class WhatsAppService
                 'remote_jid' => $data['fromJid'],
                 'phone_number' => $phoneNumber,
                 'push_name' => $data['pushName'] ?? null,
-                'direction' => 'incoming',
+                'direction' => ($data['fromMe'] ?? false) ? 'outgoing' : 'incoming',
                 'message' => $data['message'],
                 'message_type' => $data['messageType'] ?? 'text',
                 'status' => 'read',

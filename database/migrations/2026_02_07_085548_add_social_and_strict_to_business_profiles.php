@@ -12,12 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('business_profiles', function (Blueprint $table) {
-            $table->string('instagram_handle')->nullable()->after('business_type');
-            $table->string('website_url')->nullable()->after('instagram_handle');
-            $table->text('address_map_url')->nullable()->after('website_url');
-            $table->boolean('strict_mode')->default(false)->after('is_active');
-            $table->string('primary_language')->default('id')->after('strict_mode');
-            $table->integer('ai_msg_daily_limit')->default(100)->after('primary_language'); // Safety cap
+            //
         });
     }
 
@@ -27,14 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('business_profiles', function (Blueprint $table) {
-            $table->dropColumn([
-                'instagram_handle',
-                'website_url',
-                'address_map_url',
-                'strict_mode',
-                'primary_language',
-                'ai_msg_daily_limit'
-            ]);
+            //
         });
     }
 };
