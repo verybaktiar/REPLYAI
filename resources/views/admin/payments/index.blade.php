@@ -3,6 +3,11 @@
 @section('title', 'Payments Management')
 @section('page_title', 'Payments Management')
 
+@php
+    $adminUser = Auth::guard('admin')->user();
+    $canManagePayments = $adminUser->canManagePayments();
+@endphp
+
 @section('content')
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <style>[x-cloak] { display: none !important; }</style>
@@ -104,7 +109,7 @@
                                 </div>
                                 @endif
 
-                                @if($payment->status === 'pending')
+                                @if($payment->status === 'pending' && $canManagePayments)
                                 <div class="flex gap-3">
                                     <form action="{{ route('admin.payments.approve', $payment) }}" method="POST" class="flex-1" onsubmit="return confirm('Yakin approve payment ini?')">
                                         @csrf
@@ -119,6 +124,11 @@
                                             ✗ Reject
                                         </button>
                                     </form>
+                                </div>
+                                @elseif($payment->status === 'pending' && !$canManagePayments)
+                                <div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-sm">
+                                    <span class="material-symbols-outlined align-middle mr-1">info</span>
+                                    Menunggu persetujuan dari Finance/Superadmin
                                 </div>
                                 @endif
                             </div>

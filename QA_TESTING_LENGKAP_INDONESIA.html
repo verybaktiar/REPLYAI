@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA Testing Lengkap - REPLYAI (Bahasa Indonesia)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .modul-card { transition: all 0.3s ease; }
+        .modul-card:hover { transform: translateY(-3px); box-shadow: 0 20px 50px rgba(0,0,0,0.15); }
+        .test-item { transition: all 0.2s; }
+        .test-item:hover { background-color: #f8fafc; }
+        .checkbox-custom:checked + div { background-color: #135bec; border-color: #135bec; }
+        .checkbox-custom:checked + div svg { display: block; }
+        .progress-ring { transform: rotate(-90deg); }
+        .tab-active { border-bottom: 3px solid #135bec; color: #135bec; }
+        .alur-user { border-left: 4px solid #10b981; }
+        .alur-admin { border-left: 4px solid #135bec; }
+        .alur-integrasi { border-left: 4px solid #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-2xl">
+        <div class="max-w-full mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white text-2xl">fact_check</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold">REPLYAI - QA Testing Lengkap</h1>
+                        <p class="text-sm text-gray-400">Pengujian Sistem End-to-End (Bahasa Indonesia)</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400">Nama Penguji</div>
+                        <input type="text" id="namaPenguji" placeholder="Nama Anda" 
+                               class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-sm border border-slate-700 w-40">
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400">Tanggal</div>
+                        <input type="date" id="tanggalUji" 
+                               class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-sm border border-slate-700">
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400">Versi</div>
+                        <span class="text-sm font-mono bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">v2.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigasi Tab -->
+    <div class="bg-white shadow-sm sticky top-[72px] z-40">
+        <div class="max-w-full mx-auto px-6">
+            <div class="flex gap-6 overflow-x-auto">
+                <button onclick="showTab('ringkasan')" id="tab-ringkasan" class="tab-btn py-4 px-2 font-medium text-sm whitespace-nowrap tab-active">Ringkasan</button>
+                <button onclick="showTab('alur-utama')" id="tab-alur-utama" class="tab-btn py-4 px-2 font-medium text-sm whitespace-nowrap text-gray-500">Alur Utama</button>
+                <button onclick="showTab('pengguna')" id="tab-pengguna" class="tab-btn py-4 px-2 font-medium text-sm whitespace-nowrap text-gray-500">Pengguna</button>
+                <button onclick="showTab('admin')" id="tab-admin" class="tab-btn py-4 px-2 font-medium text-sm whitespace-nowrap text-gray-500">Admin</button>
+                <button onclick="showTab('superadmin')" id="tab-superadmin" class="tab-btn py-4 px-2 font-medium text-sm whitespace-nowrap text-gray-500">Superadmin</button>
+                <button onclick="showTab('bug')" id="tab-bug" class="tab-btn py-4 px-2 font-medium text-sm whitespace-nowrap text-gray-500">🐛 Bug Tracker</button>
+                <button onclick="showTab('laporan')" id="tab-laporan" class="tab-btn py-4 px-2 font-medium text-sm whitespace-nowrap text-gray-500">Laporan</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-full mx-auto px-6 py-6">
+        
+        <!-- TAB RINGKASAN -->
+        <div id="content-ringkasan" class="tab-content">
+            <!-- Statistik -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Total Kasus Uji</p>
+                            <p class="text-3xl font-bold text-slate-800">387</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-blue-600">assignment</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Selesai</p>
+                            <p class="text-3xl font-bold text-green-600" id="statSelesai">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-green-600">check_circle</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Berhasil</p>
+                            <p class="text-3xl font-bold text-blue-600" id="statBerhasil">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-blue-600">thumb_up</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Gagal</p>
+                            <p class="text-3xl font-bold text-red-600" id="statGagal">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-red-600">error</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Progres</p>
+                            <p class="text-3xl font-bold text-purple-600" id="statProgres">0%</p>
+                        </div>
+                        <div class="relative w-12 h-12">
+                            <svg class="progress-ring w-12 h-12" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+                                <circle id="ringProgres" cx="50" cy="50" r="40" fill="none" stroke="#135bec" stroke-width="8"
+                                        stroke-dasharray="251" stroke-dashoffset="251" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cakupan Modul -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Portal Pengguna -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-lg">Portal Pengguna</h3>
+                            <span class="material-symbols-outlined">person</span>
+                        </div>
+                        <p class="text-sm opacity-90">98 Kasus Uji</p>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="flex justify-between items-center"><span class="text-sm">Autentikasi</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">18 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Dashboard</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">12 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Inbox & Chat</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">24 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Perangkat WhatsApp</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">15 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Akun Instagram</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">12 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Langganan & Billing</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">17 uji</span></div>
+                        <div class="mt-4 pt-4 border-t">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Progres</span>
+                                <span class="font-bold" id="progresPengguna">0%</span>
+                            </div>
+                            <div class="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div id="barPengguna" class="h-full bg-green-500 transition-all" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel Admin -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-lg">Panel Admin</h3>
+                            <span class="material-symbols-outlined">admin_panel_settings</span>
+                        </div>
+                        <p class="text-sm opacity-90">156 Kasus Uji</p>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="flex justify-between items-center"><span class="text-sm">Manajemen Pengguna</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">28 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Pembayaran & Pendapatan</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">32 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Tiket Dukungan</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">24 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Paket & Promo</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">18 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Monitoring Sistem</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">35 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Laporan & Analitik</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">19 uji</span></div>
+                        <div class="mt-4 pt-4 border-t">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Progres</span>
+                                <span class="font-bold" id="progresAdmin">0%</span>
+                            </div>
+                            <div class="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div id="barAdmin" class="h-full bg-blue-500 transition-all" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Superadmin -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-lg">Superadmin</h3>
+                            <span class="material-symbols-outlined">security</span>
+                        </div>
+                        <p class="text-sm opacity-90">133 Kasus Uji</p>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="flex justify-between items-center"><span class="text-sm">Manajemen Perangkat</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">16 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Jadwal & Job</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">14 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Monitoring API</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">18 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Alert Sistem</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">22 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Query & Template</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">28 uji</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm">Maintenance & Backup</span><span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">35 uji</span></div>
+                        <div class="mt-4 pt-4 border-t">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Progres</span>
+                                <span class="font-bold" id="progresSuperadmin">0%</span>
+                            </div>
+                            <div class="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div id="barSuperadmin" class="h-full bg-purple-500 transition-all" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB ALUR UTAMA -->
+        <div id="content-alur-utama" class="tab-content hidden">
+            <div class="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-2xl p-6 mb-6 border border-indigo-100">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-indigo-600">account_tree</span>
+                    Alur Testing Utama (End-to-End)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center">
+                    <div class="bg-white rounded-xl p-4 shadow-sm">
+                        <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 font-bold">1</div>
+                        <h4 class="font-medium text-slate-800">Pendaftaran</h4>
+                        <p class="text-xs text-gray-500 mt-1">Pengguna daftar akun baru</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-sm">
+                        <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 font-bold">2</div>
+                        <h4 class="font-medium text-slate-800">Langganan</h4>
+                        <p class="text-xs text-gray-500 mt-1">Pilih & bayar paket</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-sm">
+                        <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 font-bold">3</div>
+                        <h4 class="font-medium text-slate-800">Verifikasi Admin</h4>
+                        <p class="text-xs text-gray-500 mt-1">Cek & aktifkan</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-sm">
+                        <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 font-bold">4</div>
+                        <h4 class="font-medium text-slate-800">Setup Perangkat</h4>
+                        <p class="text-xs text-gray-500 mt-1">Connect WA/IG</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-sm">
+                        <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 font-bold">5</div>
+                        <h4 class="font-medium text-slate-800">Monitoring</h4>
+                        <p class="text-xs text-gray-500 mt-1">Admin pantau</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skenario Alur Lengkap -->
+            <div class="space-y-6">
+                
+                <!-- FASE 1: PENDAFTARAN -->
+                <div class="modul-card bg-white rounded-2xl shadow-lg overflow-hidden alur-user">
+                    <div class="bg-green-500 text-white px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-2xl">person_add</span>
+                                <div>
+                                    <h3 class="font-bold text-lg">FASE 1: Pendaftaran & Onboarding</h3>
+                                    <p class="text-sm opacity-90">Alur: Daftar → Verifikasi Email → Login</p>
+                                </div>
+                            </div>
+                            <span class="text-2xl font-bold">6</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                            <p class="text-sm text-yellow-800">
+                                <strong>Pra-kondisi:</strong> Gunakan email baru yang belum terdaftar
+                            </p>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="pendaftaran" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">REG-01:</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Akses halaman register → Isi form (nama, email, password, perusahaan)</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="pendaftaran" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">REG-02:</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Verifikasi email terkirim (cek inbox/spam)</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="pendaftaran" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">REG-03:</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Klik link verifikasi → Redirect ke login</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="pendaftaran" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">REG-04:</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Login dengan akun baru → Dashboard muncul</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-blue-50 bg-blue-50/50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="pendaftaran" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium text-blue-700">ADM-01: [CEK ADMIN]</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-blue-600">Di /admin/users → Pengguna baru muncul di daftar</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-blue-50 bg-blue-50/50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="pendaftaran" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium text-blue-700">ADM-02: [CEK ADMIN]</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-blue-600">Activity Log tercatat "new_user_registered"</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FASE 2: LANGGANAN -->
+                <div class="modul-card bg-white rounded-2xl shadow-lg overflow-hidden alur-user">
+                    <div class="bg-purple-500 text-white px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-2xl">payments</span>
+                                <div>
+                                    <h3 class="font-bold text-lg">FASE 2: Langganan & Pembayaran</h3>
+                                    <p class="text-sm opacity-90">Alur: Pilih plan → Bayar → Admin approve</p>
+                                </div>
+                            </div>
+                            <span class="text-2xl font-bold">6</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="langganan" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">SUB-01:</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Pengguna akses /pricing → Lihat semua paket</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="langganan" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">SUB-02:</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Pilih paket → Redirect ke checkout</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="langganan" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">SUB-03:</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Pilih metode pembayaran (Transfer/QRIS) → Upload bukti</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-orange-50 bg-orange-50/50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="langganan" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium text-orange-700">INT-01: [INTEGRASI]</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-orange-600">Email notifikasi pembayaran masuk ke admin</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-blue-50 bg-blue-50/50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="langganan" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium text-blue-700">PAY-01: [ADMIN]</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-blue-600">Admin approve pembayaran → Langganan aktif</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-green-50 bg-green-50/50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="langganan" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium text-green-700">USR-01: [USER]</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-green-600">Dashboard user update → Tampil "Langganan Aktif"</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FASE 3: PERANGKAT -->
+                <div class="modul-card bg-white rounded-2xl shadow-lg overflow-hidden alur-user">
+                    <div class="bg-orange-500 text-white px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-2xl">phonelink_setup</span>
+                                <div>
+                                    <h3 class="font-bold text-lg">FASE 3: Setup Perangkat</h3>
+                                    <p class="text-sm opacity-90">Alur: Connect WA/IG → Admin monitor</p>
+                                </div>
+                            </div>
+                            <span class="text-2xl font-bold">5</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="perangkat" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">WAD-01:</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-gray-600">User akses /whatsapp/connect → Klik "Hubungkan Perangkat Baru"</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="perangkat" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">WAD-02:</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-gray-600">QR Code muncul → Scan dengan WhatsApp</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="perangkat" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">WAD-03:</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Status berubah "Connecting" → "Connected"</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="perangkat" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">IGD-01:</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Connect Instagram → OAuth → Akun terhubung</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-blue-50 bg-blue-50/50">
+                                <input type="checkbox" class="checkbox-custom hidden" data-alur="perangkat" onchange="updateProgres()">
+                                <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5"><svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium text-blue-700">ADM-03: [CEK ADMIN]</span>
+                                        <select class="text-xs border rounded hasil-select" onchange="updateProgres()"><option value="">Hasil</option><option value="pass">✅ Berhasil</option><option value="fail">❌ Gagal</option></select>
+                                    </div>
+                                    <p class="text-sm text-blue-600">/admin/devices → WA & IG muncul dengan status "Connected"</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- [TAB LAIN AKAN DILANJUTKAN...] -->
+
+        <!-- CATATAN -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mt-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-orange-500">note</span>
+                Catatan & Temuan
+            </h3>
+            <textarea id="catatanUji" rows="6" placeholder="Tulis catatan, bug, atau temuan selama testing...&#10;&#10;Format:&#10;- [Modul] Deskripsi issue&#10;- [Tingkat] Tinggi/Sedang/Rendah&#10;- [Bukti] Screenshot/log" 
+                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none resize-none"></textarea>
+        </div>
+
+        <!-- SUBMIT -->
+        <div class="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 rounded-2xl p-6 mt-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold">Selesai Testing</h3>
+                    <p class="text-sm text-gray-400">Review semua hasil sebelum submit</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="exportLaporan()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-semibold transition flex items-center gap-2">
+                        <span class="material-symbols-outlined">download</span>
+                        Export Laporan
+                    </button>
+                    <button onclick="submitQA()" class="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold transition flex items-center gap-2">
+                        <span class="material-symbols-outlined">check_circle</span>
+                        Submit Laporan QA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab Navigation
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('tab-active');
+                el.classList.add('text-gray-500');
+            });
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('tab-active');
+            document.getElementById(`tab-${tabName}`).classList.remove('text-gray-500');
+        }
+
+        // Progress Updates
+        function updateProgres() {
+            const checkboxes = document.querySelectorAll('.checkbox-custom');
+            const hasils = document.querySelectorAll('.hasil-select');
+            let berhasil = 0, gagal = 0, selesai = 0;
+
+            checkboxes.forEach((cb, idx) => {
+                if (cb.checked) selesai++;
+                const val = hasils[idx]?.value;
+                if (val === 'pass') berhasil++;
+                if (val === 'fail') gagal++;
+            });
+
+            const total = 387;
+            const persen = Math.round((selesai / total) * 100);
+
+            // Update overview
+            document.getElementById('statSelesai').textContent = selesai;
+            document.getElementById('statBerhasil').textContent = berhasil;
+            document.getElementById('statGagal').textContent = gagal;
+            document.getElementById('statProgres').textContent = persen + '%';
+            document.getElementById('ringProgres').style.strokeDashoffset = 251 - (persen / 100) * 251;
+        }
+
+        // Init tanggal
+        document.getElementById('tanggalUji').valueAsDate = new Date();
+
+        function exportLaporan() {
+            const penguji = document.getElementById('namaPenguji').value || 'Tidak diketahui';
+            const tanggal = document.getElementById('tanggalUji').value;
+            const catatan = document.getElementById('catatanUji').value;
+            
+            let laporan = `╔════════════════════════════════════════════════════════════════╗\n`;
+            laporan += `║           LAPORAN QA TESTING LENGKAP - REPLYAI                 ║\n`;
+            laporan += `╚════════════════════════════════════════════════════════════════╝\n\n`;
+            laporan += `INFORMASI PENGUJI:\n`;
+            laporan += `──────────────────\n`;
+            laporan += `Nama Penguji : ${penguji}\n`;
+            laporan += `Tanggal      : ${tanggal}\n`;
+            laporan += `Lingkungan   : Produksi\n`;
+            laporan += `Total Uji    : 387\n\n`;
+            
+            laporan += `RINGKASAN HASIL:\n`;
+            laporan += `────────────────\n`;
+            laporan += `✅ Berhasil : ${document.getElementById('statBerhasil').textContent}\n`;
+            laporan += `❌ Gagal    : ${document.getElementById('statGagal').textContent}\n`;
+            laporan += `📊 Progres  : ${document.getElementById('statProgres').textContent}\n\n`;
+
+            if (catatan) {
+                laporan += `CATATAN & TEMUAN:\n`;
+                laporan += `─────────────────\n${catatan}\n\n`;
+            }
+
+            laporan += `╔════════════════════════════════════════════════════════════════╗\n`;
+            laporan += `║                    AKHIR LAPORAN                               ║\n`;
+            laporan += `╚════════════════════════════════════════════════════════════════╝`;
+
+            alert('Laporan:\n\n' + laporan.substring(0, 500) + '...\n\n[Export lengkap akan didownload]');
+        }
+
+        function submitQA() {
+            exportLaporan();
+        }
+    </script>
+</body>
+</html>

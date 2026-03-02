@@ -20,7 +20,8 @@ class ContactController extends Controller
         
         // Instagram contacts
         if ($platform === 'all' || $platform === 'instagram') {
-            $igQuery = Conversation::withCount('messages');
+            $igQuery = Conversation::withCount('messages')
+                ->where('user_id', auth()->id());
             
             if ($search) {
                 $igQuery->where(function($q) use ($search) {
@@ -54,6 +55,9 @@ class ContactController extends Controller
         // WhatsApp contacts
         if ($platform === 'all' || $platform === 'whatsapp') {
             $waQuery = WaMessage::select('phone_number', 'push_name')
+                ->whereHas('waConversation', function($q) {
+                    $q->where('user_id', auth()->id());
+                })
                 ->selectRaw('COUNT(*) as messages_count')
                 ->selectRaw('MAX(created_at) as last_active')
                 ->groupBy('phone_number', 'push_name');
@@ -115,7 +119,9 @@ class ContactController extends Controller
         
         // Instagram contacts
         if ($platform === 'all' || $platform === 'instagram') {
-            $igContacts = Conversation::withCount('messages')->get();
+            $igContacts = Conversation::withCount('messages')
+                ->where('user_id', auth()->id())
+                ->get();
             foreach ($igContacts as $c) {
                 $name = str_replace(',', ' ', $c->display_name ?? $c->name ?? 'Tanpa Nama');
                 $csvContent .= "{$name},{$c->phone_number},Instagram,{$c->messages_count},{$c->updated_at}\n";
@@ -125,6 +131,9 @@ class ContactController extends Controller
         // WhatsApp contacts
         if ($platform === 'all' || $platform === 'whatsapp') {
             $waContacts = WaMessage::select('phone_number', 'push_name')
+                ->whereHas('waConversation', function($q) {
+                    $q->where('user_id', auth()->id());
+                })
                 ->selectRaw('COUNT(*) as messages_count')
                 ->selectRaw('MAX(created_at) as last_active')
                 ->groupBy('phone_number', 'push_name')

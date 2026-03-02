@@ -32,6 +32,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'business_industry',
         'is_suspended',
         'last_login_at',
+        'current_team_id',
+        'two_factor_secret',
+        'two_factor_enabled',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
     ];
 
     /**
@@ -189,11 +194,137 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Ambil tier dari plan user (umkm, business, enterprise)
+     * Default: umkm
+     */
+    public function getPlanTier(): string
+    {
+        if ($this->is_vip) {
+            return 'enterprise'; // VIP dianggap enterprise
+        }
+        $plan = $this->getPlan();
+        return $plan?->tier ?? 'umkm';
+    }
+
+    /**
+     * Cek apakah user adalah tier UMKM
+     */
+    public function isUmkmTier(): bool
+    {
+        return $this->getPlanTier() === 'umkm';
+    }
+
+    /**
+     * Cek apakah user adalah tier Business
+     */
+    public function isBusinessTier(): bool
+    {
+        return $this->getPlanTier() === 'business';
+    }
+
+    /**
+     * Cek apakah user adalah tier Enterprise
+     */
+    public function isEnterpriseTier(): bool
+    {
+        return $this->getPlanTier() === 'enterprise';
+    }
+
+    /**
      * Send the email verification notification.
      * Override default untuk menggunakan template custom REPLYAI
      */
     public function sendEmailVerificationNotification()
     {
         $this->notify(new \App\Notifications\VerifyEmailNotification());
+    }
+
+    // ================================
+    // Team Relations
+    // ================================
+
+    /**
+     * Get all teams the user belongs to.
+     */
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class, 'team_members')
+            ->withPivot('role', 'permissions', 'joined_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get teams owned by the user.
+     */
+    public function ownedTeams()
+    {
+        return $this->hasMany(Team::class, 'owner_id');
+    }
+
+    /**
+     * Get the current team.
+     */
+    public function currentTeam()
+    {
+        return $this->belongsTo(Team::class, 'current_team_id');
+    }
+
+    /**
+     * Check if user has a specific permission in current team.
+     */
+    public function hasTeamPermission(string $permission): bool
+    {
+        $team = $this->currentTeam;
+        
+        if (!$team) {
+            return false;
+        }
+
+        // Owner has all permissions
+        if ($team->isOwner($this)) {
+            return true;
+        }
+
+        $membership = $team->members()->where('user_id', $this->id)->first();
+        
+        if (!$membership) {
+            return false;
+        }
+
+        $permissions = $membership->pivot->permissions ?? [];
+        return in_array($permission, $permissions);
+    }
+
+    /**
+     * Check if user is at least a certain role in current team.
+     */
+    public function isAtLeastTeamRole(string $role): bool
+    {
+        $team = $this->currentTeam;
+        
+        if (!$team) {
+            return false;
+        }
+
+        if ($team->isOwner($this)) {
+            return true;
+        }
+
+        $membership = $team->members()->where('user_id', $this->id)->first();
+        
+        if (!$membership) {
+            return false;
+        }
+
+        $hierarchy = [
+            'owner' => 5,
+            'admin' => 4,
+            'manager' => 3,
+            'agent' => 2,
+            'viewer' => 1,
+        ];
+
+        $userRole = $membership->pivot->role;
+        return ($hierarchy[$userRole] ?? 0) >= ($hierarchy[$role] ?? 0);
     }
 }

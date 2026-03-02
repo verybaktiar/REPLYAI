@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\CheckMaintenanceMode::class,
         ]);
 
         $middleware->api(prepend: [
@@ -27,11 +28,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'feature' => \App\Http\Middleware\CheckFeatureAccess::class,
             'track' => \App\Http\Middleware\TrackUsage::class,
             'admin' => \App\Http\Middleware\AdminAuth::class,
+            'admin.ip' => \App\Http\Middleware\AdminIpWhitelist::class,
+            'admin.role' => \App\Http\Middleware\CheckAdminRole::class,
             'has_subscription' => \App\Http\Middleware\EnsureHasActiveSubscription::class,
             'suspended' => \App\Http\Middleware\CheckSuspendedAccount::class,
             'global_feature' => \App\Http\Middleware\CheckFeatureFlag::class,
             'onboarding' => \App\Http\Middleware\CheckOnboardingComplete::class,
             'quota' => \App\Http\Middleware\CheckPlanLimits::class,
+            'rate_limit' => \App\Http\Middleware\GlobalRateLimit::class,
+            '2fa' => \App\Http\Middleware\CheckTwoFactor::class,
+            'tier' => \App\Http\Middleware\CheckTier::class,
         ]);
 
         $middleware->trustProxies(at: '*');

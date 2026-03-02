@@ -13,11 +13,30 @@ use Carbon\Carbon;
 
 class AdminSystemActionController extends Controller
 {
+    private function checkAuthorization(): void
+    {
+        $admin = Auth::guard('admin')->user();
+        
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_system_action',
+                'Attempted system action without superadmin privilege',
+                ['url' => request()->fullUrl(), 'action' => request()->route()->getActionMethod()],
+                null,
+                9
+            );
+            abort(403, 'Only Superadmin can perform system actions.');
+        }
+    }
+
     /**
      * Clear application cache
      */
     public function clearCache()
     {
+        $this->checkAuthorization();
+        
         Artisan::call('cache:clear');
         Artisan::call('config:clear');
         
@@ -31,6 +50,8 @@ class AdminSystemActionController extends Controller
      */
     public function clearViews()
     {
+        $this->checkAuthorization();
+        
         Artisan::call('view:clear');
         
         AdminActivityLog::log(Auth::guard('admin')->user(), 'system_maintenance', 'Clear view cache');
@@ -43,6 +64,8 @@ class AdminSystemActionController extends Controller
      */
     public function pruneLogs()
     {
+        $this->checkAuthorization();
+        
         $days = 30;
         $date = Carbon::now()->subDays($days);
         
@@ -63,6 +86,8 @@ class AdminSystemActionController extends Controller
      */
     public function bulkResetUsage()
     {
+        $this->checkAuthorization();
+        
         // Reset message counts for all users
         User::query()->update([
             'messages_sent_count' => 0,
@@ -79,6 +104,8 @@ class AdminSystemActionController extends Controller
      */
     public function bulkExtend(Request $request)
     {
+        $this->checkAuthorization();
+        
         $days = (int) $request->input('days', 7);
         
         $users = User::whereHas('subscription', function($q) {
@@ -106,10 +133,17 @@ class AdminSystemActionController extends Controller
      */
     public function refreshTokens()
     {
+        $this->checkAuthorization();
+        
         // Logic to trigger refresh for all active Instagram accounts
         // Typically calls a job or service
         
-        AdminActivityLog::log(Auth::guard('admin')->user(), 'system_maintenance', 'Trigger manual token refresh');
+        AdminActivityLog::log(
+            Auth::guard('admin')->user(), 
+            'system_maintenance', 
+            'Trigger manual token refresh',
+            ['triggered_at' => now()->toDateTimeString()]
+        );
         
         return back()->with('success', 'Proses refresh token telah dijalankan.');
     }

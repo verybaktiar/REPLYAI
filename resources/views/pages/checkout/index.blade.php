@@ -25,6 +25,12 @@
             },
         }
     </script>
+    <style>
+        /* Hide radio buttons but keep them accessible */
+        input[type="radio"] {
+            accent-color: #135bec;
+        }
+    </style>
 </head>
 <body class="bg-background-dark text-white font-display antialiased min-h-screen">
     
@@ -46,6 +52,24 @@
 
     <main class="pt-24 pb-16 px-4">
         <div class="max-w-4xl mx-auto">
+            
+            <!-- Progress Indicator -->
+            <div class="flex items-center justify-center gap-2 mb-8">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-400">1</div>
+                    <span class="text-sm text-slate-400 hidden sm:inline">Pilih Plan</span>
+                </div>
+                <div class="w-8 h-0.5 bg-slate-700"></div>
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-bold text-white">2</div>
+                    <span class="text-sm font-medium text-white hidden sm:inline">Checkout</span>
+                </div>
+                <div class="w-8 h-0.5 bg-slate-700"></div>
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-400">3</div>
+                    <span class="text-sm text-slate-400 hidden sm:inline">Bayar</span>
+                </div>
+            </div>
             
             <h1 class="text-2xl font-bold mb-8 text-center">Checkout Paket {{ $plan->name }}</h1>
 
@@ -70,6 +94,12 @@
                             <span class="text-slate-400">Harga Bulanan</span>
                             <span>Rp {{ number_format($plan->price_monthly, 0, ',', '.') }}</span>
                         </div>
+                        @if($plan->price_yearly)
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Harga Tahunan</span>
+                            <span>Rp {{ number_format($plan->price_yearly, 0, ',', '.') }}</span>
+                        </div>
+                        @endif
                     </div>
 
                     <hr class="border-slate-700 my-4"/>
@@ -91,6 +121,7 @@
                     </ul>
                 </div>
 
+                <!-- Checkout Form -->
                 <div class="bg-surface-dark rounded-2xl p-6 border border-slate-700" x-data="{ duration: '1', loading: false }">
                     <h2 class="font-semibold text-lg mb-4">Pilih Durasi</h2>
                     
@@ -98,6 +129,7 @@
                         @csrf
                         
                         <div class="space-y-3 mb-6">
+                            <!-- Opsi Bulanan -->
                             <label class="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition"
                                    :class="duration === '1' ? 'border-primary bg-primary/10' : 'border-slate-700 hover:border-slate-600'">
                                 <input type="radio" name="duration" value="1" x-model="duration" class="text-primary focus:ring-primary">
@@ -107,15 +139,25 @@
                                 </div>
                             </label>
                             
-                            @if($plan->price_yearly)
+                            <!-- Opsi Tahunan -->
+                            @if($plan->price_yearly && $plan->price_yearly > 0)
+                            @php
+                                $savings = ($plan->price_monthly * 12) - $plan->price_yearly;
+                                $equivalentMonthly = $plan->price_yearly > 0 ? round($plan->price_yearly / 12) : 0;
+                            @endphp
                             <label class="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition relative"
                                    :class="duration === '12' ? 'border-primary bg-primary/10' : 'border-slate-700 hover:border-slate-600'">
                                 <input type="radio" name="duration" value="12" x-model="duration" class="text-primary focus:ring-primary">
                                 <div class="flex-1">
-                                    <span class="font-medium">Tahunan</span>
-                                    <span class="text-slate-400 text-sm ml-2">Rp {{ number_format($plan->price_yearly, 0, ',', '.') }}/tahun</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-medium">Tahunan</span>
+                                        <span class="text-xs text-green-400">(setara Rp {{ number_format($equivalentMonthly, 0, ',', '.') }}/bln)</span>
+                                    </div>
+                                    <span class="text-slate-400 text-sm">Rp {{ number_format($plan->price_yearly, 0, ',', '.') }}/tahun</span>
                                 </div>
-                                <span class="absolute -top-2 right-4 bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">HEMAT 20%</span>
+                                @if($savings > 0)
+                                <span class="absolute -top-2 right-4 bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">HEMAT Rp {{ number_format($savings, 0, ',', '.') }}</span>
+                                @endif
                             </label>
                             @endif
                         </div>
@@ -127,10 +169,36 @@
                                    class="w-full px-4 py-3 rounded-xl bg-background-dark border border-slate-700 text-white placeholder:text-slate-500 focus:border-primary focus:ring-primary">
                         </div>
 
-                        <!-- Total -->
-                        <div class="flex justify-between items-center p-4 rounded-xl bg-background-dark mb-6">
-                            <span class="text-slate-400">Total Pembayaran</span>
-                            <span class="text-2xl font-black text-primary" x-text="duration === '12' ? 'Rp {{ number_format($plan->price_yearly, 0, ',', '.') }}' : 'Rp {{ number_format($plan->price_monthly, 0, ',', '.') }}'"></span>
+                        <!-- Total - DUA VERSI: Satu untuk bulanan, satu untuk tahunan -->
+                        <div class="p-4 rounded-xl bg-background-dark mb-6">
+                            <!-- Total Bulanan (tampil kalau duration = 1) -->
+                            <div x-show="duration === '1'" x-transition>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-slate-400">Total Pembayaran</span>
+                                    <span class="text-2xl font-black text-primary">Rp {{ number_format($plan->price_monthly, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="text-right text-sm text-slate-500">
+                                    untuk 1 bulan
+                                </div>
+                            </div>
+                            
+                            <!-- Total Tahunan (tampil kalau duration = 12) -->
+                            @if($plan->price_yearly && $plan->price_yearly > 0)
+                            <div x-show="duration === '12'" x-transition>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-slate-400">Total Pembayaran</span>
+                                    <span class="text-2xl font-black text-primary">Rp {{ number_format($plan->price_yearly, 0, ',', '.') }}</span>
+                                </div>
+                                @if($savings > 0)
+                                <div class="text-right text-sm text-green-400">
+                                    ✅ Hemat Rp {{ number_format($savings, 0, ',', '.') }}
+                                </div>
+                                @endif
+                                <div class="text-right text-xs text-slate-500 mt-1">
+                                    untuk 12 bulan
+                                </div>
+                            </div>
+                            @endif
                         </div>
 
                         <button type="submit" 
@@ -143,7 +211,7 @@
                                 <div class="flex items-center gap-2">
                                     <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
                                     <span>Memproses...</span>
                                 </div>

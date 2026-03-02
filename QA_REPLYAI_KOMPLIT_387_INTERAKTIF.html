@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA REPLYAI KOMPLIT - 387 Test Cases Interaktif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .test-card { transition: all 0.2s; }
+        .test-card:hover { background-color: #f8fafc; transform: translateX(4px); }
+        .checkbox-custom:checked + div { background-color: #10b981; border-color: #10b981; }
+        .checkbox-custom:checked + div svg { display: block; }
+        .tab-active { border-bottom: 3px solid #135bec; color: #135bec; font-weight: 600; background: #eff6ff; }
+        .progress-ring { transform: rotate(-90deg); }
+        .status-pass { background: #10b981 !important; border-color: #10b981 !important; color: white !important; }
+        .status-fail { background: #ef4444 !important; border-color: #ef4444 !important; color: white !important; }
+        .badge-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen pb-20">
+    
+    <!-- HEADER -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-xl">
+        <div class="max-w-full mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <span class="material-symbols-outlined text-2xl">fact_check</span>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold">QA REPLYAI KOMPLIT</h1>
+                        <p class="text-xs text-gray-400">387 Test Cases - Semua Fitur - Interaktif</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <!-- Progress Ring -->
+                    <div class="relative w-16 h-16">
+                        <svg class="progress-ring w-16 h-16" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="42" fill="none" stroke="#334155" stroke-width="6"/>
+                            <circle id="ringProgress" cx="50" cy="50" r="42" fill="none" stroke="#135bec" stroke-width="6"
+                                    stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="textProgress" class="text-sm font-bold">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-right text-xs space-y-1">
+                        <input type="text" id="namaTester" placeholder="Nama Tester" 
+                               class="bg-slate-800 text-white px-3 py-1.5 rounded-lg border border-slate-700 w-32 block">
+                        <input type="date" id="tglTest" 
+                               class="bg-slate-800 text-white px-3 py-1.5 rounded-lg border border-slate-700 w-32 block">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- STATS BAR -->
+    <div class="bg-white shadow-sm border-b sticky top-[72px] z-40">
+        <div class="max-w-full mx-auto px-4 py-2">
+            <div class="flex flex-wrap gap-2 text-xs">
+                <div class="flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-full">
+                    <span class="font-semibold text-slate-700">Total:</span>
+                    <span class="font-bold text-slate-900 text-sm">387</span>
+                </div>
+                <div class="flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-full">
+                    <span class="font-semibold text-blue-700">Selesai:</span>
+                    <span id="statDone" class="font-bold text-blue-900 text-sm">0</span>
+                </div>
+                <div class="flex items-center gap-1 bg-green-50 px-3 py-1.5 rounded-full">
+                    <span class="font-semibold text-green-700">Berhasil:</span>
+                    <span id="statPass" class="font-bold text-green-900 text-sm">0</span>
+                </div>
+                <div class="flex items-center gap-1 bg-red-50 px-3 py-1.5 rounded-full">
+                    <span class="font-semibold text-red-700">Gagal:</span>
+                    <span id="statFail" class="font-bold text-red-900 text-sm">0</span>
+                </div>
+                <div class="flex items-center gap-1 bg-purple-50 px-3 py-1.5 rounded-full ml-auto">
+                    <span class="font-semibold text-purple-700">Sisa:</span>
+                    <span id="statLeft" class="font-bold text-purple-900 text-sm">387</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVIGATION -->
+    <div class="bg-white shadow-sm sticky top-[120px] z-30 border-b">
+        <div class="max-w-full mx-auto px-2">
+            <div class="flex gap-1 overflow-x-auto text-xs py-2">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap tab-active flex items-center gap-1">
+                    <span>📊</span> Dashboard
+                </button>
+                <button onclick="switchTab('user-auth')" id="nav-user-auth" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>🔐</span> User Auth <span class="bg-gray-200 px-1.5 rounded text-[10px]">18</span>
+                </button>
+                <button onclick="switchTab('user-dashboard')" id="nav-user-dashboard" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>🏠</span> User Dashboard <span class="bg-gray-200 px-1.5 rounded text-[10px]">12</span>
+                </button>
+                <button onclick="switchTab('user-inbox')" id="nav-user-inbox" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>💬</span> Inbox <span class="bg-gray-200 px-1.5 rounded text-[10px]">24</span>
+                </button>
+                <button onclick="switchTab('user-wa')" id="nav-user-wa" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>📱</span> WhatsApp <span class="bg-gray-200 px-1.5 rounded text-[10px]">15</span>
+                </button>
+                <button onclick="switchTab('user-ig')" id="nav-user-ig" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>📷</span> Instagram <span class="bg-gray-200 px-1.5 rounded text-[10px]">12</span>
+                </button>
+                <button onclick="switchTab('user-crm')" id="nav-user-crm" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>👥</span> Kontak <span class="bg-gray-200 px-1.5 rounded text-[10px]">17</span>
+                </button>
+                <button onclick="switchTab('admin-users')" id="nav-admin-users" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>⚙️</span> Admin Users <span class="bg-gray-200 px-1.5 rounded text-[10px]">28</span>
+                </button>
+                <button onclick="switchTab('admin-payments')" id="nav-admin-payments" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>💰</span> Payments <span class="bg-gray-200 px-1.5 rounded text-[10px]">32</span>
+                </button>
+                <button onclick="switchTab('admin-support')" id="nav-admin-support" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>🎫</span> Support <span class="bg-gray-200 px-1.5 rounded text-[10px]">24</span>
+                </button>
+                <button onclick="switchTab('admin-plans')" id="nav-admin-plans" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>📦</span> Plans <span class="bg-gray-200 px-1.5 rounded text-[10px]">18</span>
+                </button>
+                <button onclick="switchTab('admin-reports')" id="nav-admin-reports" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>📈</span> Reports <span class="bg-gray-200 px-1.5 rounded text-[10px]">19</span>
+                </button>
+                <button onclick="switchTab('admin-settings')" id="nav-admin-settings" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>🔧</span> Settings <span class="bg-gray-200 px-1.5 rounded text-[10px]">35</span>
+                </button>
+                <button onclick="switchTab('super-devices')" id="nav-super-devices" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>🔌</span> Devices <span class="bg-gray-200 px-1.5 rounded text-[10px]">16</span>
+                </button>
+                <button onclick="switchTab('super-schedule')" id="nav-super-schedule" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>⏰</span> Schedule <span class="bg-gray-200 px-1.5 rounded text-[10px]">14</span>
+                </button>
+                <button onclick="switchTab('super-api')" id="nav-super-api" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>🔍</span> API Monitor <span class="bg-gray-200 px-1.5 rounded text-[10px]">18</span>
+                </button>
+                <button onclick="switchTab('super-alerts')" id="nav-super-alerts" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>🚨</span> Alerts <span class="bg-gray-200 px-1.5 rounded text-[10px]">22</span>
+                </button>
+                <button onclick="switchTab('super-query')" id="nav-super-query" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>🗄️</span> Query <span class="bg-gray-200 px-1.5 rounded text-[10px]">15</span>
+                </button>
+                <button onclick="switchTab('super-templates')" id="nav-super-templates" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>📝</span> Templates <span class="bg-gray-200 px-1.5 rounded text-[10px]">13</span>
+                </button>
+                <button onclick="switchTab('super-maintenance')" id="nav-super-maintenance" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>🔒</span> Maintenance <span class="bg-gray-200 px-1.5 rounded text-[10px]">12</span>
+                </button>
+                <button onclick="switchTab('super-transfer')" id="nav-super-transfer" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>📤</span> Data Transfer <span class="bg-gray-200 px-1.5 rounded text-[10px]">15</span>
+                </button>
+                <button onclick="switchTab('bugtracker')" id="nav-bugtracker" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100 flex items-center gap-1">
+                    <span>🐛</span> Bugs
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-full mx-auto px-4 py-4">
+
+        <!-- DASHBOARD TAB -->
+        <div id="tab-dashboard" class="tab-panel">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-xl shadow-lg p-5 border-l-4 border-green-500">
+                    <p class="text-xs text-gray-500 font-medium">Portal Pengguna</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-1">98</p>
+                    <div class="mt-2">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-500">Progres</span>
+                            <span class="font-bold text-green-600" id="progress-user">0%</span>
+                        </div>
+                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div id="bar-user" class="h-full bg-green-500 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-5 border-l-4 border-blue-500">
+                    <p class="text-xs text-gray-500 font-medium">Panel Admin</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-1">156</p>
+                    <div class="mt-2">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-500">Progres</span>
+                            <span class="font-bold text-blue-600" id="progress-admin">0%</span>
+                        </div>
+                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div id="bar-admin" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-5 border-l-4 border-purple-500">
+                    <p class="text-xs text-gray-500 font-medium">Superadmin</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-1">133</p>
+                    <div class="mt-2">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-500">Progres</span>
+                            <span class="font-bold text-purple-600" id="progress-super">0%</span>
+                        </div>
+                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div id="bar-super" class="h-full bg-purple-500 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-5 border-l-4 border-orange-500">
+                    <p class="text-xs text-gray-500 font-medium">Total Keseluruhan</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-1">387</p>
+                    <div class="mt-2">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-500">Progres</span>
+                            <span class="font-bold text-orange-600" id="progress-total">0%</span>
+                        </div>
+                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div id="bar-total" class="h-full bg-orange-500 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panduan -->
+            <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-6 border border-blue-200 mb-6">
+                <h3 class="font-bold text-slate-800 mb-4 text-lg flex items-center gap-2">
+                    <span class="text-2xl">📋</span> Panduan Penggunaan
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="space-y-2">
+                        <p class="flex items-start gap-2">
+                            <span class="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0">1</span>
+                            <span>Isi <strong>Nama Tester</strong> dan <strong>Tanggal</strong> di pojok kanan atas</span>
+                        </p>
+                        <p class="flex items-start gap-2">
+                            <span class="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0">2</span>
+                            <span>Klik tab modul yang ingin di-test (contoh: "🔐 User Auth")</span>
+                        </p>
+                        <p class="flex items-start gap-2">
+                            <span class="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0">3</span>
+                            <span>Jalankan test sesuai Kode Test (USR-AUTH-01, USR-AUTH-02, dst)</span>
+                        </p>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="flex items-start gap-2">
+                            <span class="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0">4</span>
+                            <span><strong>Centang checkbox</strong> ☑️ jika sudah di-test</span>
+                        </p>
+                        <p class="flex items-start gap-2">
+                            <span class="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0">5</span>
+                            <span>Klik <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs">✓ Berhasil</span> atau <span class="bg-red-500 text-white px-2 py-0.5 rounded text-xs">✗ Gagal</span></span>
+                        </p>
+                        <p class="flex items-start gap-2">
+                            <span class="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0">6</span>
+                            <span>Progress update otomatis, bug bisa dicatat di tab "🐛 Bugs"</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alur Testing -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span class="text-xl">🔄</span> Alur Testing End-to-End
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 text-center border border-green-200">
+                        <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 font-bold">1</div>
+                        <div class="font-semibold text-sm">Pendaftaran</div>
+                        <div class="text-xs text-gray-500 mt-1">/register</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 text-center border border-green-200">
+                        <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 font-bold">2</div>
+                        <div class="font-semibold text-sm">Verifikasi</div>
+                        <div class="text-xs text-gray-500 mt-1">Email</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 text-center border border-blue-200">
+                        <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 font-bold">3</div>
+                        <div class="font-semibold text-sm">Login</div>
+                        <div class="text-xs text-gray-500 mt-1">/login</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 text-center border border-blue-200">
+                        <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 font-bold">4</div>
+                        <div class="font-semibold text-sm">Langganan</div>
+                        <div class="text-xs text-gray-500 mt-1">/pricing</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 text-center border border-purple-200">
+                        <div class="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 font-bold">5</div>
+                        <div class="font-semibold text-sm">Perangkat</div>
+                        <div class="text-xs text-gray-500 mt-1">WA/IG</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 text-center border border-orange-200">
+                        <div class="w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 font-bold">6</div>
+                        <div class="font-semibold text-sm">Monitoring</div>
+                        <div class="text-xs text-gray-500 mt-1">/admin</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- [ALL OTHER TABS WILL BE GENERATED BY JAVASCRIPT] -->
+        <div id="tab-user-auth" class="tab-panel hidden"><div id="content-user-auth"></div></div>
+        <div id="tab-user-dashboard" class="tab-panel hidden"><div id="content-user-dashboard"></div></div>
+        <div id="tab-user-inbox" class="tab-panel hidden"><div id="content-user-inbox"></div></div>
+        <div id="tab-user-wa" class="tab-panel hidden"><div id="content-user-wa"></div></div>
+        <div id="tab-user-ig" class="tab-panel hidden"><div id="content-user-ig"></div></div>
+        <div id="tab-user-crm" class="tab-panel hidden"><div id="content-user-crm"></div></div>
+        <div id="tab-admin-users" class="tab-panel hidden"><div id="content-admin-users"></div></div>
+        <div id="tab-admin-payments" class="tab-panel hidden"><div id="content-admin-payments"></div></div>
+        <div id="tab-admin-support" class="tab-panel hidden"><div id="content-admin-support"></div></div>
+        <div id="tab-admin-plans" class="tab-panel hidden"><div id="content-admin-plans"></div></div>
+        <div id="tab-admin-reports" class="tab-panel hidden"><div id="content-admin-reports"></div></div>
+        <div id="tab-admin-settings" class="tab-panel hidden"><div id="content-admin-settings"></div></div>
+        <div id="tab-super-devices" class="tab-panel hidden"><div id="content-super-devices"></div></div>
+        <div id="tab-super-schedule" class="tab-panel hidden"><div id="content-super-schedule"></div></div>
+        <div id="tab-super-api" class="tab-panel hidden"><div id="content-super-api"></div></div>
+        <div id="tab-super-alerts" class="tab-panel hidden"><div id="content-super-alerts"></div></div>
+        <div id="tab-super-query" class="tab-panel hidden"><div id="content-super-query"></div></div>
+        <div id="tab-super-templates" class="tab-panel hidden"><div id="content-super-templates"></div></div>
+        <div id="tab-super-maintenance" class="tab-panel hidden"><div id="content-super-maintenance"></div></div>
+        <div id="tab-super-transfer" class="tab-panel hidden"><div id="content-super-transfer"></div></div>
+
+        <!-- BUG TRACKER -->
+        <div id="tab-bugtracker" class="tab-panel hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-bold text-xl flex items-center gap-2">
+                        <span>🐛</span> Bug Tracker
+                    </h2>
+                    <button onclick="addBug()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition">
+                        <span>+</span> Tambah Bug
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-100 text-gray-600">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold">ID</th>
+                                <th class="px-4 py-3 text-left font-semibold">Modul</th>
+                                <th class="px-4 py-3 text-left font-semibold">Level</th>
+                                <th class="px-4 py-3 text-left font-semibold">Deskripsi Bug</th>
+                                <th class="px-4 py-3 text-left font-semibold">Status</th>
+                                <th class="px-4 py-3 text-left font-semibold">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bug-list">
+                            <tr id="empty-bug">
+                                <td colspan="6" class="px-4 py-8 text-center text-gray-500">Belum ada bug tercatat. Klik "Tambah Bug" untuk mencatat temuan.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FLOATING BUTTONS -->
+    <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+        <button onclick="exportData()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-full shadow-xl flex items-center gap-2 transition transform hover:scale-105">
+            <span class="material-symbols-outlined text-sm">download</span>
+            <span class="text-sm font-semibold">Export Data</span>
+        </button>
+        <button onclick="resetAll()" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-full shadow-xl flex items-center gap-2 transition transform hover:scale-105">
+            <span class="material-symbols-outlined text-sm">refresh</span>
+            <span class="text-sm font-semibold">Reset</span>
+        </button>
+    </div>
+
+    <script>
+        // ============================================================
+        // DATA TEST CASES - SEMUA 387 TEST LENGKAP
+        // ============================================================
+        
+        const allTests = {
+            // USER PORTAL - 98 TESTS =====================================
+            'user-auth': {
+                title: '🔐 Portal Pengguna: Autentikasi (18 tests)',
+                color: 'green',
+                tests: [
+                    {kode: 'USR-AUTH-01', skenario: 'Register dengan data valid (nama lengkap, email valid, password 8+ karakter, nama perusahaan)', harapan: 'Akun berhasil dibuat, email verifikasi terkirim ke inbox'},
+                    {kode: 'USR-AUTH-02', skenario: 'Register dengan email yang sudah terdaftar di sistem', harapan: 'Muncul error "Email sudah digunakan"'},
+                    {kode: 'USR-AUTH-03', skenario: 'Register dengan password kurang dari 8 karakter', harapan: 'Muncul error "Password minimal 8 karakter"'},
+                    {kode: 'USR-AUTH-04', skenario: 'Register dengan format email tidak valid (tanpa @ atau .com)', harapan: 'Muncul error "Format email tidak valid"'},
+                    {kode: 'USR-AUTH-05', skenario: 'Register dengan field nama kosong', harapan: 'Muncul error "Nama wajib diisi"'},
+                    {kode: 'USR-AUTH-06', skenario: 'Klik link verifikasi email dari inbox', harapan: 'Email terverifikasi, redirect ke halaman login sukses'},
+                    {kode: 'USR-AUTH-07', skenario: 'Klik link verifikasi yang sudah expired/lebih dari 24 jam', harapan: 'Muncul error "Link verifikasi sudah tidak valid"'},
+                    {kode: 'USR-AUTH-08', skenario: 'Login dengan email dan password yang benar', harapan: 'Berhasil login, redirect ke dashboard pengguna'},
+                    {kode: 'USR-AUTH-09', skenario: 'Login dengan password salah', harapan: 'Muncul error "Password tidak cocok"'},
+                    {kode: 'USR-AUTH-10', skenario: 'Login dengan email yang belum diverifikasi', harapan: 'Muncul error "Email belum diverifikasi, cek inbox"'},
+                    {kode: 'USR-AUTH-11', skenario: 'Login dengan akun yang di-suspend oleh admin', harapan: 'Muncul error "Akun Anda telah ditangguhkan"'},
+                    {kode: 'USR-AUTH-12', skenario: 'Klik "Lupa Password" dan masukkan email terdaftar', harapan: 'Email reset password terkirim ke inbox'},
+                    {kode: 'USR-AUTH-13', skenario: 'Reset password dengan link valid dari email', harapan: 'Password berhasil diubah, bisa login dengan password baru'},
+                    {kode: 'USR-AUTH-14', skenario: 'Setup 2FA Google Authenticator di pengaturan', harapan: 'QR code muncul, scan berhasil, 2FA aktif'},
+                    {kode: 'USR-AUTH-15', skenario: 'Login dengan 2FA enabled - masukkan kode TOTP valid', harapan: 'Login berhasil, masuk dashboard'},
+                    {kode: 'USR-AUTH-16', skenario: 'Login dengan 2FA enabled - masukkan kode TOTP salah', harapan: 'Error "Kode verifikasi tidak valid"'},
+                    {kode: 'USR-AUTH-17', skenario: 'Logout dari dashboard pengguna', harapan: 'Session berakhir, redirect ke halaman login'},
+                    {kode: 'USR-AUTH-18', skenario: 'Coba akses halaman dashboard tanpa login', harapan: 'Redirect otomatis ke halaman login'}
+                ]
+            },
+            'user-dashboard': {
+                title: '🏠 Portal Pengguna: Dashboard (12 tests)',
+                color: 'emerald',
+                tests: [
+                    {kode: 'USR-DASH-01', skenario: 'Akses halaman dashboard setelah login berhasil', harapan: 'Dashboard muncul dengan semua widget statistik'},
+                    {kode: 'USR-DASH-02', skenario: 'Lihat total pesan terkirim hari ini', harapan: 'Angka total pesan hari ini terupdate real-time'},
+                    {kode: 'USR-DASH-03', skenario: 'Lihat jumlah kontak/lead yang tersimpan', harapan: 'Jumlah kontak ditampilkan dengan benar'},
+                    {kode: 'USR-DASH-04', skenario: 'Lihat status koneksi perangkat WhatsApp', harapan: 'Status "Connected" atau "Disconnected" dengan indikator warna'},
+                    {kode: 'USR-DASH-05', skenario: 'Lihat status koneksi akun Instagram', harapan: 'Status "Active" atau "Expired" dengan indikator warna'},
+                    {kode: 'USR-DASH-06', skenario: 'Lihat penggunaan kuota pesan bulanan', harapan: 'Progress bar kuota muncul dengan persentase'},
+                    {kode: 'USR-DASH-07', skenario: 'Lihat informasi langganan aktif', harapan: 'Nama plan, tanggal mulai, dan tanggal expired ditampilkan'},
+                    {kode: 'USR-DASH-08', skenario: 'Klik tombol "Pesan Baru" di dashboard', harapan: 'Redirect ke halaman compose pesan'},
+                    {kode: 'USR-DASH-09', skenario: 'Klik tombol "Hubungkan WhatsApp"', harapan: 'Redirect ke halaman koneksi WhatsApp'},
+                    {kode: 'USR-DASH-10', skenario: 'Klik icon notifikasi (bell) di navbar', harapan: 'Dropdown notifikasi muncul dengan daftar notifikasi terbaru'},
+                    {kode: 'USR-DASH-11', skenario: 'Klik conversation/chat terbaru dari list', harapan: 'Redirect ke halaman inbox dengan chat tersebut terbuka'},
+                    {kode: 'USR-DASH-12', skenario: 'Refresh halaman dashboard (F5)', harapan: 'Data terupdate tanpa error, session tetap aktif'}
+                ]
+            },
+            'user-inbox': {
+                title: '💬 Portal Pengguna: Inbox & Chat (24 tests)',
+                color: 'teal',
+                tests: [
+                    {kode: 'USR-INBOX-01', skenario: 'Akses halaman inbox (/inbox)', harapan: 'Daftar conversation muncul di sidebar kiri'},
+                    {kode: 'USR-INBOX-02', skenario: 'Pilih conversation dari list', harapan: 'Chat terbuka di area utama dengan history pesan'},
+                    {kode: 'USR-INBOX-03', skenario: 'Kirim pesan teks baru ke kontak', harapan: 'Pesan terkirim, muncul di chat history, status "Sent"'},
+                    {kode: 'USR-INBOX-04', skenario: 'Kirim pesan dengan attachment gambar', harapan: 'Gambar terupload dan terkirim, preview muncul'},
+                    {kode: 'USR-INBOX-05', skenario: 'Kirim pesan dengan attachment dokumen (PDF)', harapan: 'Dokumen terupload dan terkirim, bisa di-download'},
+                    {kode: 'USR-INBOX-06', skenario: 'Gunakan fitur "Quick Reply" / template pesan', harapan: 'Template pesan terinsert ke input field'},
+                    {kode: 'USR-INBOX-07', skenario: 'Tambah catatan/internal note pada chat', harapan: 'Catatan tersimpan, hanya terlihat oleh user (bukan kontak)'},
+                    {kode: 'USR-INBOX-08', skenario: 'Tandai conversation sebagai "Starred/Favorite"', harapan: 'Icon star berubah, conversation masuk ke list starred'},
+                    {kode: 'USR-INBOX-09', skenario: 'Arsipkan conversation', harapan: 'Conversation pindah ke tab "Archived"'},
+                    {kode: 'USR-INBOX-10', skenario: 'Hapus conversation', harapan: 'Confirmation dialog muncul, setelah confirm conversation terhapus'},
+                    {kode: 'USR-INBOX-11', skenario: 'Search conversation by name', harapan: 'Hasil pencarian muncul sesuai keyword'},
+                    {kode: 'USR-INBOX-12', skenario: 'Filter conversation by status (unread, starred)', harapan: 'List terfilter sesuai kriteria'},
+                    {kode: 'USR-INBOX-13', skenario: 'Terima pesan masuk dari WhatsApp', harapan: 'Pesan muncul real-time di inbox dengan notifikasi'},
+                    {kode: 'USR-INBOX-14', skenario: 'Terima pesan masuk dari Instagram DM', harapan: 'Pesan muncul real-time di inbox dengan label IG'},
+                    {kode: 'USR-INBOX-15', skenario: 'Lihat status pesan (Sent, Delivered, Read)', harapan: 'Status terupdate sesuai kondisi aktual'},
+                    {kode: 'USR-INBOX-16', skenario: 'Mention user lain dalam internal note', harapan: 'User yang di-mention menerima notifikasi'},
+                    {kode: 'USR-INBOX-17', skenario: 'Assign chat ke team member lain', harapan: 'Chat pindah ke inbox team member tersebut'},
+                    {kode: 'USR-INBOX-18', skenario: 'Gunakan AI Auto-Reply untuk balas pesan', harapan: 'AI generate response, user bisa edit sebelum kirim'},
+                    {kode: 'USR-INBOX-19', skenario: 'Set reminder/follow-up pada chat', harapan: 'Reminder tersimpan, notifikasi muncul saat waktunya'},
+                    {kode: 'USR-INBOX-20', skenario: 'Export chat history ke CSV/PDF', harapan: 'File terdownload dengan isi chat lengkap'},
+                    {kode: 'USR-INBOX-21', skenario: 'Blokir kontak dari chat', harapan: 'Kontak diblokir, tidak bisa kirim pesan lagi'},
+                    {kode: 'USR-INBOX-22', skenario: 'Lihat profil kontak dari chat', harapan: 'Sidebar profil muncul dengan detail kontak'},
+                    {kode: 'USR-INBOX-23', skenario: 'Edit info kontak dari chat', harapan: 'Data kontak terupdate'},
+                    {kode: 'USR-INBOX-24', skenario: 'Kirim broadcast message ke multiple contacts', harapan: 'Pesan terkirim ke semua kontak yang dipilih'}
+                ]
+            },
+            'user-wa': {
+                title: '📱 Portal Pengguna: WhatsApp Device (15 tests)',
+                color: 'green',
+                tests: [
+                    {kode: 'USR-WA-01', skenario: 'Buka halaman koneksi WhatsApp (/whatsapp)', harapan: 'Halaman muncul dengan tombol "Hubungkan Perangkat"'},
+                    {kode: 'USR-WA-02', skenario: 'Klik "Hubungkan Perangkat Baru"', harapan: 'QR code muncul untuk di-scan'},
+                    {kode: 'USR-WA-03', skenario: 'Scan QR code dengan aplikasi WhatsApp mobile', harapan: 'Perangkat terhubung, status "Connecting"'},
+                    {kode: 'USR-WA-04', skenario: 'Tunggu hingga koneksi established', harapan: 'Status berubah menjadi "Connected" dengan icon hijau'},
+                    {kode: 'USR-WA-05', skenario: 'Lihat detail perangkat yang terhubung', harapan: 'Nomor WA, nama device, dan status muncul'},
+                    {kode: 'USR-WA-06', skenario: 'Putuskan koneksi WhatsApp', harapan: 'Status berubah "Disconnected", perangkat tidak aktif'},
+                    {kode: 'USR-WA-07', skenario: 'Hapus session WhatsApp', harapan: 'Session terhapus dari daftar, harus scan ulang'},
+                    {kode: 'USR-WA-08', skenario: 'Reconnect WhatsApp yang disconnected', harapan: 'QR code muncul kembali, bisa scan ulang'},
+                    {kode: 'USR-WA-09', skenario: 'Lihat log koneksi WhatsApp', harapan: 'History koneksi dan error log muncul'},
+                    {kode: 'USR-WA-10', skenario: 'Ganti nama session WhatsApp', harapan: 'Nama session terupdate'},
+                    {kode: 'USR-WA-11', skenario: 'Test kirim pesan via WhatsApp yang terhubung', harapan: 'Pesan terkirim dan diterima oleh penerima'},
+                    {kode: 'USR-WA-12', skenario: 'Terima pesan masuk via WhatsApp', harapan: 'Pesan muncul di inbox secara real-time'},
+                    {kode: 'USR-WA-13', skenario: 'Lihat status kesehatan koneksi WA', harapan: 'Indikator signal strength dan latency muncul'},
+                    {kode: 'USR-WA-14', skenario: 'Setup auto-reply untuk WA', harapan: 'Auto-reply tersimpan dan aktif'},
+                    {kode: 'USR-WA-15', skenario: 'Batasi jam operasional WA (business hours)', harapan: 'Pesan di luar jam operasional dapat auto-reply'}
+                ]
+            },
+            'user-ig': {
+                title: '📷 Portal Pengguna: Instagram (12 tests)',
+                color: 'pink',
+                tests: [
+                    {kode: 'USR-IG-01', skenario: 'Buka pengaturan Instagram (/settings/instagram)', harapan: 'Halaman muncul dengan tombol "Hubungkan Instagram"'},
+                    {kode: 'USR-IG-02', skenario: 'Klik "Hubungkan Instagram"', harapan: 'Redirect ke halaman OAuth Instagram/Facebook'},
+                    {kode: 'USR-IG-03', skenario: 'Login dengan akun Instagram dan authorize aplikasi', harapan: 'Redirect back ke REPLYAI, akun terhubung'},
+                    {kode: 'USR-IG-04', skenario: 'Lihat akun Instagram yang terhubung', harapan: 'Username, status "Active", dan foto profil muncul'},
+                    {kode: 'USR-IG-05', skenario: 'Lihat daftar DM Instagram di inbox', harapan: 'Pesan DM masuk muncul dengan label Instagram'},
+                    {kode: 'USR-IG-06', skenario: 'Balas DM Instagram dari inbox', harapan: 'Pesan terkirim ke Instagram DM penerima'},
+                    {kode: 'USR-IG-07', skenario: 'Terima DM baru dari Instagram', harapan: 'Pesan muncul real-time di inbox dengan notifikasi'},
+                    {kode: 'USR-IG-08', skenario: 'Lihat komentar Instagram (jika fitur aktif)', harapan: 'Komentar pada post muncul di tab terpisah'},
+                    {kode: 'USR-IG-09', skenario: 'Balas komentar Instagram', harapan: 'Komentar reply terposting di Instagram'},
+                    {kode: 'USR-IG-10', skenario: 'Putuskan koneksi Instagram', harapan: 'Status berubah "Disconnected", tidak menerima pesan baru'},
+                    {kode: 'USR-IG-11', skenario: 'Reconnect Instagram yang expired', harapan: 'Proses OAuth ulang berhasil'},
+                    {kode: 'USR-IG-12', skenario: 'Setup auto-reply untuk Instagram DM', harapan: 'Auto-reply tersimpan dan aktif'}
+                ]
+            },
+            'user-crm': {
+                title: '👥 Portal Pengguna: Kontak & CRM (17 tests)',
+                color: 'cyan',
+                tests: [
+                    {kode: 'USR-CRM-01', skenario: 'Akses halaman kontak (/contacts)', harapan: 'Daftar kontak muncul dengan pagination'},
+                    {kode: 'USR-CRM-02', skenario: 'Tambah kontak baru manual', harapan: 'Form muncul, data tersimpan, kontak muncul di list'},
+                    {kode: 'USR-CRM-03', skenario: 'Import kontak dari CSV/Excel', harapan: 'File diupload, kontak terimport dengan benar'},
+                    {kode: 'USR-CRM-04', skenario: 'Export kontak ke CSV/Excel', harapan: 'File terdownload dengan data kontak lengkap'},
+                    {kode: 'USR-CRM-05', skenario: 'Edit data kontak yang sudah ada', harapan: 'Perubahan tersimpan'},
+                    {kode: 'USR-CRM-06', skenario: 'Hapus kontak', harapan: 'Konfirmasi muncul, kontak terhapus dari database'},
+                    {kode: 'USR-CRM-07', skenario: 'Search kontak by nama/email/phone', harapan: 'Hasil pencarian sesuai'},
+                    {kode: 'USR-CRM-08', skenario: 'Filter kontak by tags/labels', harapan: 'Kontak terfilter sesuai tag'},
+                    {kode: 'USR-CRM-09', skenario: 'Tambah tag/label ke kontak', harapan: 'Tag muncul di profil kontak'},
+                    {kode: 'USR-CRM-10', skenario: 'Lihat history chat dengan kontak', harapan: 'Semua conversation dengan kontak tersebut muncul'},
+                    {kode: 'USR-CRM-11', skenario: 'Lihat detail profil kontak lengkap', harapan: 'Info lengkap: nama, email, phone, alamat, catatan'},
+                    {kode: 'USR-CRM-12', skenario: 'Tambah catatan ke kontak', harapan: 'Catatan tersimpan dan muncul di profil'},
+                    {kode: 'USR-CRM-13', skenario: 'Merge kontak duplikat', harapan: 'Kontak duplikat tergabung, data tidak hilang'},
+                    {kode: 'USR-CRM-14', skenario: 'Segmentasi kontak (grup)', harapan: 'Grup kontak tersimpan, bisa kirim broadcast'},
+                    {kode: 'USR-CRM-15', skenario: 'Filter kontak by date added', harapan: 'Kontak terfilter by tanggal'},
+                    {kode: 'USR-CRM-16', skenario: 'Export segment to CSV', harapan: 'CSV terdownload untuk segment'},
+                    {kode: 'USR-CRM-17', skenario: 'Bulk delete kontak', harapan: 'Multiple kontak terhapus'}
+                ]
+            },
+
+            // ADMIN PANEL - 156 TESTS =====================================
+            'admin-users': {
+                title: '⚙️ Panel Admin: Manajemen Pengguna (28 tests)',
+                color: 'blue',
+                tests: [
+                    {kode: 'ADM-USER-01', skenario: 'Lihat daftar pengguna dengan pagination', harapan: 'List user muncul dengan navigasi page'},
+                    {kode: 'ADM-USER-02', skenario: 'Search user by name atau email', harapan: 'Hasil sesuai keyword pencarian'},
+                    {kode: 'ADM-USER-03', skenario: 'Filter user by status (Aktif/Suspended/Expired)', harapan: 'Filter berfungsi, list terupdate'},
+                    {kode: 'ADM-USER-04', skenario: 'Filter user by plan (Basic/Pro/Enterprise)', harapan: 'List terfilter sesuai plan'},
+                    {kode: 'ADM-USER-05', skenario: 'View detail profil user lengkap', harapan: 'Info lengkap user muncul'},
+                    {kode: 'ADM-USER-06', skenario: 'Edit data user (nama, email, phone)', harapan: 'Perubahan tersimpan'},
+                    {kode: 'ADM-USER-07', skenario: 'Suspend user account', harapan: 'User tidak bisa login setelah suspend'},
+                    {kode: 'ADM-USER-08', skenario: 'Unsuspend user account', harapan: 'User bisa login kembali'},
+                    {kode: 'ADM-USER-09', skenario: 'Delete user permanently', harapan: 'User terhapus dari database'},
+                    {kode: 'ADM-USER-10', skenario: 'Impersonate user (login sebagai user)', harapan: 'Admin masuk ke dashboard user'},
+                    {kode: 'ADM-USER-11', skenario: 'Reset password user', harapan: 'Email reset terkirim ke user'},
+                    {kode: 'ADM-USER-12', skenario: 'Verifikasi email user manual', harapan: 'Email user terverifikasi'},
+                    {kode: 'ADM-USER-13', skenario: 'Assign subscription ke user', harapan: 'Plan aktif di user dashboard'},
+                    {kode: 'ADM-USER-14', skenario: 'Extend subscription user', harapan: 'Masa aktif bertambah'},
+                    {kode: 'ADM-USER-15', skenario: 'Cancel subscription user', harapan: 'Subscription non-aktif'},
+                    {kode: 'ADM-USER-16', skenario: 'Reset usage quota user', harapan: 'Quota kembali ke 0/full'},
+                    {kode: 'ADM-USER-17', skenario: 'Lihat activity log user', harapan: 'Semua aktivitas user tercatat'},
+                    {kode: 'ADM-USER-18', skenario: 'Lihat devices yang dikelola user', harapan: 'List WA & IG user muncul'},
+                    {kode: 'ADM-USER-19', skenario: 'Export data user ke CSV', harapan: 'CSV terdownload'},
+                    {kode: 'ADM-USER-20', skenario: 'Bulk suspend multiple users', harapan: 'Users ter-suspend bersamaan'},
+                    {kode: 'ADM-USER-21', skenario: 'Bulk delete users', harapan: 'Users terhapus bersamaan'},
+                    {kode: 'ADM-USER-22', skenario: 'Lihat pembayaran history user', harapan: 'List payment user muncul'},
+                    {kode: 'ADM-USER-23', skenario: 'Kirim email ke user', harapan: 'Email terkirim ke inbox user'},
+                    {kode: 'ADM-USER-24', skenario: 'Lihat tiket support user', harapan: 'List tiket dari user muncul'},
+                    {kode: 'ADM-USER-25', skenario: 'Lihat statistik usage user', harapan: 'Pesan terkirim, kontak, dll'},
+                    {kode: 'ADM-USER-26', skenario: 'Force logout user', harapan: 'Session user berakhir'},
+                    {kode: 'ADM-USER-27', skenario: 'Add note ke user profile', harapan: 'Catatan tersimpan'},
+                    {kode: 'ADM-USER-28', skenario: 'Change user role', harapan: 'Role user terupdate'}
+                ]
+            },
+            'admin-payments': {
+                title: '💰 Panel Admin: Pembayaran & Pendapatan (32 tests)',
+                color: 'indigo',
+                tests: [
+                    {kode: 'ADM-PAY-01', skenario: 'Lihat daftar pembayaran dengan filter', harapan: 'List payment dengan filter options'},
+                    {kode: 'ADM-PAY-02', skenario: 'Filter payment by status (Pending/Success/Failed)', harapan: 'Filter berfungsi'},
+                    {kode: 'ADM-PAY-03', skenario: 'Filter payment by method (Transfer/QRIS/CC)', harapan: 'List terfilter by method'},
+                    {kode: 'ADM-PAY-04', skenario: 'Filter payment by date range', harapan: 'Hasil sesuai tanggal'},
+                    {kode: 'ADM-PAY-05', skenario: 'View detail pembayaran lengkap', harapan: 'Info lengkap payment muncul'},
+                    {kode: 'ADM-PAY-06', skenario: 'Lihat bukti pembayaran user', harapan: 'Gambar bukti terbuka'},
+                    {kode: 'ADM-PAY-07', skenario: 'Approve pembayaran manual', harapan: 'Status success, subscription aktif'},
+                    {kode: 'ADM-PAY-08', skenario: 'Reject pembayaran', harapan: 'Status failed, alasan tercatat'},
+                    {kode: 'ADM-PAY-09', skenario: 'Request bukti ulang ke user', harapan: 'Email request terkirim'},
+                    {kode: 'ADM-PAY-10', skenario: 'Generate invoice manual', harapan: 'Invoice tergenerate'},
+                    {kode: 'ADM-PAY-11', skenario: 'Export payments ke CSV/Excel', harapan: 'File terdownload'},
+                    {kode: 'ADM-PAY-12', skenario: 'Lihat pendapatan harian/mingguan/bulanan', harapan: 'Chart pendapatan muncul'},
+                    {kode: 'ADM-PAY-13', skenario: 'Refund payment', harapan: 'Refund diproses, uang kembali ke user'},
+                    {kode: 'ADM-PAY-14', skenario: 'Bulk approve payments', harapan: 'Multiple payments approved'},
+                    {kode: 'ADM-PAY-15', skenario: 'Search payment by invoice number', harapan: 'Hasil sesuai nomor invoice'},
+                    {kode: 'ADM-PAY-16', skenario: 'Filter payment by user', harapan: 'List terfilter by user'},
+                    {kode: 'ADM-PAY-17', skenario: 'Lihat refund history', harapan: 'List refund muncul'},
+                    {kode: 'ADM-PAY-18', skenario: 'Cancel pending payment', harapan: 'Payment di-cancel, invoice expired'},
+                    {kode: 'ADM-PAY-19', skenario: 'Resend invoice email', harapan: 'Email invoice terkirim ulang'},
+                    {kode: 'ADM-PAY-20', skenario: 'Update payment method', harapan: 'Payment method terupdate'},
+                    {kode: 'ADM-PAY-21', skenario: 'View payment gateway logs', harapan: 'Log Midtrans/gateway muncul'},
+                    {kode: 'ADM-PAY-22', skenario: 'Manual adjustment (tambah/kurang saldo)', harapan: 'Saldo user terupdate'},
+                    {kode: 'ADM-PAY-23', skenario: 'Generate report pembayaran', harapan: 'PDF/Excel report tergenerate'},
+                    {kode: 'ADM-PAY-24', skenario: 'Filter by amount range', harapan: 'List terfilter by nominal'},
+                    {kode: 'ADM-PAY-25', skenario: 'Mark payment as fraud', harapan: 'Payment flagged, user notified'},
+                    {kode: 'ADM-PAY-26', skenario: 'View subscription details', harapan: 'Detail subscription muncul'},
+                    {kode: 'ADM-PAY-27', skenario: 'Extend payment due date', harapan: 'Due date terupdate'},
+                    {kode: 'ADM-PAY-28', skenario: 'Add discount/coupon to payment', harapan: 'Discount applied, harga berubah'},
+                    {kode: 'ADM-PAY-29', skenario: 'View tax details', harapan: 'Pajak kalkulasi muncul'},
+                    {kode: 'ADM-PAY-30', skenario: 'Export for accounting', harapan: 'Format accounting terdownload'},
+                    {kode: 'ADM-PAY-31', skenario: 'Reconcile payments', harapan: 'Reconciliation report muncul'},
+                    {kode: 'ADM-PAY-32', skenario: 'View failed payment reasons', harapan: 'Error messages tercatat'}
+                ]
+            },
+            'admin-support': {
+                title: '🎫 Panel Admin: Tiket Support (24 tests)',
+                color: 'orange',
+                tests: [
+                    {kode: 'ADM-SUP-01', skenario: 'Lihat daftar tiket support', harapan: 'List tiket dengan filter dan sort'},
+                    {kode: 'ADM-SUP-02', skenario: 'Filter tiket by status (Open/In Progress/Resolved)', harapan: 'Filter berfungsi'},
+                    {kode: 'ADM-SUP-03', skenario: 'Filter tiket by priority (Low/Medium/High/Urgent)', harapan: 'List terfilter by priority'},
+                    {kode: 'ADM-SUP-04', skenario: 'Filter tiket by category', harapan: 'List terfilter by kategori'},
+                    {kode: 'ADM-SUP-05', skenario: 'View detail tiket', harapan: 'Detail lengkap tiket muncul'},
+                    {kode: 'ADM-SUP-06', skenario: 'Reply tiket dari admin', harapan: 'Balasan tersimpan, user menerima notif'},
+                    {kode: 'ADM-SUP-07', skenario: 'Assign tiket ke agent', harapan: 'Tiket masuk ke queue agent'},
+                    {kode: 'ADM-SUP-08', skenario: 'Change tiket priority', harapan: 'Priority terupdate'},
+                    {kode: 'ADM-SUP-09', skenario: 'Close/resolve tiket', harapan: 'Status resolved, user diberitahu'},
+                    {kode: 'ADM-SUP-10', skenario: 'Reopen closed tiket', harapan: 'Status kembali open'},
+                    {kode: 'ADM-SUP-11', skenario: 'Add internal note ke tiket', harapan: 'Note internal tersimpan'},
+                    {kode: 'ADM-SUP-12', skenario: 'Escalate tiket ke senior', harapan: 'Tiket pindah ke level atas'},
+                    {kode: 'ADM-SUP-13', skenario: 'Merge duplicate tiket', harapan: 'Tiket digabung, tidak ada duplikat'},
+                    {kode: 'ADM-SUP-14', skenario: 'Search tiket by keyword', harapan: 'Hasil sesuai keyword'},
+                    {kode: 'ADM-SUP-15', skenario: 'View user info from tiket', harapan: 'Profil user terkait muncul'},
+                    {kode: 'ADM-SUP-16', skenario: 'View device info dari tiket', harapan: 'Info WA/IG user muncul'},
+                    {kode: 'ADM-SUP-17', skenario: 'Bulk close tiket', harapan: 'Multiple tiket ditutup'},
+                    {kode: 'ADM-SUP-18', skenario: 'Export tiket report', harapan: 'CSV/PDF terdownload'},
+                    {kode: 'ADM-SUP-19', skenario: 'View SLA metrics', harapan: 'Response time, resolution time muncul'},
+                    {kode: 'ADM-SUP-20', skenario: 'Set reminder untuk follow-up', harapan: 'Reminder tersimpan'},
+                    {kode: 'ADM-SUP-21', skenario: 'Transfer tiket ke department lain', harapan: 'Tiket pindah department'},
+                    {kode: 'ADM-SUP-22', skenario: 'Add attachment to reply', harapan: 'File terupload'},
+                    {kode: 'ADM-SUP-23', skenario: 'Use canned response', harapan: 'Template balasan terinsert'},
+                    {kode: 'ADM-SUP-24', skenario: 'View conversation history', harapan: 'Semua chat tiket muncul'}
+                ]
+            },
+            'admin-plans': {
+                title: '📦 Panel Admin: Paket Langganan (18 tests)',
+                color: 'yellow',
+                tests: [
+                    {kode: 'ADM-PLAN-01', skenario: 'Lihat daftar paket langganan', harapan: 'List plans dengan detail masing-masing'},
+                    {kode: 'ADM-PLAN-02', skenario: 'Create new plan', harapan: 'Plan baru tersimpan'},
+                    {kode: 'ADM-PLAN-03', skenario: 'Edit existing plan', harapan: 'Perubahan tersimpan'},
+                    {kode: 'ADM-PLAN-04', skenario: 'Delete plan', harapan: 'Plan terhapus atau di-mark inactive'},
+                    {kode: 'ADM-PLAN-05', skenario: 'Set plan features/benefits', harapan: 'Fitur plan terupdate'},
+                    {kode: 'ADM-PLAN-06', skenario: 'Set plan pricing', harapan: 'Harga plan terupdate'},
+                    {kode: 'ADM-PLAN-07', skenario: 'Set plan quota limits', harapan: 'Limit pesan, kontak, dll terupdate'},
+                    {kode: 'ADM-PLAN-08', skenario: 'Toggle plan visibility', harapan: 'Plan show/hide di pricing page'},
+                    {kode: 'ADM-PLAN-09', skenario: 'Set plan as recommended/popular', harapan: 'Badge recommended muncul'},
+                    {kode: 'ADM-PLAN-10', skenario: 'View subscribers per plan', harapan: 'Jumlah user per plan muncul'},
+                    {kode: 'ADM-PLAN-11', skenario: 'Duplicate plan', harapan: 'Plan dicopy dengan setting sama'},
+                    {kode: 'ADM-PLAN-12', skenario: 'Reorder plan display', harapan: 'Urutan plan terupdate'},
+                    {kode: 'ADM-PLAN-13', skenario: 'Set trial period untuk plan', harapan: 'Trial days terupdate'},
+                    {kode: 'ADM-PLAN-14', skenario: 'Add plan description', harapan: 'Deskripsi tersimpan'},
+                    {kode: 'ADM-PLAN-15', skenario: 'Upload plan icon/image', harapan: 'Gambar terupload'},
+                    {kode: 'ADM-PLAN-16', skenario: 'Set billing cycle options', harapan: 'Monthly/yearly options muncul'},
+                    {kode: 'ADM-PLAN-17', skenario: 'Archive old plan', harapan: 'Plan di-archive, tidak bisa subscribe baru'},
+                    {kode: 'ADM-PLAN-18', skenario: 'View plan analytics', harapan: 'Conversion rate, revenue per plan muncul'}
+                ]
+            },
+            'admin-reports': {
+                title: '📈 Panel Admin: Laporan & Analitik (19 tests)',
+                color: 'red',
+                tests: [
+                    {kode: 'ADM-RPT-01', skenario: 'Lihat dashboard overview', harapan: 'Summary metrics muncul'},
+                    {kode: 'ADM-RPT-02', skenario: 'View user growth report', harapan: 'Chart pertumbuhan user muncul'},
+                    {kode: 'ADM-RPT-03', skenario: 'View revenue report', harapan: 'Chart pendapatan muncul'},
+                    {kode: 'ADM-RPT-04', skenario: 'Filter report by date range', harapan: 'Data terfilter by tanggal'},
+                    {kode: 'ADM-RPT-05', skenario: 'Export report to PDF', harapan: 'PDF report terdownload'},
+                    {kode: 'ADM-RPT-06', skenario: 'Export report to Excel', harapan: 'Excel report terdownload'},
+                    {kode: 'ADM-RPT-07', skenario: 'View device usage statistics', harapan: 'Stats WA/IG usage muncul'},
+                    {kode: 'ADM-RPT-08', skenario: 'View message statistics', harapan: 'Jumlah pesan terkirim/diterima muncul'},
+                    {kode: 'ADM-RPT-09', skenario: 'View active users count', harapan: 'DAU/MAU metrics muncul'},
+                    {kode: 'ADM-RPT-10', skenario: 'View churn rate', harapan: 'Persentase churn muncul'},
+                    {kode: 'ADM-RPT-11', skenario: 'View MRR/ARR', harapan: 'Monthly/Annual recurring revenue muncul'},
+                    {kode: 'ADM-RPT-12', skenario: 'Compare periods', harapan: 'Perbandingan period-to-period muncul'},
+                    {kode: 'ADM-RPT-13', skenario: 'View top users by message volume', harapan: 'Ranking user muncul'},
+                    {kode: 'ADM-RPT-14', skenario: 'View failed payment rate', harapan: 'Persentase gagal bayar muncul'},
+                    {kode: 'ADM-RPT-15', skenario: 'View support ticket metrics', harapan: 'Ticket volume, resolution time muncul'},
+                    {kode: 'ADM-RPT-16', skenario: 'Schedule report email', harapan: 'Report terkirim otomatis via email'},
+                    {kode: 'ADM-RPT-17', skenario: 'Customize report columns', harapan: 'Kolom report terpilih sesuai setting'},
+                    {kode: 'ADM-RPT-18', skenario: 'View real-time analytics', harapan: 'Data real-time terupdate'},
+                    {kode: 'ADM-RPT-19', skenario: 'View geographic distribution', harapan: 'Map/peta distribusi user muncul'}
+                ]
+            },
+            'admin-settings': {
+                title: '🔧 Panel Admin: Pengaturan Sistem (35 tests)',
+                color: 'gray',
+                tests: [
+                    {kode: 'ADM-SET-01', skenario: 'Edit informasi perusahaan', harapan: 'Data perusahaan tersimpan'},
+                    {kode: 'ADM-SET-02', skenario: 'Upload logo perusahaan', harapan: 'Logo terupload dan tampil'},
+                    {kode: 'ADM-SET-03', skenario: 'Edit email settings (SMTP)', harapan: 'Setting email tersimpan'},
+                    {kode: 'ADM-SET-04', skenario: 'Test email configuration', harapan: 'Test email terkirim'},
+                    {kode: 'ADM-SET-05', skenario: 'Edit payment gateway settings', harapan: 'Midtrans/gateway config tersimpan'},
+                    {kode: 'ADM-SET-06', skenario: 'Set notification preferences', harapan: 'Notif settings tersimpan'},
+                    {kode: 'ADM-SET-07', skenario: 'Manage email templates', harapan: 'Template email bisa diedit'},
+                    {kode: 'ADM-SET-08', skenario: 'Manage SMS templates', harapan: 'Template SMS bisa diedit'},
+                    {kode: 'ADM-SET-09', skenario: 'Set timezone', harapan: 'Timezone terupdate'},
+                    {kode: 'ADM-SET-10', skenario: 'Set currency format', harapan: 'Format mata uang terupdate'},
+                    {kode: 'ADM-SET-11', skenario: 'Enable/disable registration', harapan: 'Registrasi dibuka/ditutup'},
+                    {kode: 'ADM-SET-12', skenario: 'Set terms & conditions', harapan: 'T&C tersimpan'},
+                    {kode: 'ADM-SET-13', skenario: 'Set privacy policy', harapan: 'Privacy policy tersimpan'},
+                    {kode: 'ADM-SET-14', skenario: 'Manage API keys', harapan: 'API key bisa generate/revoke'},
+                    {kode: 'ADM-SET-15', skenario: 'View system logs', harapan: 'Log aplikasi muncul'},
+                    {kode: 'ADM-SET-16', skenario: 'Configure backup settings', harapan: 'Backup schedule tersimpan'},
+                    {kode: 'ADM-SET-17', skenario: 'Manual backup database', harapan: 'Backup file tergenerate'},
+                    {kode: 'ADM-SET-18', skenario: 'Restore from backup', harapan: 'Database ter-restore'},
+                    {kode: 'ADM-SET-19', skenario: 'Clear cache', harapan: 'Cache dibersihkan'},
+                    {kode: 'ADM-SET-20', skenario: 'Optimize database', harapan: 'Database di-optimize'},
+                    {kode: 'ADM-SET-21', skenario: 'Manage admin users', harapan: 'Admin bisa ditambah/dihapus'},
+                    {kode: 'ADM-SET-22', skenario: 'Set admin roles & permissions', harapan: 'Role permission terupdate'},
+                    {kode: 'ADM-SET-23', skenario: 'View system status', harapan: 'Health status muncul'},
+                    {kode: 'ADM-SET-24', skenario: 'Configure webhook URLs', harapan: 'Webhook config tersimpan'},
+                    {kode: 'ADM-SET-25', skenario: 'Set rate limiting', harapan: 'Rate limits terupdate'},
+                    {kode: 'ADM-SET-26', skenario: 'Configure reCAPTCHA', harapan: 'reCAPTCHA key tersimpan'},
+                    {kode: 'ADM-SET-27', skenario: 'Set session timeout', harapan: 'Session duration terupdate'},
+                    {kode: 'ADM-SET-28', skenario: 'Configure file upload limits', harapan: 'Max file size terupdate'},
+                    {kode: 'ADM-SET-29', skenario: 'Manage banned IPs', harapan: 'IP block list terupdate'},
+                    {kode: 'ADM-SET-30', skenario: 'Set maintenance mode', harapan: 'Maintenance page muncul'},
+                    {kode: 'ADM-SET-31', skenario: 'Customize error pages', harapan: 'Error page content terupdate'},
+                    {kode: 'ADM-SET-32', skenario: 'Manage integrations', harapan: 'Integration settings tersimpan'},
+                    {kode: 'ADM-SET-33', skenario: 'View audit log', harapan: 'Semua aktivitas admin tercatat'},
+                    {kode: 'ADM-SET-34', skenario: 'Export settings', harapan: 'Config file terdownload'},
+                    {kode: 'ADM-SET-35', skenario: 'Import settings', harapan: 'Config di-import dan diterapkan'}
+                ]
+            },
+
+            // SUPERADMIN - 133 TESTS =====================================
+            'super-devices': {
+                title: '🔌 Superadmin: Manajemen Perangkat (16 tests)',
+                color: 'purple',
+                tests: [
+                    {kode: 'SUP-DEV-01', skenario: 'Lihat semua perangkat WhatsApp', harapan: 'List semua WA device dengan status'},
+                    {kode: 'SUP-DEV-02', skenario: 'Lihat semua akun Instagram', harapan: 'List semua IG account dengan status'},
+                    {kode: 'SUP-DEV-03', skenario: 'Filter device by status (Connected/Disconnected)', harapan: 'List terfilter by status'},
+                    {kode: 'SUP-DEV-04', skenario: 'Filter device by user', harapan: 'Device milik user tertentu'},
+                    {kode: 'SUP-DEV-05', skenario: 'View detail device (info lengkap)', harapan: 'Detail lengkap device muncul'},
+                    {kode: 'SUP-DEV-06', skenario: 'Force reconnect device', harapan: 'Device reconnect otomatis'},
+                    {kode: 'SUP-DEV-07', skenario: 'Force disconnect device', harapan: 'Device disconnected paksa'},
+                    {kode: 'SUP-DEV-08', skenario: 'Delete device permanently', harapan: 'Device terhapus dari database'},
+                    {kode: 'SUP-DEV-09', skenario: 'Cleanup orphaned devices', harapan: 'Device tanpa owner terhapus'},
+                    {kode: 'SUP-DEV-10', skenario: 'Bulk reconnect devices', harapan: 'Multiple devices reconnect'},
+                    {kode: 'SUP-DEV-11', skenario: 'Bulk delete devices', harapan: 'Multiple devices deleted'},
+                    {kode: 'SUP-DEV-12', skenario: 'View device connection logs', harapan: 'Log koneksi device muncul'},
+                    {kode: 'SUP-DEV-13', skenario: 'Monitor device health metrics', harapan: 'Health status dan metrics muncul'},
+                    {kode: 'SUP-DEV-14', skenario: 'Set auto-reconnect untuk device', harapan: 'Auto-reconnect aktif untuk device'},
+                    {kode: 'SUP-DEV-15', skenario: 'View QR code untuk device', harapan: 'QR code muncul untuk scan'},
+                    {kode: 'SUP-DEV-16', skenario: 'Export device data ke CSV', harapan: 'CSV file terdownload'}
+                ]
+            },
+            'super-schedule': {
+                title: '⏰ Superadmin: Schedule Monitor (14 tests)',
+                color: 'violet',
+                tests: [
+                    {kode: 'SUP-SCH-01', skenario: 'Lihat daftar scheduled tasks/cron jobs', harapan: 'List cron jobs dengan status masing-masing'},
+                    {kode: 'SUP-SCH-02', skenario: 'View queue status', harapan: 'Status queue (pending, processing, failed) muncul'},
+                    {kode: 'SUP-SCH-03', skenario: 'View failed jobs', harapan: 'List failed jobs dengan error message'},
+                    {kode: 'SUP-SCH-04', skenario: 'Retry failed job', harapan: 'Failed job di-retry'},
+                    {kode: 'SUP-SCH-05', skenario: 'Retry all failed jobs', harapan: 'Semua failed job di-retry'},
+                    {kode: 'SUP-SCH-06', skenario: 'Clear queue', harapan: 'Queue dibersihkan'},
+                    {kode: 'SUP-SCH-07', skenario: 'View job execution logs', harapan: 'Log eksekusi job muncul'},
+                    {kode: 'SUP-SCH-08', skenario: 'Pause/Resume scheduler', harapan: 'Scheduler di-pause atau resume'},
+                    {kode: 'SUP-SCH-09', skenario: 'View worker status', harapan: 'Status worker proses muncul'},
+                    {kode: 'SUP-SCH-10', skenario: 'Restart queue workers', harapan: 'Workers di-restart'},
+                    {kode: 'SUP-SCH-11', skenario: 'Monitor queue throughput', harapan: 'Rate job processing muncul'},
+                    {kode: 'SUP-SCH-12', skenario: 'View scheduled task calendar', harapan: 'Kalender task muncul'},
+                    {kode: 'SUP-SCH-13', skenario: 'Add manual scheduled task', harapan: 'Task baru tersimpan'},
+                    {kode: 'SUP-SCH-14', skenario: 'Delete scheduled task', harapan: 'Task terhapus'}
+                ]
+            },
+            'super-api': {
+                title: '🔍 Superadmin: API Monitor (18 tests)',
+                color: 'fuchsia',
+                tests: [
+                    {kode: 'SUP-API-01', skenario: 'Lihat API usage statistics', harapan: 'Statistik penggunaan API muncul'},
+                    {kode: 'SUP-API-02', skenario: 'View API endpoint logs', harapan: 'Log request/response API muncul'},
+                    {kode: 'SUP-API-03', skenario: 'Monitor API response times', harapan: 'Latency metrics muncul'},
+                    {kode: 'SUP-API-04', skenario: 'View rate limiting status', harapan: 'Rate limit per user/IP muncul'},
+                    {kode: 'SUP-API-05', skenario: 'Block API access untuk user', harapan: 'User diblokir akses API'},
+                    {kode: 'SUP-API-06', skenario: 'Unblock API access user', harapan: 'User bisa akses API kembali'},
+                    {kode: 'SUP-API-07', skenario: 'View API errors', harapan: 'Error log API muncul'},
+                    {kode: 'SUP-API-08', skenario: 'Filter API logs by endpoint', harapan: 'Log terfilter by endpoint'},
+                    {kode: 'SUP-API-09', skenario: 'Filter API logs by status code', harapan: 'Log terfilter by status (200, 404, 500, dll)'},
+                    {kode: 'SUP-API-10', skenario: 'View top API consumers', harapan: 'Ranking user by API usage muncul'},
+                    {kode: 'SUP-API-11', skenario: 'Export API logs', harapan: 'CSV log terdownload'},
+                    {kode: 'SUP-API-12', skenario: 'Set API rate limits', harapan: 'Rate limits terupdate'},
+                    {kode: 'SUP-API-13', skenario: 'View API authentication logs', harapan: 'Login/logout API tercatat'},
+                    {kode: 'SUP-API-14', skenario: 'Monitor API uptime', harapan: 'Uptime percentage muncul'},
+                    {kode: 'SUP-API-15', skenario: 'View third-party API status', harapan: 'Status WA gateway, IG API muncul'},
+                    {kode: 'SUP-API-16', skenario: 'Test API endpoint', harapan: 'Response test muncul'},
+                    {kode: 'SUP-API-17', skenario: 'Rotate API keys', harapan: 'API key baru digenerate'},
+                    {kode: 'SUP-API-18', skenario: 'View API documentation', harapan: 'API docs muncul'}
+                ]
+            },
+            'super-alerts': {
+                title: '🚨 Superadmin: System Alerts (22 tests)',
+                color: 'rose',
+                tests: [
+                    {kode: 'SUP-ALR-01', skenario: 'Lihat daftar alert rules', harapan: 'List alert rules muncul'},
+                    {kode: 'SUP-ALR-02', skenario: 'Create new alert rule', harapan: 'Alert rule tersimpan'},
+                    {kode: 'SUP-ALR-03', skenario: 'Edit alert rule', harapan: 'Perubahan tersimpan'},
+                    {kode: 'SUP-ALR-04', skenario: 'Delete alert rule', harapan: 'Alert rule terhapus'},
+                    {kode: 'SUP-ALR-05', skenario: 'Toggle alert rule (enable/disable)', harapan: 'Status alert berubah'},
+                    {kode: 'SUP-ALR-06', skenario: 'View alert history', harapan: 'History alert yang terpicu muncul'},
+                    {kode: 'SUP-ALR-07', skenario: 'Set alert condition (CPU, RAM, Disk)', harapan: 'Condition tersimpan'},
+                    {kode: 'SUP-ALR-08', skenario: 'Set alert threshold', harapan: 'Threshold value tersimpan'},
+                    {kode: 'SUP-ALR-09', skenario: 'Set alert notification channel (email, SMS, webhook)', harapan: 'Channel tersimpan'},
+                    {kode: 'SUP-ALR-10', skenario: 'Test alert notification', harapan: 'Test notification terkirim'},
+                    {kode: 'SUP-ALR-11', skenario: 'Acknowledge alert', harapan: 'Alert di-mark acknowledged'},
+                    {kode: 'SUP-ALR-12', skenario: 'Resolve alert', harapan: 'Alert status resolved'},
+                    {kode: 'SUP-ALR-13', skenario: 'View alert details', harapan: 'Detail alert muncul'},
+                    {kode: 'SUP-ALR-14', skenario: 'Set alert severity levels', harapan: 'Severity (info, warning, critical) tersimpan'},
+                    {kode: 'SUP-ALR-15', skenario: 'Configure alert grouping', harapan: 'Alert grouping tersimpan'},
+                    {kode: 'SUP-ALR-16', skenario: 'Set alert cooldown period', harapan: 'Cooldown tersimpan'},
+                    {kode: 'SUP-ALR-17', skenario: 'View system health dashboard', harapan: 'Health metrics muncul'},
+                    {kode: 'SUP-ALR-18', skenario: 'Monitor server resources', harapan: 'CPU, RAM, Disk usage muncul real-time'},
+                    {kode: 'SUP-ALR-19', skenario: 'View service status', harapan: 'Status WA service, queue worker muncul'},
+                    {kode: 'SUP-ALR-20', skenario: 'Start/Stop/Restart service', harapan: 'Service berhasil di-control'},
+                    {kode: 'SUP-ALR-21', skenario: 'View error rate trends', harapan: 'Chart error rate muncul'},
+                    {kode: 'SUP-ALR-22', skenario: 'Export alert report', harapan: 'Report terdownload'}
+                ]
+            },
+            'super-query': {
+                title: '🗄️ Superadmin: Query Runner (19 tests)',
+                color: 'sky',
+                tests: [
+                    {kode: 'SUP-QRY-01', skenario: 'Akses query runner interface', harapan: 'Interface query muncul (read-only)'},
+                    {kode: 'SUP-QRY-02', skenario: 'Execute SELECT query', harapan: 'Hasil query muncul dalam tabel'},
+                    {kode: 'SUP-QRY-03', skenario: 'Export query results', harapan: 'CSV/JSON hasil query terdownload'},
+                    {kode: 'SUP-QRY-04', skenario: 'View query execution time', harapan: 'Execution time ditampilkan'},
+                    {kode: 'SUP-QRY-05', skenario: 'View query row count', harapan: 'Jumlah rows returned muncul'},
+                    {kode: 'SUP-QRY-06', skenario: 'Save favorite query', harapan: 'Query tersimpan di favorites'},
+                    {kode: 'SUP-QRY-07', skenario: 'Load saved query', harapan: 'Saved query muncul di editor'},
+                    {kode: 'SUP-QRY-08', skenario: 'View database schema', harapan: 'Daftar tabel dan struktur muncul'},
+                    {kode: 'SUP-QRY-09', skenario: 'Search table/column names', harapan: 'Hasil pencarian schema muncul'},
+                    {kode: 'SUP-QRY-10', skenario: 'View table indexes', harapan: 'Index info muncul'},
+                    {kode: 'SUP-QRY-11', skenario: 'View recent queries', harapan: 'History query muncul'},
+                    {kode: 'SUP-QRY-12', skenario: 'Clear query editor', harapan: 'Editor dibersihkan'},
+                    {kode: 'SUP-QRY-13', skenario: 'Format SQL query', harapan: 'Query diformat rapi'},
+                    {kode: 'SUP-QRY-14', skenario: 'Test query before execute', harapan: 'Query validated, error muncul jika ada'},
+                    {kode: 'SUP-QRY-15', skenario: 'Limit result rows', harapan: 'Hasil dibatasi sesuai limit'},
+                    {kode: 'SUP-QRY-16', skenario: 'View query performance stats', harapan: 'Performance metrics muncul'},
+                    {kode: 'SUP-QRY-17', skenario: 'Analyze query execution plan', harapan: 'Explain query muncul'},
+                    {kode: 'SUP-QRY-18', skenario: 'Save query result as view', harapan: 'View tersimpan'},
+                    {kode: 'SUP-QRY-19', skenario: 'Compare query results', harapan: 'Perbandingan hasil query muncul'}
+                ]
+            },
+            'super-templates': {
+                title: '📝 Superadmin: Message Templates (13 tests)',
+                color: 'lime',
+                tests: [
+                    {kode: 'SUP-TPL-01', skenario: 'Lihat daftar message templates', harapan: 'List templates dengan kategori muncul'},
+                    {kode: 'SUP-TPL-02', skenario: 'Create new template', harapan: 'Template baru tersimpan'},
+                    {kode: 'SUP-TPL-03', skenario: 'Edit existing template', harapan: 'Perubahan tersimpan'},
+                    {kode: 'SUP-TPL-04', skenario: 'Delete template', harapan: 'Template terhapus'},
+                    {kode: 'SUP-TPL-05', skenario: 'Set template category', harapan: 'Kategori template terupdate'},
+                    {kode: 'SUP-TPL-06', skenario: 'Add template variables ({{name}}, {{date}})', harapan: 'Variables bisa digunakan'},
+                    {kode: 'SUP-TPL-07', skenario: 'Preview template dengan sample data', harapan: 'Preview muncul dengan data sample'},
+                    {kode: 'SUP-TPL-08', skenario: 'Duplicate template', harapan: 'Template dicopy'},
+                    {kode: 'SUP-TPL-09', skenario: 'Set template language', harapan: 'Bahasa template terupdate'},
+                    {kode: 'SUP-TPL-10', skenario: 'Enable/disable template', harapan: 'Status template berubah'},
+                    {kode: 'SUP-TPL-11', skenario: 'Filter templates by category', harapan: 'Templates terfilter'},
+                    {kode: 'SUP-TPL-12', skenario: 'Search templates', harapan: 'Hasil pencarian muncul'},
+                    {kode: 'SUP-TPL-13', skenario: 'Export templates', harapan: 'JSON templates terdownload'}
+                ]
+            },
+            'super-maintenance': {
+                title: '🔒 Superadmin: Maintenance Mode (12 tests)',
+                color: 'stone',
+                tests: [
+                    {kode: 'SUP-MNT-01', skenario: 'Enable maintenance mode', harapan: 'Maintenance page muncul untuk semua user'},
+                    {kode: 'SUP-MNT-02', skenario: 'Disable maintenance mode', harapan: 'Aplikasi normal kembali'},
+                    {kode: 'SUP-MNT-03', skenario: 'Set maintenance message', harapan: 'Custom message muncul di maintenance page'},
+                    {kode: 'SUP-MNT-04', skenario: 'Set allowed IPs (whitelist)', harapan: 'IP whitelist bisa akses saat maintenance'},
+                    {kode: 'SUP-MNT-05', skenario: 'Set maintenance countdown', harapan: 'Countdown timer muncul'},
+                    {kode: 'SUP-MNT-06', skenario: 'Schedule maintenance window', harapan: 'Maintenance auto-enable sesuai jadwal'},
+                    {kode: 'SUP-MNT-07', skenario: 'View maintenance history', harapan: 'Log maintenance muncul'},
+                    {kode: 'SUP-MNT-08', skenario: 'Customize maintenance page', harapan: 'Custom HTML/CSS tersimpan'},
+                    {kode: 'SUP-MNT-09', skenario: 'Test maintenance mode', harapan: 'Preview maintenance page muncul'},
+                    {kode: 'SUP-MNT-10', skenario: 'Enable partial maintenance (certain routes)', harapan: 'Hanya route tertentu maintenance'},
+                    {kode: 'SUP-MNT-11', skenario: 'Notify users about upcoming maintenance', harapan: 'Notifikasi terkirim ke user'},
+                    {kode: 'SUP-MNT-12', skenario: 'View active sessions during maintenance', harapan: 'Session list muncul'}
+                ]
+            },
+            'super-transfer': {
+                title: '📤 Superadmin: Data Transfer (19 tests)',
+                color: 'amber',
+                tests: [
+                    {kode: 'SUP-TRF-01', skenario: 'Export users data', harapan: 'CSV/Excel users terdownload'},
+                    {kode: 'SUP-TRF-02', skenario: 'Export payments data', harapan: 'CSV/Excel payments terdownload'},
+                    {kode: 'SUP-TRF-03', skenario: 'Export messages/conversations', harapan: 'CSV messages terdownload'},
+                    {kode: 'SUP-TRF-04', skenario: 'Export contacts data', harapan: 'CSV contacts terdownload'},
+                    {kode: 'SUP-TRF-05', skenario: 'Download export template', harapan: 'Template CSV untuk import terdownload'},
+                    {kode: 'SUP-TRF-06', skenario: 'Import users from CSV', harapan: 'Users terimport dengan benar'},
+                    {kode: 'SUP-TRF-07', skenario: 'Import contacts from CSV', harapan: 'Contacts terimport dengan benar'},
+                    {kode: 'SUP-TRF-08', skenario: 'Validate import file', harapan: 'Error muncul jika format salah'},
+                    {kode: 'SUP-TRF-09', skenario: 'Preview import data', harapan: 'Preview data muncul sebelum import'},
+                    {kode: 'SUP-TRF-10', skenario: 'Schedule database backup', harapan: 'Backup auto-run sesuai jadwal'},
+                    {kode: 'SUP-TRF-11', skenario: 'Manual database backup', harapan: 'Backup file SQL tergenerate'},
+                    {kode: 'SUP-TRF-12', skenario: 'Download backup file', harapan: 'Backup file terdownload'},
+                    {kode: 'SUP-TRF-13', skenario: 'Restore from backup', harapan: 'Database ter-restore dari backup'},
+                    {kode: 'SUP-TRF-14', skenario: 'Delete old backups', harapan: 'Backup file terhapus'},
+                    {kode: 'SUP-TRF-15', skenario: 'Export system logs', harapan: 'Log file terdownload'},
+                    {kode: 'SUP-TRF-16', skenario: 'Export analytics data', harapan: 'Data analytics terdownload'},
+                    {kode: 'SUP-TRF-17', skenario: 'Import device data', harapan: 'Device data terimport'},
+                    {kode: 'SUP-TRF-18', skenario: 'Export audit logs', harapan: 'Audit log terdownload'},
+                    {kode: 'SUP-TRF-19', skenario: 'Backup to cloud storage', harapan: 'Backup tersimpan di cloud'}
+                ]
+            }
+        };
+
+        // ============================================================
+        // RENDER FUNCTIONS
+        // ============================================================
+
+        function renderTestSection(moduleKey) {
+            const module = allTests[moduleKey];
+            if (!module) return;
+
+            const container = document.getElementById(`content-${moduleKey}`);
+            const colorClasses = {
+                green: 'bg-green-500',
+                emerald: 'bg-emerald-500',
+                teal: 'bg-teal-500',
+                blue: 'bg-blue-500',
+                indigo: 'bg-indigo-500',
+                purple: 'bg-purple-500',
+                pink: 'bg-pink-500',
+                cyan: 'bg-cyan-500'
+            };
+
+            const headerColor = colorClasses[module.color] || 'bg-gray-500';
+
+            container.innerHTML = `
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="${headerColor} text-white px-4 py-3 flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined">fact_check</span>
+                            <h2 class="font-bold text-lg">${module.title}</h2>
+                        </div>
+                        <span class="bg-white/20 px-3 py-1 rounded-full text-sm" id="badge-${moduleKey}">0/${module.tests.length}</span>
+                    </div>
+                    <div class="p-4 space-y-2" id="list-${moduleKey}">
+                        ${module.tests.map((test, idx) => `
+                            <div class="test-card bg-gray-50 rounded-lg p-3 border" id="test-${moduleKey}-${idx}">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex flex-col items-center gap-1 pt-1">
+                                        <input type="checkbox" class="checkbox-custom hidden" id="cb-${moduleKey}-${idx}" onchange="updateStats()">
+                                        <div class="w-6 h-6 border-2 border-gray-300 rounded flex items-center justify-center cursor-pointer bg-white hover:border-gray-400" 
+                                             onclick="document.getElementById('cb-${moduleKey}-${idx}').click()">
+                                            <svg class="w-4 h-4 text-white hidden" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div class="flex-1">
+                                                <span class="font-mono text-xs font-bold text-blue-600">${test.kode}</span>
+                                                <p class="text-sm font-medium text-gray-800 mt-0.5">${test.skenario}</p>
+                                                <p class="text-xs text-gray-500 mt-1">${test.harapan}</p>
+                                            </div>
+                                            <div class="flex flex-col gap-1 flex-shrink-0">
+                                                <button onclick="setResult('${moduleKey}', ${idx}, 'pass')" 
+                                                        class="result-btn px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-green-500 hover:text-white transition"
+                                                        data-result="pass">✓ Berhasil</button>
+                                                <button onclick="setResult('${moduleKey}', ${idx}, 'fail')" 
+                                                        class="result-btn px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-red-500 hover:text-white transition"
+                                                        data-result="fail">✗ Gagal</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize all sections
+        Object.keys(allTests).forEach(key => renderTestSection(key));
+
+        // ============================================================
+        // INTERACTION FUNCTIONS
+        // ============================================================
+
+        function setResult(module, idx, result) {
+            const testEl = document.getElementById(`test-${module}-${idx}`);
+            const checkbox = document.getElementById(`cb-${module}-${idx}`);
+            
+            checkbox.checked = true;
+            checkbox.dispatchEvent(new Event('change'));
+            
+            const buttons = testEl.querySelectorAll('.result-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('status-pass', 'status-fail');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            
+            const activeBtn = testEl.querySelector(`[data-result="${result}"]`);
+            if (result === 'pass') {
+                activeBtn.classList.add('status-pass');
+                activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                testEl.classList.add('bg-green-50');
+                testEl.classList.remove('bg-red-50');
+            } else {
+                activeBtn.classList.add('status-fail');
+                activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                testEl.classList.add('bg-red-50');
+                testEl.classList.remove('bg-green-50');
+            }
+        }
+
+        function updateStats() {
+            const checkboxes = document.querySelectorAll('.checkbox-custom:checked');
+            const passBtns = document.querySelectorAll('.result-btn.status-pass');
+            const failBtns = document.querySelectorAll('.result-btn.status-fail');
+            
+            const totalDone = checkboxes.length;
+            const totalPass = passBtns.length;
+            const totalFail = failBtns.length;
+            const percentage = Math.round((totalDone / 387) * 100);
+            
+            // Update header stats
+            document.getElementById('statDone').textContent = totalDone;
+            document.getElementById('statPass').textContent = totalPass;
+            document.getElementById('statFail').textContent = totalFail;
+            document.getElementById('statLeft').textContent = 387 - totalDone;
+            document.getElementById('textProgress').textContent = percentage + '%';
+            document.getElementById('ringProgress').style.strokeDashoffset = 264 - (percentage / 100) * 264;
+            
+            // Update badges
+            Object.keys(allTests).forEach(key => {
+                const total = allTests[key].tests.length;
+                const checked = document.querySelectorAll(`#list-${key} .checkbox-custom:checked`).length;
+                const badge = document.getElementById(`badge-${key}`);
+                if (badge) badge.textContent = `${checked}/${total}`;
+            });
+
+            // Update progress bars on dashboard
+            updateProgressBars();
+        }
+
+        function updateProgressBars() {
+            const categories = {
+                user: ['user-auth', 'user-dashboard', 'user-inbox', 'user-wa', 'user-ig', 'user-crm'],
+                admin: ['admin-users', 'admin-payments', 'admin-support', 'admin-plans', 'admin-reports', 'admin-settings'],
+                super: ['super-devices', 'super-schedule', 'super-api', 'super-alerts', 'super-query', 'super-templates', 'super-maintenance', 'super-transfer']
+            };
+
+            const counts = {
+                user: 98, admin: 156, super: 133
+            };
+
+            Object.keys(categories).forEach(cat => {
+                let checked = 0;
+                categories[cat].forEach(module => {
+                    checked += document.querySelectorAll(`#list-${module} .checkbox-custom:checked`).length;
+                });
+                const percent = Math.round((checked / counts[cat]) * 100);
+                document.getElementById(`progress-${cat}`).textContent = percent + '%';
+                document.getElementById(`bar-${cat}`).style.width = percent + '%';
+            });
+
+            const totalChecked = document.querySelectorAll('.checkbox-custom:checked').length;
+            const totalPercent = Math.round((totalChecked / 387) * 100);
+            document.getElementById('progress-total').textContent = totalPercent + '%';
+            document.getElementById('bar-total').style.width = totalPercent + '%';
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-panel').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('tab-active');
+                el.classList.add('text-gray-600');
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabName}`).classList.add('tab-active');
+            document.getElementById(`nav-${tabName}`).classList.remove('text-gray-600');
+        }
+
+        // Bug tracker
+        let bugCount = 0;
+        function addBug() {
+            bugCount++;
+            const tbody = document.getElementById('bug-list');
+            const empty = document.getElementById('empty-bug');
+            if (empty) empty.remove();
+            
+            const row = document.createElement('tr');
+            row.className = 'border-b hover:bg-gray-50';
+            row.innerHTML = `
+                <td class="px-4 py-3 font-mono text-sm font-bold">BUG-${String(bugCount).padStart(3,'0')}</td>
+                <td class="px-4 py-3"><input type="text" class="w-full border rounded px-2 py-1 text-sm" placeholder="Nama modul"></td>
+                <td class="px-4 py-3">
+                    <select class="border rounded px-2 py-1 text-sm">
+                        <option value="critical">🔴 Critical</option>
+                        <option value="high">🟠 Tinggi</option>
+                        <option value="medium">🟡 Sedang</option>
+                        <option value="low">🟢 Rendah</option>
+                    </select>
+                </td>
+                <td class="px-4 py-3"><input type="text" class="w-full border rounded px-2 py-1 text-sm" placeholder="Deskripsi lengkap bug"></td>
+                <td class="px-4 py-3">
+                    <select class="border rounded px-2 py-1 text-sm">
+                        <option value="open">Open</option>
+                        <option value="progress">In Progress</option>
+                        <option value="fixed">Fixed</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </td>
+                <td class="px-4 py-3">
+                    <button onclick="this.closest('tr').remove()" class="text-red-500 hover:text-red-700 text-sm font-medium">Hapus</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function exportData() {
+            const done = document.querySelectorAll('.checkbox-custom:checked').length;
+            const pass = document.querySelectorAll('.result-btn.status-pass').length;
+            const fail = document.querySelectorAll('.result-btn.status-fail').length;
+            
+            const data = {
+                tester: document.getElementById('namaTester').value,
+                date: document.getElementById('tglTest').value,
+                summary: { total: 387, done, pass, fail, progress: Math.round((done/387)*100) + '%' }
+            };
+            
+            alert(`📊 LAPORAN QA REPLYAI\n\nTotal Test: 387\nSelesai: ${done}\n✅ Berhasil: ${pass}\n❌ Gagal: ${fail}\n📈 Progres: ${data.summary.progress}\n\nTester: ${data.tester || '-'}\nTanggal: ${data.date || '-'}\n\n[Data siap diexport ke JSON/CSV]`);
+        }
+
+        function resetAll() {
+            if (confirm('⚠️ Yakin ingin reset semua data testing?')) {
+                document.querySelectorAll('.checkbox-custom').forEach(cb => cb.checked = false);
+                document.querySelectorAll('.result-btn').forEach(btn => {
+                    btn.classList.remove('status-pass', 'status-fail');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                });
+                document.querySelectorAll('.test-card').forEach(card => {
+                    card.classList.remove('bg-green-50', 'bg-red-50');
+                });
+                updateStats();
+            }
+        }
+
+        // Initialize
+        document.getElementById('tglTest').valueAsDate = new Date();
+    </script>
+</body>
+</html>

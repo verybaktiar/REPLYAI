@@ -29,23 +29,31 @@ class MidtransService
      * Buat Snap transaction untuk popup payment
      * 
      * @param Payment $payment
+     * @param bool $forceNew Force create new token (for changing payment method)
      * @return array ['token' => string, 'redirect_url' => string]
      */
-    public function createSnapTransaction(Payment $payment): array
+    public function createSnapTransaction(Payment $payment, bool $forceNew = false): array
     {
         // Cek apakah sudah ada snap token yang valid (dibuat dalam 24 jam terakhir)
-        $metadata = $payment->metadata ?? [];
-        if (isset($metadata['snap_token']) && isset($metadata['midtrans_created_at'])) {
-            $createdAt = \Carbon\Carbon::parse($metadata['midtrans_created_at']);
-            if ($createdAt->diffInHours(now()) < 23) {
-                Log::info('Reusing existing Midtrans Snap token', [
-                    'invoice' => $payment->invoice_number,
-                ]);
-                return [
-                    'token' => $metadata['snap_token'],
-                    'redirect_url' => null,
-                ];
+        // Tapi kalau forceNew = true, selalu buat token baru
+        if (!$forceNew) {
+            $metadata = $payment->metadata ?? [];
+            if (isset($metadata['snap_token']) && isset($metadata['midtrans_created_at'])) {
+                $createdAt = \Carbon\Carbon::parse($metadata['midtrans_created_at']);
+                if ($createdAt->diffInHours(now()) < 23) {
+                    Log::info('Reusing existing Midtrans Snap token', [
+                        'invoice' => $payment->invoice_number,
+                    ]);
+                    return [
+                        'token' => $metadata['snap_token'],
+                        'redirect_url' => null,
+                    ];
+                }
             }
+        } else {
+            Log::info('Force creating new Midtrans Snap token', [
+                'invoice' => $payment->invoice_number,
+            ]);
         }
 
         $user = $payment->user;

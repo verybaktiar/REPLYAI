@@ -8,13 +8,19 @@ use App\Services\PaymentService;
 use App\Services\MidtransService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\File;
 
 /**
  * Controller: Checkout
  * 
- * Controller untuk proses checkout dan pembayaran.
- * Menangani: pilih paket, apply promo, upload bukti transfer, Midtrans.
+ * Controller untuk proses checkout dan pembayaran dengan keamanan tinggi.
+ * 
+ * SECURITY FIXES:
+ * - FIX-003: Midtrans callback verify ke API (tidak trust URL params)
+ * - FIX-004: Secure file upload dengan random filename
+ * - FIX-001: Price validation di backend via PaymentService
  */
 class CheckoutController extends Controller
 {
@@ -74,13 +80,41 @@ class CheckoutController extends Controller
         $promoCode = $request->promo_code;
         $paymentMethod = $request->payment_method ?? 'manual';
 
+        // DEBUG: Log request data
+        Log::info('Checkout process started', [
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'duration' => $duration,
+            'price_monthly' => $plan->price_monthly,
+            'price_yearly' => $plan->price_yearly,
+        ]);
+
         try {
+            // 🔒 FIX-001 & FIX-002: PaymentService akan handle:
+            // - Recalculate harga dari database
+            // - Prevent multiple pending payments
             $payment = $this->paymentService->createPayment(
                 $user,
                 $plan,
                 $duration,
                 $promoCode
             );
+
+            // DEBUG: Log created payment
+            Log::info('Payment created', [
+                'payment_id' => $payment->id,
+                'invoice' => $payment->invoice_number,
+                'amount' => $payment->amount,
+                'total' => $payment->total,
+                'duration_months' => $payment->duration_months,
+                'is_existing' => $payment->created_at < now()->subMinutes(1),
+            ]);
+
+            // Jika existing payment dikembalikan, redirect ke payment page
+            if ($payment->created_at < now()->subMinutes(1)) {
+                return redirect()->route('checkout.payment', $payment->invoice_number)
+                    ->with('info', 'Anda sudah memiliki invoice pending. Silakan selesaikan pembayaran.');
+            }
 
             // Jika pilih Midtrans, langsung redirect ke Midtrans payment
             if ($paymentMethod === 'midtrans') {
@@ -91,6 +125,12 @@ class CheckoutController extends Controller
                 ->with('success', 'Invoice berhasil dibuat. Silakan lakukan pembayaran.');
 
         } catch (\Exception $e) {
+            Log::error('Checkout failed', [
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'error' => $e->getMessage(),
+            ]);
+            
             return back()
                 ->with('error', 'Gagal membuat invoice: ' . $e->getMessage())
                 ->withInput();
@@ -118,8 +158,12 @@ class CheckoutController extends Controller
 
     /**
      * Bayar dengan Midtrans - Generate Snap token
+     * 
+     * @param string $invoiceNumber
+     * @param Request $request
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
-    public function payWithMidtrans(string $invoiceNumber)
+    public function payWithMidtrans(string $invoiceNumber, Request $request)
     {
         $payment = Payment::where('invoice_number', $invoiceNumber)
             ->where('user_id', Auth::id())
@@ -132,8 +176,17 @@ class CheckoutController extends Controller
                 ->with('info', 'Pembayaran sudah diproses.');
         }
 
+        // Cek apakah payment sudah expired
+        if ($payment->expires_at < now()) {
+            return redirect()->route('pricing')
+                ->with('error', 'Invoice sudah expired. Silakan buat invoice baru.');
+        }
+
+        // 🔥 NEW: Force create new token untuk ganti metode pembayaran
+        $forceNew = $request->has('new');
+
         try {
-            $snapData = $this->midtransService->createSnapTransaction($payment);
+            $snapData = $this->midtransService->createSnapTransaction($payment, $forceNew);
             
             $midtransClientKey = $this->midtransService->getClientKey();
             $midtransSnapUrl = $this->midtransService->getSnapUrl();
@@ -142,16 +195,26 @@ class CheckoutController extends Controller
                 'payment', 
                 'snapData', 
                 'midtransClientKey',
-                'midtransSnapUrl'
+                'midtransSnapUrl',
+                'forceNew'
             ));
 
         } catch (\Exception $e) {
+            Log::error('Failed to create Midtrans snap', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+                'force_new' => $forceNew,
+            ]);
+            
             return back()->with('error', 'Gagal membuat transaksi Midtrans: ' . $e->getMessage());
         }
     }
 
     /**
      * Callback setelah payment Midtrans selesai
+     * 
+     * 🔒 FIX-003: Verify ke Midtrans API sebelum update status
+     * Tidak trust URL parameters dari client
      */
     public function midtransFinish(Request $request)
     {
@@ -159,7 +222,6 @@ class CheckoutController extends Controller
         
         // Clean up order_id jika ada suffix timestamp
         if ($invoiceNumber && str_contains($invoiceNumber, '-17')) {
-            // Format: INV-2026-00001-1769316510 -> INV-2026-00001
             $invoiceNumber = preg_replace('/-\d{10}$/', '', $invoiceNumber);
         }
         
@@ -178,31 +240,16 @@ class CheckoutController extends Controller
                 ->with('info', 'Menunggu konfirmasi pembayaran.');
         }
 
-        // Cek parameter dari URL (Midtrans redirect params)
-        $transactionStatus = $request->get('transaction_status');
-        
-        // Jika status settlement dari URL, langsung proses
-        if (in_array($transactionStatus, ['settlement', 'capture'])) {
-            if ($payment->status !== Payment::STATUS_PAID) {
-                // Update payment status
-                $payment->update([
-                    'status' => Payment::STATUS_PAID,
-                    'paid_at' => now(),
-                    'payment_method' => 'midtrans',
-                ]);
-                
-                // Aktivasi subscription
-                $this->paymentService->activateSubscription($payment);
-            }
-            
-            return redirect()->route('checkout.success', $invoiceNumber)
-                ->with('success', 'Pembayaran berhasil! Subscription Anda sudah aktif.');
-        }
-
-        // Fallback: Cek status dari Midtrans API
+        // 🔒 FIX-003: SELALU verify ke Midtrans API
+        // Tidak trust URL parameters
         try {
             $status = $this->midtransService->getTransactionStatus($invoiceNumber);
             
+            Log::info('Midtrans finish callback - status check', [
+                'invoice' => $invoiceNumber,
+                'status' => $status->transaction_status ?? 'unknown',
+            ]);
+
             if (in_array($status->transaction_status, ['settlement', 'capture'])) {
                 if ($payment->status !== Payment::STATUS_PAID) {
                     $payment->update([
@@ -210,7 +257,12 @@ class CheckoutController extends Controller
                         'paid_at' => now(),
                         'payment_method' => 'midtrans',
                     ]);
+                    
+                    // Aktivasi subscription
                     $this->paymentService->activateSubscription($payment);
+                    
+                    // Kirim email konfirmasi
+                    $this->sendPaymentSuccessEmail($payment);
                 }
                 
                 return redirect()->route('checkout.success', $invoiceNumber)
@@ -222,10 +274,24 @@ class CheckoutController extends Controller
                     ->with('info', 'Menunggu pembayaran dikonfirmasi. Silakan selesaikan pembayaran Anda.');
             }
 
+            if (in_array($status->transaction_status, ['cancel', 'deny', 'expire'])) {
+                $payment->update([
+                    'status' => Payment::STATUS_FAILED,
+                    'admin_notes' => "Midtrans status: {$status->transaction_status}",
+                ]);
+                
+                return redirect()->route('checkout.payment', $invoiceNumber)
+                    ->with('error', 'Pembayaran gagal atau dibatalkan. Silakan coba lagi.');
+            }
+
         } catch (\Exception $e) {
-            // Fallback jika gagal cek status
+            Log::error('Midtrans status check failed', [
+                'invoice' => $invoiceNumber,
+                'error' => $e->getMessage(),
+            ]);
         }
 
+        // Fallback: Redirect ke payment page
         return redirect()->route('checkout.payment', $invoiceNumber)
             ->with('info', 'Silakan selesaikan pembayaran Anda.');
     }
@@ -255,16 +321,28 @@ class CheckoutController extends Controller
 
     /**
      * Upload bukti transfer
+     * 
+     * 🔒 FIX-004: Secure file upload dengan random filename
      */
     public function uploadProof(Request $request, Payment $payment)
     {
-        $request->validate([
-            'proof' => 'required|image|mimes:jpg,jpeg,png|max:5120', // Max 5MB
+        // 🔒 Validasi file dengan aturan ketat
+        $validator = Validator::make($request->all(), [
+            'proof' => [
+                'required',
+                File::types(['jpg', 'jpeg', 'png'])
+                    ->min(10)
+                    ->max(5 * 1024), // 5MB
+            ],
         ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
 
         // Cek kepemilikan
         if ($payment->user_id !== Auth::id()) {
-            abort(403);
+            abort(403, 'Unauthorized');
         }
 
         // Cek status
@@ -272,28 +350,33 @@ class CheckoutController extends Controller
             return back()->with('error', 'Pembayaran sudah diproses.');
         }
 
-        try {
-            // Upload file
-            $path = $request->file('proof')->store('payment-proofs', 'public');
-            
-            // Generate full URL yang benar
-            $proofUrl = asset('storage/' . $path);
+        // Cek expired
+        if ($payment->expires_at < now()) {
+            return redirect()->route('pricing')
+                ->with('error', 'Invoice sudah expired. Silakan buat invoice baru.');
+        }
 
-            // Update payment
-            $this->paymentService->uploadProof($payment, $proofUrl);
+        try {
+            $file = $request->file('proof');
+            
+            // 🔒 FIX-004: Gunakan PaymentService untuk secure upload
+            $payment = $this->paymentService->uploadProof($payment, $file);
 
             return redirect()->route('checkout.success', $payment->invoice_number)
                 ->with('success', 'Bukti transfer berhasil diupload. Menunggu verifikasi admin.');
 
         } catch (\Exception $e) {
+            Log::error('Upload proof failed', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+            
             return back()->with('error', 'Gagal upload bukti: ' . $e->getMessage());
         }
     }
 
     /**
      * Halaman sukses setelah pembayaran
-     * - Untuk Midtrans (status paid): tampilkan halaman celebrasi
-     * - Untuk manual transfer: tampilkan halaman menunggu verifikasi
      */
     public function success(string $invoiceNumber)
     {
@@ -325,5 +408,36 @@ class CheckoutController extends Controller
         $payments = $this->paymentService->getUserPayments(Auth::id());
 
         return view('pages.checkout.history', compact('payments'));
+    }
+
+    /**
+     * Kirim email sukses pembayaran
+     * 
+     * @param Payment $payment
+     * @return void
+     */
+    private function sendPaymentSuccessEmail(Payment $payment): void
+    {
+        try {
+            $user = $payment->user;
+            
+            if (!$user || !$user->email) {
+                return;
+            }
+
+            // Gunakan Mailable
+            \Illuminate\Support\Facades\Mail::to($user->email)
+                ->queue(new \App\Mail\PaymentSuccessMail($payment));
+
+            Log::info('Payment success email queued', [
+                'payment_id' => $payment->id,
+                'email' => $user->email,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send payment success email', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

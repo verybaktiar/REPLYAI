@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rules\NotDisposableEmail;
+use App\Rules\UserPasswordPolicy;
+use App\Services\Security\CaptchaService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
@@ -19,7 +21,11 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        return view('auth.register', [
+            'captchaSiteKey' => app(CaptchaService::class)->getSiteKey(),
+            'captchaEnabled' => CaptchaService::isEnabled(),
+            'captchaProvider' => app(CaptchaService::class)->getProvider(),
+        ]);
     }
 
     /**
@@ -29,16 +35,47 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $captchaService = app(CaptchaService::class);
+
+        // Build validation rules
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+            'email' => [
+                'required', 
+                'string', 
+                'lowercase', 
+                'email', 
+                'max:255', 
+                'unique:'.User::class,
+                new NotDisposableEmail(), // ✅ Block disposable emails
+            ],
+            'password' => ['required', 'confirmed', new UserPasswordPolicy()],
+        ];
+
+        // ✅ Add CAPTCHA validation if enabled
+        if ($captchaService::isEnabled()) {
+            $rules[$captchaService->getResponseFieldName()] = ['required', 'string'];
+        }
+
+        $validated = $request->validate($rules);
+
+        // ✅ Verify CAPTCHA
+        if ($captchaService::isEnabled()) {
+            $captchaResponse = $request->input($captchaService->getResponseFieldName());
+            
+            if (!$captchaService->verify($captchaResponse, $request->ip())) {
+                return back()
+                    ->withInput($request->except('password', 'password_confirmation'))
+                    ->withErrors([
+                        'captcha' => 'Verifikasi CAPTCHA gagal. Silakan coba lagi.',
+                    ]);
+            }
+        }
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
         ]);
 
         // Send email verification

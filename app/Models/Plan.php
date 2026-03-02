@@ -42,6 +42,7 @@ class Plan extends Model
         'is_free',        // Apakah ini paket gratis
         'is_trial',       // Apakah ini paket trial
         'trial_days',     // Durasi trial
+        'tier',           // Tier: umkm, business, enterprise
     ];
 
     /**
@@ -54,6 +55,7 @@ class Plan extends Model
         'is_popular' => 'boolean',
         'is_free' => 'boolean',
         'is_trial' => 'boolean',
+        'tier' => 'string',
     ];
 
     // ==========================================
@@ -186,5 +188,68 @@ class Plan extends Model
         $savings = $monthlyTotal - $this->price_yearly;
         
         return (int) round(($savings / $monthlyTotal) * 100);
+    }
+
+    /**
+     * Route model binding menggunakan slug, bukan id
+     * Ini memungkinkan URL seperti /checkout/business
+     * 
+     * @return string
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    // ==========================================
+    // TIER HELPER METHODS
+    // ==========================================
+
+    /**
+     * Cek apakah plan ini untuk UMKM
+     */
+    public function isUmkm(): bool
+    {
+        return $this->tier === 'umkm';
+    }
+
+    /**
+     * Cek apakah plan ini untuk Business
+     */
+    public function isBusiness(): bool
+    {
+        return $this->tier === 'business';
+    }
+
+    /**
+     * Cek apakah plan ini untuk Enterprise
+     */
+    public function isEnterprise(): bool
+    {
+        return $this->tier === 'enterprise';
+    }
+
+    /**
+     * Scope: Hanya plan UMKM
+     */
+    public function scopeUmkm($query)
+    {
+        return $query->where('tier', 'umkm');
+    }
+
+    /**
+     * Scope: Hanya plan Business
+     */
+    public function scopeBusiness($query)
+    {
+        return $query->where('tier', 'business');
+    }
+
+    /**
+     * Scope: Hanya plan Enterprise
+     */
+    public function scopeEnterprise($query)
+    {
+        return $query->where('tier', 'enterprise');
     }
 }

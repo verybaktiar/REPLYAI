@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA Testing - Superadmin Features | REPLYAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .checkbox-custom:checked + div { background-color: #135bec; border-color: #135bec; }
+        .checkbox-custom:checked + div svg { display: block; }
+        .status-pass { background: #10b981; color: white; }
+        .status-fail { background: #ef4444; color: white; }
+        .status-pending { background: #f59e0b; color: white; }
+        .feature-card { transition: all 0.3s ease; }
+        .feature-card:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .progress-ring { transform: rotate(-90deg); }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-slow { animation: pulse-slow 2s infinite; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-slate-900 to-slate-800 text-white sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white">verified</span>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold">QA Testing - Superadmin Features</h1>
+                        <p class="text-sm text-gray-400">REPLYAI v2.0 | Complete Feature Audit</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <div class="text-sm text-gray-400">Tester</div>
+                        <input type="text" id="testerName" placeholder="Nama Tester" 
+                               class="bg-slate-700 text-white px-3 py-1 rounded text-sm w-40">
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-400">Tanggal</div>
+                        <input type="date" id="testDate" 
+                               class="bg-slate-700 text-white px-3 py-1 rounded text-sm">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Progress Overview -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                    <div class="relative w-24 h-24">
+                        <svg class="progress-ring w-24 h-24" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+                            <circle id="progressCircle" cx="50" cy="50" r="45" fill="none" stroke="#135bec" stroke-width="8"
+                                    stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="progressPercent" class="text-2xl font-bold text-slate-800">0%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-800">Testing Progress</h2>
+                        <p class="text-sm text-gray-500">
+                            <span id="passedCount">0</span> passed / 
+                            <span id="failedCount">0</span> failed / 
+                            <span id="totalTests">87</span> total
+                        </p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="exportReport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">download</span>
+                        Export Report
+                    </button>
+                    <button onclick="resetAll()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">refresh</span>
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testing Flow -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-6 border border-blue-100">
+            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600">route</span>
+                Alur Testing Superadmin
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-xl p-4 shadow-sm">
+                    <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mb-2">1</div>
+                    <h4 class="font-medium text-slate-800">Login</h4>
+                    <p class="text-xs text-gray-500 mt-1">Akses /admin/login dengan credential superadmin</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm">
+                    <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mb-2">2</div>
+                    <h4 class="font-medium text-slate-800">2FA Verification</h4>
+                    <p class="text-xs text-gray-500 mt-1">Masukkan kode 2FA jika diaktifkan</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm">
+                    <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mb-2">3</div>
+                    <h4 class="font-medium text-slate-800">Dashboard</h4>
+                    <p class="text-xs text-gray-500 mt-1">Verifikasi semua menu superadmin muncul</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm">
+                    <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mb-2">4</div>
+                    <h4 class="font-medium text-slate-800">Feature Testing</h4>
+                    <p class="text-xs text-gray-500 mt-1">Test fitur satu per satu sesuai skenario</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Sections -->
+        <div class="space-y-6" id="featureContainer">
+            
+            <!-- FEATURE 1: Device Management -->
+            <div class="feature-card bg-white rounded-2xl shadow-lg overflow-hidden" data-feature="devices">
+                <div class="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-2xl">devices</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Feature 1: Device Management</h3>
+                                <p class="text-sm opacity-90">WhatsApp & Instagram Device Monitoring</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold"><span class="feature-passed">0</span>/<span class="feature-total">8</span></div>
+                            <div class="text-xs opacity-80">tests passed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Pre-condition:</strong> Pastikan ada minimal 1 WhatsApp device dan 1 Instagram account yang terdaftar
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="devices-1" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DEV-01:</span>
+                                <span class="text-slate-600">Akses halaman Devices (/admin/devices) - Verifikasi stats card muncul (WA Connected, WA Disconnected, IG Active, IG Expired, Orphaned)</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: 5 stats cards</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="devices-2" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DEV-02:</span>
+                                <span class="text-slate-600">Test Reconnect WA Device - Klik tombol "Reconnect" pada device yang disconnected</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Status berubah menjadi "Connecting"</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="devices-3" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DEV-03:</span>
+                                <span class="text-slate-600">Test Disconnect WA Device - Klik tombol "Disconnect" pada device yang connected</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Device terputus, status "Disconnected"</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="devices-4" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DEV-04:</span>
+                                <span class="text-slate-600">Test Delete WA Device - Klik "Delete" dan konfirmasi penghapusan</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-red-100 rounded text-red-600">⚠️ Hati-hati: Data akan hilang!</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="devices-5" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DEV-05:</span>
+                                <span class="text-slate-600">Test Reconnect Instagram - Klik "Reconnect" pada IG account yang expired</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Redirect ke OAuth Instagram</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="devices-6" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DEV-06:</span>
+                                <span class="text-slate-600">Test Cleanup Orphaned Devices - Klik "Clean Orphaned" jika ada</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Device tanpa owner terhapus</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="devices-7" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DEV-07:</span>
+                                <span class="text-slate-600">Test Bulk Actions - Pilih multiple devices dan lakukan bulk reconnect/disconnect</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Semua device terupdate</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="devices-8" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DEV-08:</span>
+                                <span class="text-slate-600">Verifikasi Activity Log - Cek di System Logs apakah actions tercatat</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Log entry untuk setiap action</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FEATURE 2: Schedule Monitor -->
+            <div class="feature-card bg-white rounded-2xl shadow-lg overflow-hidden" data-feature="schedule">
+                <div class="bg-gradient-to-r from-purple-600 to-purple-500 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-2xl">schedule</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Feature 2: Schedule Monitor</h3>
+                                <p class="text-sm opacity-90">Task Scheduling & Queue Management</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold"><span class="feature-passed">0</span>/<span class="feature-total">5</span></div>
+                            <div class="text-xs opacity-80">tests passed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Pre-condition:</strong> Pastikan queue worker dan scheduler aktif
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="schedule-1" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-SCH-01:</span>
+                                <span class="text-slate-600">View scheduled tasks list - Akses halaman /admin/schedule</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Tabel scheduled tasks muncul dengan status</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="schedule-2" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-SCH-02:</span>
+                                <span class="text-slate-600">Run task manually - Klik "Run Now" pada task queue work atau webhook process</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Task dijalankan, status berubah</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="schedule-3" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-SCH-03:</span>
+                                <span class="text-slate-600">Check queue status display - Verifikasi stats queue (pending, processing, failed)</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Counter queue status terupdate</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="schedule-4" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-SCH-04:</span>
+                                <span class="text-slate-600">View execution history - Klik "History" atau tab execution log</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Log eksekusi task ditampilkan</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="schedule-5" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-SCH-05:</span>
+                                <span class="text-slate-600">Verify auto-refresh works - Tunggu 30 detik, verifikasi data terupdate otomatis</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Data refresh tanpa reload page</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FEATURE 3: API Monitor -->
+            <div class="feature-card bg-white rounded-2xl shadow-lg overflow-hidden" data-feature="api-monitor">
+                <div class="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-2xl">api</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Feature 3: API Monitor</h3>
+                                <p class="text-sm opacity-90">API Usage & Rate Limit Monitoring</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold"><span class="feature-passed">0</span>/<span class="feature-total">7</span></div>
+                            <div class="text-xs opacity-80">tests passed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Pre-condition:</strong> Pastikan ada user yang telah menggunakan API dalam 24 jam terakhir
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="api-1" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-API-01:</span>
+                                <span class="text-slate-600">View API usage dashboard - Akses halaman /admin/api-monitor</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Dashboard stats dan chart muncul</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="api-2" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-API-02:</span>
+                                <span class="text-slate-600">View rate limit stats - Cek section rate limit overview</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Persentase penggunaan rate limit terlihat</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="api-3" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-API-03:</span>
+                                <span class="text-slate-600">Check user API usage table - Verifikasi tabel penggunaan per user</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Data request count dan limit per user</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="api-4" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-API-04:</span>
+                                <span class="text-slate-600">View endpoint usage stats - Cek grafik/pie chart endpoint usage</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Breakdown penggunaan per endpoint</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="api-5" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-API-05:</span>
+                                <span class="text-slate-600">Block user API access - Klik "Block" pada user di tabel</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Status user berubah menjadi "Blocked"</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="api-6" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-API-06:</span>
+                                <span class="text-slate-600">Unblock user API access - Klik "Unblock" pada user yang diblokir</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: User dapat kembali mengakses API</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="api-7" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-API-07:</span>
+                                <span class="text-slate-600">View recent requests log - Scroll ke section recent API requests</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Log request terbaru ditampilkan</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FEATURE 4: Webhook Logs -->
+            <div class="feature-card bg-white rounded-2xl shadow-lg overflow-hidden" data-feature="webhook">
+                <div class="bg-gradient-to-r from-cyan-600 to-cyan-500 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-2xl">webhook</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Feature 4: Webhook Logs</h3>
+                                <p class="text-sm opacity-90">Webhook Integration & Log Monitoring</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold"><span class="feature-passed">0</span>/<span class="feature-total">6</span></div>
+                            <div class="text-xs opacity-80">tests passed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Pre-condition:</strong> Pastikan ada webhook data dari Midtrans atau payment gateway
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="webhook-1" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-WEB-01:</span>
+                                <span class="text-slate-600">View integration health cards - Akses halaman /admin/webhook-logs</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Health status cards (WA, IG, Payment) muncul</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="webhook-2" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-WEB-02:</span>
+                                <span class="text-slate-600">View webhook logs table - Verifikasi tabel webhook logs</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: List webhook dengan status success/failed/pending</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="webhook-3" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-WEB-03:</span>
+                                <span class="text-slate-600">Filter by provider/status - Gunakan filter dropdown untuk menyaring logs</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Tabel terfilter sesuai kriteria</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="webhook-4" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-WEB-04:</span>
+                                <span class="text-slate-600">View webhook detail - Klik pada row webhook untuk melihat detail</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Modal/detail dengan payload dan response</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="webhook-5" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-WEB-05:</span>
+                                <span class="text-slate-600">Retry failed webhook - Klik "Retry" pada webhook yang failed</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Webhook dijalankan ulang, status terupdate</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="webhook-6" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-WEB-06:</span>
+                                <span class="text-slate-600">Retry all failed webhooks - Klik "Retry All Failed" button</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Semua failed webhook diproses ulang</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FEATURE 5: User Analytics -->
+            <div class="feature-card bg-white rounded-2xl shadow-lg overflow-hidden" data-feature="analytics">
+                <div class="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-2xl">analytics</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Feature 5: User Analytics</h3>
+                                <p class="text-sm opacity-90">User Activity & Engagement Tracking</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold"><span class="feature-passed">0</span>/<span class="feature-total">6</span></div>
+                            <div class="text-xs opacity-80">tests passed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Pre-condition:</strong> Pastikan ada aktivitas user dalam 30 hari terakhir
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="analytics-1" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ANU-01:</span>
+                                <span class="text-slate-600">View user analytics dashboard - Akses halaman /admin/user-analytics</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Dashboard dengan stats overview muncul</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="analytics-2" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ANU-02:</span>
+                                <span class="text-slate-600">Check activity heatmap - Verifikasi heatmap aktivitas user</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Heatmap menunjukkan pola aktivitas harian</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="analytics-3" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ANU-03:</span>
+                                <span class="text-slate-600">View feature usage breakdown - Cek grafik penggunaan fitur</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Chart breakdown per fitur (WA, IG, API, dll)</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="analytics-4" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ANU-04:</span>
+                                <span class="text-slate-600">View top active users - Cek tabel top active users</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: List user teraktif dengan statistiknya</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="analytics-5" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ANU-05:</span>
+                                <span class="text-slate-600">View individual user detail - Klik pada user di tabel untuk detail</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Detail aktivitas individual user muncul</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="analytics-6" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ANU-06:</span>
+                                <span class="text-slate-600">Check login history - Akses section login history</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Riwayat login user dengan IP dan waktu</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FEATURE 6: System Alerts -->
+            <div class="feature-card bg-white rounded-2xl shadow-lg overflow-hidden" data-feature="alerts">
+                <div class="bg-gradient-to-r from-red-600 to-red-500 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-2xl">notification_important</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Feature 6: System Alerts</h3>
+                                <p class="text-sm opacity-90">Alert Rules & Monitoring Configuration</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold"><span class="feature-passed">0</span>/<span class="feature-total">6</span></div>
+                            <div class="text-xs opacity-80">tests passed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Pre-condition:</strong> Pastikan notification channels (email/webhook) sudah dikonfigurasi
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="alerts-1" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ALT-01:</span>
+                                <span class="text-slate-600">View system metrics - Akses halaman /admin/system-alerts</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: System metrics cards (CPU, Memory, Disk) muncul</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="alerts-2" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ALT-02:</span>
+                                <span class="text-slate-600">View alert rules list - Verifikasi tabel alert rules</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: List alert rules dengan status on/off</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="alerts-3" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ALT-03:</span>
+                                <span class="text-slate-600">Create new alert rule - Klik "Add Alert Rule" dan isi form</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Alert rule baru tersimpan dan aktif</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="alerts-4" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ALT-04:</span>
+                                <span class="text-slate-600">Toggle alert on/off - Klik toggle switch pada alert rule</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Status alert berubah, notifikasi muncul</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="alerts-5" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ALT-05:</span>
+                                <span class="text-slate-600">Test alert notification - Klik "Test" pada alert rule</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Notifikasi test terkirim ke channel</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="alerts-6" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-ALT-06:</span>
+                                <span class="text-slate-600">Delete alert rule - Klik "Delete" pada alert rule test</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-red-100 rounded text-red-600">⚠️ Konfirmasi penghapusan</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FEATURE 7: Query Runner -->
+            <div class="feature-card bg-white rounded-2xl shadow-lg overflow-hidden" data-feature="query">
+                <div class="bg-gradient-to-r from-teal-600 to-teal-500 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-2xl">database</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Feature 7: Query Runner</h3>
+                                <p class="text-sm opacity-90">Safe Database Query Interface</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold"><span class="feature-passed">0</span>/<span class="feature-total">6</span></div>
+                            <div class="text-xs opacity-80">tests passed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Pre-condition:</strong> Pastikan user memiliki permission superadmin untuk query runner
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="query-1" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-QRY-01:</span>
+                                <span class="text-slate-600">View query interface - Akses halaman /admin/query-runner</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: SQL editor dan table list muncul</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="query-2" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-QRY-02:</span>
+                                <span class="text-slate-600">Execute SELECT query - Jalankan query "SELECT * FROM users LIMIT 5"</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Hasil query ditampilkan dalam tabel</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="query-3" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-QRY-03:</span>
+                                <span class="text-slate-600">Test safety - reject non-SELECT - Coba jalankan "DELETE FROM users" atau "DROP TABLE"</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-red-100 rounded text-red-600">⚠️ Safety: Query berbahaya harus ditolak!</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="query-4" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-QRY-04:</span>
+                                <span class="text-slate-600">Use predefined query - Pilih predefined query dari dropdown</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Query otomatis terisi di editor</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="query-5" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-QRY-05:</span>
+                                <span class="text-slate-600">View table schema - Klik pada nama tabel untuk melihat schema</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Schema tabel (columns, types) ditampilkan</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="query-6" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-QRY-06:</span>
+                                <span class="text-slate-600">Export results to CSV - Klik "Export CSV" setelah menjalankan query</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: File CSV terdownload dengan data hasil query</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FEATURE 8: Message Templates -->
+            <div class="feature-card bg-white rounded-2xl shadow-lg overflow-hidden" data-feature="templates">
+                <div class="bg-gradient-to-r from-pink-600 to-pink-500 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-2xl">description</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Feature 8: Message Templates</h3>
+                                <p class="text-sm opacity-90">Template Management & Variable Testing</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold"><span class="feature-passed">0</span>/<span class="feature-total">6</span></div>
+                            <div class="text-xs opacity-80">tests passed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Pre-condition:</strong> Pastikan permission untuk mengelola templates aktif
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="templates-1" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-TPL-01:</span>
+                                <span class="text-slate-600">View templates list - Akses halaman /admin/templates</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: List templates dengan kategori dan status</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="templates-2" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-TPL-02:</span>
+                                <span class="text-slate-600">Create new template - Klik "Add Template" dan isi form lengkap</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Template baru tersimpan, muncul di list</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="templates-3" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-TPL-03:</span>
+                                <span class="text-slate-600">Edit template - Klik "Edit" pada template, ubah konten, simpan</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Perubahan tersimpan, version updated</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="templates-4" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-TPL-04:</span>
+                                <span class="text-slate-600">Test variable detection - Buat template dengan variabel {{name}}, {{date}}</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Variabel terdeteksi dan dihighlight</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="templates-5" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-TPL-05:</span>
+                                <span class="text-slate-600">Test preview with variables - Isi sample values, klik "Preview"</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Preview menunjukkan hasil dengan variabel terganti</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="templates-6" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-TPL-06:</span>
+                                <span class="text-slate-600">Delete template - Klik "Delete" pada template test</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-red-100 rounded text-red-600">⚠️ Konfirmasi penghapusan</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FEATURE 9: Maintenance Mode -->
+            <div class="feature-card bg-white rounded-2xl shadow-lg overflow-hidden" data-feature="maintenance">
+                <div class="bg-gradient-to-r from-slate-600 to-slate-500 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-2xl">build</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Feature 9: Maintenance Mode</h3>
+                                <p class="text-sm opacity-90">System Maintenance & Access Control</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold"><span class="feature-passed">0</span>/<span class="feature-total">6</span></div>
+                            <div class="text-xs opacity-80">tests passed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Pre-condition:</strong> Pastikan memiliki akses admin untuk maintenance mode
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="maintenance-1" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-MTN-01:</span>
+                                <span class="text-slate-600">View maintenance settings - Akses halaman /admin/maintenance-mode</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Toggle switch dan settings muncul</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="maintenance-2" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-MTN-02:</span>
+                                <span class="text-slate-600">Enable maintenance mode - Toggle switch ke ON</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-red-100 rounded text-red-600">⚠️ Warning: Sistem akan maintenance!</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="maintenance-3" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-MTN-03:</span>
+                                <span class="text-slate-600">Set custom message - Isi custom maintenance message</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Pesan tersimpan dan muncul di maintenance page</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="maintenance-4" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-MTN-04:</span>
+                                <span class="text-slate-600">Add IP to whitelist - Tambahkan IP address ke whitelist</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: IP tersimpan, akses dari IP tersebut tetap normal</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="maintenance-5" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-MTN-05:</span>
+                                <span class="text-slate-600">Verify maintenance page shows - Akses dari browser lain/incognito</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Maintenance page ditampilkan</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="maintenance-6" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-MTN-06:</span>
+                                <span class="text-slate-600">Disable maintenance mode - Toggle switch ke OFF</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Sistem kembali normal, maintenance page hilang</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FEATURE 10: Data Transfer -->
+            <div class="feature-card bg-white rounded-2xl shadow-lg overflow-hidden" data-feature="datatransfer">
+                <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-2xl">swap_horiz</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Feature 10: Data Transfer</h3>
+                                <p class="text-sm opacity-90">Import, Export & Backup Management</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold"><span class="feature-passed">0</span>/<span class="feature-total">7</span></div>
+                            <div class="text-xs opacity-80">tests passed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Pre-condition:</strong> Pastikan folder storage/app/backup writable dan ada data untuk diexport
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="datatransfer-1" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DAT-01:</span>
+                                <span class="text-slate-600">View stats cards - Akses halaman /admin/data-transfer</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Stats cards (Export, Import, Backup) muncul</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="datatransfer-2" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DAT-02:</span>
+                                <span class="text-slate-600">Export users to CSV - Klik "Export Users", pilih CSV format</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: File CSV users terdownload</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="datatransfer-3" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DAT-03:</span>
+                                <span class="text-slate-600">Export payments to Excel - Klik "Export Payments", pilih Excel format</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: File Excel payments terdownload</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="datatransfer-4" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DAT-04:</span>
+                                <span class="text-slate-600">Download template - Klik "Download Template" untuk import</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: File template CSV/Excel terdownload</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="datatransfer-5" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DAT-05:</span>
+                                <span class="text-slate-600">Import users from CSV - Upload file CSV dengan data test</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Data berhasil diimport, muncul di user list</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="datatransfer-6" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DAT-06:</span>
+                                <span class="text-slate-600">Create database backup - Klik "Create Backup"</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: Backup berhasil dibuat, muncul di list</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="checkbox-custom hidden" data-test="datatransfer-7" onchange="updateProgress()">
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded flex items-center justify-center mt-0.5 group-hover:border-blue-500">
+                                <svg class="w-3 h-3 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-slate-800 font-medium">TC-DAT-07:</span>
+                                <span class="text-slate-600">Download backup file - Klik "Download" pada backup yang dibuat</span>
+                                <div class="mt-1 flex gap-2">
+                                    <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">Expected: File backup SQL terdownload</span>
+                                    <select class="text-xs border rounded px-2 py-0.5 test-result" onchange="updateProgress()">
+                                        <option value="">Select Result</option>
+                                        <option value="pass">Pass</option>
+                                        <option value="fail">Fail</option>
+                                        <option value="skip">Skip</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Notes Section -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mt-6">
+            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-orange-500">note</span>
+                Catatan & Temuan
+            </h3>
+            <textarea id="testNotes" rows="6" placeholder="Tulis catatan, bug, atau temuan selama testing...&#10;&#10;Format:&#10;- [Feature] Deskripsi issue&#10;- [Severitas] Low/Medium/High/Critical&#10;- [Evidence] Screenshot/Log" 
+                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none resize-none"></textarea>
+        </div>
+
+        <!-- Submit Section -->
+        <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 mt-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold">Final Review</h3>
+                    <p class="text-sm text-gray-400">Pastikan semua test telah dijalankan dan hasil dipilih</p>
+                </div>
+                <button onclick="submitReport()" class="px-8 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold transition flex items-center gap-2">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    Submit QA Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto m-4">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-bold text-slate-800">QA Test Report</h3>
+            </div>
+            <div class="p-6">
+                <pre id="reportContent" class="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto"></pre>
+            </div>
+            <div class="p-6 border-t flex justify-end gap-3">
+                <button onclick="copyReport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Copy to Clipboard
+                </button>
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize date
+        document.getElementById('testDate').valueAsDate = new Date();
+
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('.checkbox-custom');
+            const results = document.querySelectorAll('.test-result');
+            let passed = 0;
+            let failed = 0;
+            let checked = 0;
+
+            checkboxes.forEach((cb, index) => {
+                if (cb.checked) checked++;
+                const result = results[index]?.value;
+                if (result === 'pass') passed++;
+                if (result === 'fail') failed++;
+            });
+
+            const total = checkboxes.length;
+            const percent = total > 0 ? Math.round((checked / total) * 100) : 0;
+
+            // Update progress circle
+            const circle = document.getElementById('progressCircle');
+            const circumference = 283;
+            const offset = circumference - (percent / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+
+            // Update text
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('passedCount').textContent = passed;
+            document.getElementById('failedCount').textContent = failed;
+            document.getElementById('totalTests').textContent = total;
+
+            // Update feature counts
+            updateFeatureCounts();
+        }
+
+        function updateFeatureCounts() {
+            const features = document.querySelectorAll('.feature-card');
+            features.forEach(feature => {
+                const checkboxes = feature.querySelectorAll('.checkbox-custom');
+                const results = feature.querySelectorAll('.test-result');
+                let passed = 0;
+                
+                results.forEach((result, index) => {
+                    if (result.value === 'pass' && checkboxes[index]?.checked) {
+                        passed++;
+                    }
+                });
+
+                const total = checkboxes.length;
+                feature.querySelector('.feature-passed').textContent = passed;
+                feature.querySelector('.feature-total').textContent = total;
+            });
+        }
+
+        function exportReport() {
+            const tester = document.getElementById('testerName').value || 'Unknown';
+            const date = document.getElementById('testDate').value;
+            const notes = document.getElementById('testNotes').value;
+            
+            let report = `================================================================================\n`;
+            report += `                    REPLYAI SUPERADMIN QA TEST REPORT\n`;
+            report += `================================================================================\n\n`;
+            report += `Tester: ${tester}\n`;
+            report += `Date: ${date}\n`;
+            report += `Environment: Production\n`;
+            report += `Total Tests: 87\n\n`;
+            
+            const checkboxes = document.querySelectorAll('.checkbox-custom');
+            const results = document.querySelectorAll('.test-result');
+            let passed = 0, failed = 0, skipped = 0;
+            
+            checkboxes.forEach((cb, index) => {
+                const result = results[index]?.value;
+                if (result === 'pass') passed++;
+                if (result === 'fail') failed++;
+                if (result === 'skip') skipped++;
+            });
+            
+            report += `SUMMARY:\n`;
+            report += `--------\n`;
+            report += `Passed: ${passed}\n`;
+            report += `Failed: ${failed}\n`;
+            report += `Skipped: ${skipped}\n`;
+            report += `Completion: ${Math.round((passed+failed+skipped)/87*100)}%\n\n`;
+            
+            if (notes) {
+                report += `NOTES:\n`;
+                report += `------\n${notes}\n\n`;
+            }
+            
+            report += `DETAILED RESULTS:\n`;
+            report += `-----------------\n`;
+            
+            checkboxes.forEach((cb, index) => {
+                const label = cb.closest('label').querySelector('span.font-medium')?.textContent || '';
+                const desc = cb.closest('label').querySelector('span.text-slate-600')?.textContent || '';
+                const result = results[index]?.value;
+                const icon = result === 'pass' ? '[PASS]' : result === 'fail' ? '[FAIL]' : result === 'skip' ? '[SKIP]' : '[PENDING]';
+                report += `${icon} ${label}: ${desc.substring(0, 60)}...\n`;
+            });
+            
+            report += `\n================================================================================\n`;
+            report += `                              END OF REPORT\n`;
+            report += `================================================================================`;
+
+            document.getElementById('reportContent').textContent = report;
+            document.getElementById('reportModal').classList.remove('hidden');
+            document.getElementById('reportModal').classList.add('flex');
+        }
+
+        function copyReport() {
+            const content = document.getElementById('reportContent').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                alert('Report copied to clipboard!');
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('reportModal').classList.add('hidden');
+            document.getElementById('reportModal').classList.remove('flex');
+        }
+
+        function submitReport() {
+            exportReport();
+        }
+
+        function resetAll() {
+            if (confirm('Reset all test results?')) {
+                document.querySelectorAll('.checkbox-custom').forEach(cb => cb.checked = false);
+                document.querySelectorAll('.test-result').forEach(sel => sel.value = '');
+                document.getElementById('testNotes').value = '';
+                updateProgress();
+            }
+        }
+
+        // Initial update
+        updateProgress();
+    </script>
+</body>
+</html>

@@ -11,7 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Tailwind & App JS -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('build/assets/app-fDSZ1D-r.css') }}" />
+    <script type="module" src="{{ asset('build/assets/app-C4lgtJz4.js') }}"></script>
     
     <style>
         [x-cloak] { display: none !important; }

@@ -80,6 +80,25 @@
                            placeholder="Ulangi password">
                 </div>
 
+                @if($captchaEnabled)
+                <div class="mb-6">
+                    @if($captchaProvider === 'hcaptcha')
+                        <div class="h-captcha" data-sitekey="{{ $captchaSiteKey }}"></div>
+                        <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+                    @elseif($captchaProvider === 'recaptcha')
+                        <div class="g-recaptcha" data-sitekey="{{ $captchaSiteKey }}"></div>
+                        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+                    @elseif($captchaProvider === 'turnstile')
+                        <div class="cf-turnstile" data-sitekey="{{ $captchaSiteKey }}"></div>
+                        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+                    @endif
+                    
+                    @error('captcha')
+                        <p class="mt-2 text-sm text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+                @endif
+
                 <button type="submit" class="w-full py-4 rounded-xl bg-primary text-white font-bold text-lg hover:bg-primary/90 transition">
                     Daftar Sekarang
                 </button>

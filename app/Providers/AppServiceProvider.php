@@ -5,9 +5,13 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use App\Models\WaMessage;
 use App\Models\WaConversation;
 use App\Models\Announcement;
+use App\Models\ContactSegment;
+use App\Policies\ContactSegmentPolicy;
+use App\Http\View\Composers\PendingPaymentComposer;
 use Illuminate\Support\Facades\URL;
 use Carbon\Carbon;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -38,6 +42,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
+
+        // Register Policies
+        Gate::policy(ContactSegment::class, ContactSegmentPolicy::class);
 
         // Register Observers for automated activity logging
         \App\Models\KbArticle::observe(\App\Observers\ActivityObserver::class);
@@ -103,5 +110,8 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('unread_announcements', $announcements);
             }
         });
+
+        // Share Pending Payment notification with all authenticated views
+        View::composer(['layouts.dark', 'layouts.app', 'components.navbar'], PendingPaymentComposer::class);
     }
 }

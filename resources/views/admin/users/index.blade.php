@@ -3,6 +3,11 @@
 @section('title', 'User Management')
 @section('page_title', 'User Management')
 
+@php
+    $adminUser = Auth::guard('admin')->user();
+    $isSuperAdmin = $adminUser->isSuperAdmin();
+@endphp
+
 @section('content')
 
 <!-- Header -->
@@ -14,10 +19,12 @@
         <span class="px-3 py-1 bg-slate-700 text-slate-300 rounded-full text-sm">
             {{ $users->total() }} Users
         </span>
+        @if($isSuperAdmin)
         <a href="{{ route('admin.users.create') }}" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/80 rounded-xl font-medium transition">
             <span class="material-symbols-outlined text-lg">person_add</span>
             Add User
         </a>
+        @endif
     </div>
 </div>
 
@@ -94,6 +101,7 @@
                     @endif
                 </td>
                 <td class="px-6 py-4">
+                    @if($isSuperAdmin)
                     <form action="{{ route('admin.users.toggle-verify', $user) }}" method="POST" class="inline">
                         @csrf
                         @method('PATCH')
@@ -111,12 +119,27 @@
                             @endif
                         </button>
                     </form>
+                    @else
+                    {{-- View only for non-superadmin --}}
+                    @if($user->email_verified_at)
+                    <span class="flex items-center gap-1 text-green-400 text-sm">
+                        <span class="material-symbols-outlined text-lg">verified</span>
+                        Verified
+                    </span>
+                    @else
+                    <span class="flex items-center gap-1 text-yellow-400 text-sm">
+                        <span class="material-symbols-outlined text-lg">pending</span>
+                        Pending
+                    </span>
+                    @endif
+                    @endif
                 </td>
                 <td class="px-6 py-4 text-sm text-slate-400">
                     {{ $user->created_at->format('d M Y') }}
                 </td>
                 <td class="px-6 py-4 text-right">
                     <div class="flex items-center justify-end gap-2">
+                        @if($isSuperAdmin)
                         <!-- Toggle VIP -->
                         <form action="{{ route('admin.users.toggle-vip', $user) }}" method="POST" class="inline">
                             @csrf
@@ -144,8 +167,9 @@
                                 <span class="material-symbols-outlined text-lg">login</span>
                             </button>
                         </form>
+                        @endif
 
-                        <!-- View Detail -->
+                        <!-- View Detail (All roles) -->
                         <a href="{{ route('admin.users.show', $user) }}" 
                            class="p-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg transition"
                            title="Detail">

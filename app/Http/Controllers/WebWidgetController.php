@@ -14,6 +14,7 @@ class WebWidgetController extends Controller
     public function index()
     {
         $widgets = WebWidget::withCount('conversations')
+            ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -48,6 +49,7 @@ class WebWidgetController extends Controller
         ]);
 
         $widget = WebWidget::create([
+            'user_id' => auth()->id(),
             'name' => $validated['name'],
             'domain' => $validated['domain'] ?? null,
             'welcome_message' => $validated['welcome_message'] ?? 'Halo! Ada yang bisa kami bantu?',
@@ -66,6 +68,8 @@ class WebWidgetController extends Controller
      */
     public function edit(WebWidget $webWidget)
     {
+        $this->authorize('update', $webWidget);
+        
         return view('pages.web-widget.edit', [
             'title' => 'Edit Widget',
             'widget' => $webWidget,
@@ -77,6 +81,8 @@ class WebWidgetController extends Controller
      */
     public function update(Request $request, WebWidget $webWidget)
     {
+        $this->authorize('update', $webWidget);
+        
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'domain' => 'nullable|string|max:255',
@@ -106,6 +112,8 @@ class WebWidgetController extends Controller
      */
     public function destroy(WebWidget $webWidget)
     {
+        $this->authorize('delete', $webWidget);
+        
         $webWidget->delete();
 
         return redirect()->route('web-widgets.index')
@@ -117,6 +125,8 @@ class WebWidgetController extends Controller
      */
     public function toggle(WebWidget $webWidget)
     {
+        $this->authorize('update', $webWidget);
+        
         $webWidget->update([
             'is_active' => !$webWidget->is_active,
         ]);
@@ -132,6 +142,8 @@ class WebWidgetController extends Controller
      */
     public function regenerateKey(WebWidget $webWidget)
     {
+        $this->authorize('update', $webWidget);
+        
         $webWidget->update([
             'api_key' => 'rw_' . Str::random(32),
         ]);
@@ -148,6 +160,8 @@ class WebWidgetController extends Controller
      */
     public function getEmbedCode(WebWidget $webWidget)
     {
+        $this->authorize('view', $webWidget);
+        
         return response()->json([
             'success' => true,
             'embed_code' => $webWidget->embed_code,

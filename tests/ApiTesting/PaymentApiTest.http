@@ -1,0 +1,148 @@
+### ==========================================
+### REPLYAI - Payment API Testing
+### ==========================================
+### Gunakan dengan VS Code REST Client extension
+### atau copy ke Postman/Insomnia
+### ==========================================
+
+### Variables (update sesuai environment)
+@baseUrl = http://localhost:8000
+@adminEmail = admin@example.com
+@adminPassword = password
+@userEmail = user@example.com
+@userPassword = password
+
+### ==========================================
+### 1. AUTHENTICATION
+### ==========================================
+
+### Login sebagai User
+POST {{baseUrl}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{userEmail}}&password={{userPassword}}
+
+### Login sebagai Admin
+POST {{baseUrl}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email={{adminEmail}}&password={{adminPassword}}
+
+### ==========================================
+### 2. CHECKOUT FLOW
+### ==========================================
+
+### Get Pricing Page
+GET {{baseUrl}}/pricing
+
+### Get Checkout Page (Plan Pro)
+GET {{baseUrl}}/checkout/pro
+
+### Process Checkout - Monthly
+POST {{baseUrl}}/checkout/pro
+Content-Type: application/x-www-form-urlencoded
+
+duration=1&promo_code=&payment_method=manual
+
+### Process Checkout - Yearly
+POST {{baseUrl}}/checkout/pro
+Content-Type: application/x-www-form-urlencoded
+
+duration=12&promo_code=&payment_method=manual
+
+### ==========================================
+### 3. PAYMENT API
+### ==========================================
+
+### Get Payment Detail (ganti INVOICE_NUMBER)
+GET {{baseUrl}}/payment/INV-2026-00001
+
+### Apply Promo Code
+POST {{baseUrl}}/payment/1/apply-promo
+Content-Type: application/x-www-form-urlencoded
+
+promo_code=PROMO10
+
+### Upload Payment Proof (gunakan form-data di Postman)
+POST {{baseUrl}}/payment/1/upload-proof
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="proof"; filename="proof.jpg"
+Content-Type: image/jpeg
+
+< ./test-proof.jpg
+------WebKitFormBoundary--
+
+### ==========================================
+### 4. MIDTRANS WEBHOOK (Security Tests)
+### ==========================================
+
+### Test: Invalid Signature
+POST {{baseUrl}}/api/midtrans/notification
+Content-Type: application/json
+
+{
+    "order_id": "INV-2026-00001",
+    "status_code": "200",
+    "gross_amount": "5000000",
+    "signature_key": "invalid_signature",
+    "transaction_status": "settlement"
+}
+
+### Test: Valid Signature (update dengan signature yang benar)
+POST {{baseUrl}}/api/midtrans/notification
+Content-Type: application/json
+
+{
+    "order_id": "INV-2026-00001-1234567890",
+    "status_code": "200",
+    "gross_amount": "5000000",
+    "signature_key": "CORRECT_SHA512_SIGNATURE_HERE",
+    "transaction_status": "settlement",
+    "transaction_id": "trx-123456",
+    "payment_type": "bank_transfer"
+}
+
+### Test: Amount Mismatch
+POST {{baseUrl}}/api/midtrans/notification
+Content-Type: application/json
+
+{
+    "order_id": "INV-2026-00001",
+    "status_code": "200",
+    "gross_amount": "1000000",
+    "signature_key": "SIGNATURE_FOR_1M",
+    "transaction_status": "settlement"
+}
+
+### ==========================================
+### 5. CHECK STATUS
+### ==========================================
+
+### Check Midtrans Status
+GET {{baseUrl}}/api/midtrans/status/INV-2026-00001
+
+### ==========================================
+### 6. MANUAL TESTING CHECKLIST
+### ==========================================
+
+### [ ] Price Manipulation Test
+### 1. Buka checkout page
+### 2. Inspect element, coba ubah hidden input harga
+### 3. Submit - harus tetap pakai harga database
+
+### [ ] Multiple Payment Test  
+### 1. Checkout plan Pro
+### 2. Jangan bayar, buat checkout lagi plan Pro yang sama
+### 3. Harus redirect ke invoice yang sama, bukan buat baru
+
+### [ ] Expired Payment Test
+### 1. Set expires_at payment ke masa lalu via database
+### 2. Jalankan: php artisan payments:cleanup-expired
+### 3. Status harus berubah jadi 'failed'
+
+### [ ] Midtrans Callback Test
+### 1. Akses /checkout/midtrans/finish dengan parameter palsu
+### 2. Harus check ke Midtrans API dulu
+### 3. Tidak langsung mark as paid

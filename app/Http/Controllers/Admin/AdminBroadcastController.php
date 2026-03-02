@@ -9,13 +9,33 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminBroadcastController extends Controller
 {
+    private function checkAuthorization(): void
+    {
+        $admin = Auth::guard('admin')->user();
+        
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_broadcast_attempt',
+                'Attempted to access broadcast without superadmin privilege',
+                ['url' => request()->fullUrl()],
+                null,
+                8
+            );
+            abort(403, 'Only Superadmin can manage broadcasts.');
+        }
+    }
+
     public function index()
     {
+        $this->checkAuthorization();
         return view('admin.broadcast.index');
     }
 
     public function send(Request $request)
     {
+        $this->checkAuthorization();
+        
         $request->validate([
             'title' => 'required|string|max:255',
             'message' => 'required|string',
@@ -25,7 +45,7 @@ class AdminBroadcastController extends Controller
             'duration_days' => 'required|integer|min:1|max:30',
         ]);
         
-        Announcement::create([
+        $announcement = Announcement::create([
             'title' => $request->title,
             'message' => $request->message,
             'type' => $request->type,
@@ -36,6 +56,20 @@ class AdminBroadcastController extends Controller
             'expires_at' => now()->addDays((int) $request->duration_days),
             'created_by' => Auth::guard('admin')->id(),
         ]);
+        
+        // Log activity
+        AdminActivityLog::log(
+            Auth::guard('admin')->user(),
+            'send_broadcast',
+            "Sent broadcast: {$request->title} to {$request->audience}",
+            [
+                'announcement_id' => $announcement->id,
+                'title' => $request->title,
+                'audience' => $request->audience,
+                'type' => $request->type
+            ],
+            $announcement
+        );
         
         return back()->with('success', 'Broadcast berhasil dikirim!');
     }

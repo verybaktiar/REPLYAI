@@ -42,10 +42,12 @@
         <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('whatsapp.broadcast*') ? 'filled' : '' }}">campaign</span>
         <span class="text-[10px] font-bold uppercase tracking-tighter">Promo</span>
     </a>
+    @if(Route::has('analytics.index'))
     <a href="{{ route('analytics.index') }}" class="flex flex-col items-center gap-1 min-w-[60px] {{ request()->routeIs('analytics*') || request()->routeIs('settings*') ? 'text-blue-500' : 'text-gray-500' }}">
         <span class="material-symbols-outlined text-[24px] {{ request()->routeIs('analytics*') ? 'filled' : '' }}">settings</span>
         <span class="text-[10px] font-bold uppercase tracking-tighter">Setting</span>
     </a>
+    @endif
 </div>
 
 <!-- Desktop Sidebar -->

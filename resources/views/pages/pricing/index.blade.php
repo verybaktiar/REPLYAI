@@ -27,30 +27,39 @@
 </head>
 <body class="bg-background-dark text-white font-display antialiased">
 
-    <!-- Navbar Simple -->
-    <nav class="bg-surface-dark border-b border-slate-700">
-        <div class="max-w-7xl mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
+    <!-- Navbar - Consistent with other payment pages -->
+    <nav class="fixed top-0 w-full z-50 bg-background-dark/90 backdrop-blur-md border-b border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
                 <a href="/" class="flex items-center gap-2 text-2xl font-black">
                     <span class="text-primary">REPLY</span>
                     <span class="text-white">AI</span>
                 </a>
                 @auth
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition">
-                        Logout
-                    </button>
-                </form>
+                <div class="flex items-center gap-4">
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-2 text-slate-300 hover:text-white transition">
+                        <span class="material-symbols-outlined">dashboard</span>
+                        <span class="hidden sm:inline text-sm font-medium">Dashboard</span>
+                    </a>
+                    <form action="{{ route('logout') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="flex items-center gap-2 text-slate-400 hover:text-white transition">
+                            <span class="material-symbols-outlined">logout</span>
+                            <span class="hidden sm:inline text-sm">Logout</span>
+                        </button>
+                    </form>
+                </div>
                 @else
                 <div class="flex items-center gap-4">
-                    <a href="{{ route('login') }}" class="text-slate-400 hover:text-white transition">Login</a>
-                    <a href="{{ route('register') }}" class="px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg transition">Register</a>
+                    <a href="{{ route('login') }}" class="text-slate-400 hover:text-white transition text-sm font-medium">Login</a>
+                    <a href="{{ route('register') }}" class="px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg transition text-sm font-bold">Register</a>
                 </div>
                 @endauth
             </div>
         </div>
     </nav>
+    <!-- Spacer for fixed navbar -->
+    <div class="h-16"></div>
 
     <div class="min-h-screen py-20 px-4 relative overflow-hidden">
         <!-- Background Glow -->

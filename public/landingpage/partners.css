@@ -1,0 +1,221 @@
+
+/* ========================================
+   PARTNERS SECTION - PROFESSIONAL STYLE
+   ======================================== */
+
+.partners-section {
+    padding: 100px 0;
+    background: linear-gradient(180deg, #0a0a0f 0%, #111118 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.partners-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+/* Header */
+.section-header {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.section-header .badge {
+    display: inline-block;
+    padding: 8px 20px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #818cf8;
+    letter-spacing: 0.5px;
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    font-size: 36px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+}
+
+.section-header p {
+    font-size: 16px;
+    color: #6b7280;
+    max-width: 450px;
+    margin: 0 auto;
+}
+
+/* Partners Row */
+.partners-row {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 30px;
+    flex-wrap: wrap;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Partner Item */
+.partner-item {
+    flex: 0 1 240px;
+}
+
+.partner-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.partner-box:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px -20px rgba(99, 102, 241, 0.3);
+}
+
+/* WhatsApp Clickable */
+.wa-clickable {
+    position: relative;
+}
+
+.wa-clickable:hover {
+    border-color: #25d366;
+    box-shadow: 0 20px 40px -20px rgba(37, 211, 102, 0.3);
+}
+
+.wa-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    transition: all 0.3s ease;
+}
+
+.wa-clickable:hover .wa-badge {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+}
+
+/* Logo Container */
+.logo-wrap {
+    width: 120px;
+    height: 120px;
+    background: #ffffff;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    padding: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.logo-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+
+/* CTA Icon */
+.cta-icon {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+/* Partner Text */
+.partner-name {
+    display: block;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 6px;
+}
+
+.partner-desc {
+    display: block;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* CTA Partner */
+.partner-cta .partner-box {
+    background: rgba(99, 102, 241, 0.05);
+    border-style: dashed;
+    border-color: rgba(99, 102, 241, 0.3);
+    cursor: pointer;
+}
+
+.partner-cta .partner-box:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.6);
+}
+
+.partner-cta .partner-name {
+    color: #818cf8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .partners-section {
+        padding: 70px 0;
+    }
+    
+    .section-header h2 {
+        font-size: 28px;
+    }
+    
+    .partners-row {
+        gap: 20px;
+    }
+    
+    .partner-item {
+        flex: 0 1 calc(50% - 10px);
+        min-width: 160px;
+    }
+    
+    .logo-wrap {
+        width: 90px;
+        height: 90px;
+    }
+}
+
+@media (max-width: 480px) {
+    .partner-item {
+        flex: 1 1 100%;
+        max-width: 280px;
+    }
+    
+    .logo-wrap {
+        width: 100px;
+        height: 100px;
+    }
+}

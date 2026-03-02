@@ -27,7 +27,7 @@
          style="top: {{ session()->has('impersonating_from_admin') ? '44px' : '0' }}"
          :class="mobileSidebarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'">
         <div class="flex items-center gap-2">
-            <button @click="mobileSidebarOpen = true" class="p-2 -ml-2 text-gray-400 hover:text-white transition-colors">
+            <button @click="mobileSidebarOpen = true" class="p-2 -ml-2 text-gray-400 hover:text-white transition-colors" aria-label="Buka menu navigasi">
                 <span class="material-symbols-outlined text-[24px]">menu</span>
             </button>
             <span class="text-sm font-bold text-white tracking-tight">ReplyAI</span>
@@ -102,7 +102,7 @@
                     </div>
                     <span class="text-lg font-bold text-white tracking-tight">ReplyAI</span>
                 </div>
-                <button @click="mobileSidebarOpen = false" class="p-2 -mr-2 text-gray-500 hover:text-white">
+                <button @click="mobileSidebarOpen = false" class="p-2 -mr-2 text-gray-500 hover:text-white" aria-label="Tutup menu">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>

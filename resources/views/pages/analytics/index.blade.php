@@ -29,9 +29,19 @@
 <div class="space-y-6">
     <!-- Page Header -->
     <div class="flex items-center justify-between">
-        <div>
+        <div class="flex items-center gap-3">
             <h1 class="text-2xl font-bold">{{ __('analytics.title') }}</h1>
-            <p class="text-slate-400">{{ __('analytics.subtitle') }}</p>
+            @include('components.page-help', [
+                'title' => 'Statistik & Analitik',
+                'description' => 'Pantau performa chat bot dan aktivitas pelanggan dalam periode waktu tertentu.',
+                'tips' => [
+                    'Lihat total pesan masuk dan keluar harian',
+                    'Cek Bot Resolution Rate untuk efektivitas AI',
+                    'Monitor CS Handoff untuk percakapan yang perlu ditangani manual',
+                    'Export data ke CSV untuk analisis lebih lanjut'
+                ]
+            ])
+            <p class="text-slate-400 ml-2">{{ __('analytics.subtitle') }}</p>
         </div>
         <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 text-sm text-slate-400 bg-surface-dark px-4 py-2 rounded-lg border border-slate-800">

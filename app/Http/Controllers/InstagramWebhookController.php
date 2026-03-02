@@ -55,10 +55,9 @@ class InstagramWebhookController extends Controller
 
                     $senderId    = (string) ($event['sender']['id'] ?? '');
                     $recipientId = (string) ($event['recipient']['id'] ?? ''); // ig user id
-                    $messageText = (string) ($event['message']['text'] ?? '');
                     $mid         = $event['message']['mid'] ?? null;
 
-                    if ($senderId === '' || $recipientId === '' || trim($messageText) === '') continue;
+                    if ($senderId === '' || $recipientId === '') continue;
 
                     // ✅ Skip jika mid sudah pernah diproses (anti duplikat)
                     if ($mid && Message::where('instagram_message_id', $mid)->exists()) {
@@ -66,13 +65,20 @@ class InstagramWebhookController extends Controller
                         continue;
                     }
 
+                    // Get message text
+                    $messageText = (string) ($event['message']['text'] ?? '');
+                    
+                    // Get attachments (media)
+                    $attachments = $event['message']['attachments'] ?? [];
+                    
                     Log::info('Processing message', [
                         'sender' => $senderId,
                         'text' => $messageText,
                         'mid' => $mid,
+                        'has_attachments' => !empty($attachments),
                     ]);
 
-                    $this->processMessage($senderId, $messageText, $mid, $recipientId);
+                    $this->processMessage($senderId, $messageText, $mid, $recipientId, $attachments);
                 }
             }
 
@@ -86,7 +92,7 @@ class InstagramWebhookController extends Controller
         }
     }
 
-    protected function processMessage(string $senderId, string $messageText, ?string $messageId, string $igUserId)
+    protected function processMessage(string $senderId, string $messageText, ?string $messageId, string $igUserId, array $attachments = [])
     {
         // ✅ Multi-tenancy: Find which user owns this Instagram account
         $igAccount = InstagramAccount::findByInstagramId($igUserId);
@@ -113,6 +119,9 @@ class InstagramWebhookController extends Controller
         $name     = $userInfo['name'] ?? null;
         $avatar   = $userInfo['profile_pic'] ?? null;
 
+        // Create display text for last_message (truncate if needed)
+        $lastMessageText = $messageText ?: ($attachments ? '[Media Attachment]' : '');
+
         // ✅ Include user_id AND instagram_account_id for proper multi-tenancy
         $conversation = Conversation::firstOrCreate(
             [
@@ -125,7 +134,7 @@ class InstagramWebhookController extends Controller
                 'ig_username' => $username,
                 'display_name' => $name ?? $username ?? 'Instagram User',
                 'avatar' => $avatar,
-                'last_message' => $messageText,
+                'last_message' => $lastMessageText,
                 'source' => 'meta_direct',
                 'last_activity_at' => now()->toDateTimeString(),
                 'status' => 'open',
@@ -136,7 +145,7 @@ class InstagramWebhookController extends Controller
             'ig_username' => $username ?? $conversation->ig_username,
             'display_name' => $name ?? $username ?? $conversation->display_name,
             'avatar' => $avatar ?? $conversation->avatar,
-            'last_message' => $messageText,
+            'last_message' => $lastMessageText,
             'last_activity_at' => now()->toDateTimeString(),
             // ✅ Always link to user and IG account if we found one
             'user_id' => $userId ?? $conversation->user_id,
@@ -187,6 +196,11 @@ class InstagramWebhookController extends Controller
         ]);
 
         Log::info('💾 Message saved to database', ['message_id' => $message->id]);
+
+        // Process attachments/media
+        if (!empty($attachments) && $userId) {
+            $this->processAttachments($attachments, $conversation, $message, $userId);
+        }
 
         $engineResult = $this->engine->handleIncomingInstagramMessage($message, $conversation);
 
@@ -278,6 +292,55 @@ class InstagramWebhookController extends Controller
         } catch (\Throwable $e) {
             Log::error('❌ Exception sending message', ['error' => $e->getMessage()]);
             return false;
+        }
+    }
+
+    /**
+     * Process media attachments from Instagram message
+     */
+    protected function processAttachments(array $attachments, Conversation $conversation, Message $message, int $userId): void
+    {
+        foreach ($attachments as $attachment) {
+            $type = $attachment['type'] ?? 'unknown';
+            $payload = $attachment['payload'] ?? [];
+            
+            // Determine media type and URL
+            $mediaUrl = $payload['url'] ?? null;
+            
+            if (!$mediaUrl) {
+                Log::warning('Instagram attachment without URL', $attachment);
+                continue;
+            }
+
+            // Map Instagram attachment type to our media types
+            $mediaType = match($type) {
+                'image' => \App\Models\ChatMedia::TYPE_IMAGE,
+                'video' => \App\Models\ChatMedia::TYPE_VIDEO,
+                'audio' => \App\Models\ChatMedia::TYPE_AUDIO,
+                'file' => \App\Models\ChatMedia::TYPE_DOCUMENT,
+                default => \App\Models\ChatMedia::TYPE_DOCUMENT,
+            };
+
+            // Store media record
+            \App\Http\Controllers\ChatMediaController::storeFromWebhook(
+                'instagram',
+                $conversation->id,
+                $message->id,
+                Message::class,
+                [
+                    'url' => $mediaUrl,
+                    'mime_type' => $payload['mime_type'] ?? 'application/octet-stream',
+                    'filename' => $payload['filename'] ?? ($type . '_' . time()),
+                    'size' => $payload['size'] ?? null,
+                ],
+                $userId
+            );
+
+            Log::info('Instagram media saved', [
+                'message_id' => $message->id,
+                'type' => $type,
+                'url' => $mediaUrl,
+            ]);
         }
     }
 

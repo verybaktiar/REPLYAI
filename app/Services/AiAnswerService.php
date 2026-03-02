@@ -107,15 +107,15 @@ class AiAnswerService
             return null;
         }
 
-        $apiKey = config('services.perplexity.key');
+        $apiKey = config('services.megallm.key') ?? config('services.perplexity.key');
         if (!$apiKey) {
-            Log::error('❌ Perplexity API key missing');
+            Log::error('❌ AI API key missing (MegaLLM/Perplexity)');
             return null;
         }
 
         $context = $this->buildContext($articles, $question);
 
-        $res = $this->callPerplexity($question, $context);
+        $res = $this->callMegaLLM($question, $context);
         if (!$res) return null;
 
         $conf = (float)($res['confidence'] ?? 0);
@@ -164,10 +164,13 @@ class AiAnswerService
         $question = trim($question);
         if ($question === '') return null;
         
+        $historyCount = count($conversationHistory);
         Log::info('🤖 AI AnswerWhatsApp START', [
             'question' => $question,
             'user_id' => $userId,
             'profile_id' => $profile?->id,
+            'history_count' => $historyCount,
+            'has_history' => $historyCount > 0,
         ]);
         
         // RATE LIMITING: Check if user has exceeded AI request limit
@@ -357,9 +360,30 @@ class AiAnswerService
              $isSpecific = Str::contains($lower, $specificKeywords);
              
              if ($isSpecific) {
-                 $industry = $profile?->getIndustryLabel() ?? 'bisnis';
+                 $businessName = $profile?->business_name ?? 'kami';
+                 
+                 // Extract what user is asking about
+                 $topic = '';
+                 if (Str::contains($lower, ['poli', 'dokter', 'spesialis'])) {
+                     $topic = 'poli/spesialis';
+                 } elseif (Str::contains($lower, ['jadwal', 'buka', 'tutup', 'jam'])) {
+                     $topic = 'jadwal operasional';
+                 } elseif (Str::contains($lower, ['harga', 'biaya', 'tarif'])) {
+                     $topic = 'harga dan biaya';
+                 } elseif (Str::contains($lower, ['lokasi', 'alamat'])) {
+                     $topic = 'lokasi';
+                 }
+                 
+                 if ($topic) {
+                     return [
+                         'answer' => "Mohon maaf kak, informasi tentang {$topic} belum tersedia di sistem kami. 😊\n\nSilakan hubungi Admin {$businessName} untuk info lengkapnya ya. Terima kasih!",
+                         'confidence' => 1.0,
+                         'source' => 'system_no_data'
+                     ];
+                 }
+                 
                  return [
-                     'answer' => "Maaf kak, maksudnya tanya tentang {$industry}? Kami bisa bantu info menu, harga, atau cara pesan. Mau yang mana? 😊",
+                     'answer' => "Mohon maaf kak, untuk info detailnya bisa langsung hubungi Admin {$businessName} ya. Kami siap membantu! 😊",
                      'confidence' => 1.0,
                      'source' => 'system_no_data'
                  ];
@@ -367,9 +391,9 @@ class AiAnswerService
         }
 
         // 6) Panggil AI dengan prompt khusus WhatsApp
-        $apiKey = config('services.perplexity.key');
+        $apiKey = config('services.megallm.key') ?? config('services.perplexity.key');
         if (!$apiKey) {
-            Log::error('❌ Perplexity API key missing');
+            Log::error('❌ AI API key missing (MegaLLM/Perplexity)');
             
             // Fallback response jika API key tidak ada
             $fallbackProfile = $profile ?? BusinessProfile::getActive();
@@ -386,7 +410,7 @@ class AiAnswerService
         // 7) Deteksi sentimen user
         $sentiment = $this->detectSentiment($question);
         
-        $res = $this->callWhatsAppAI($question, $context, $conversationHistory, $profile, $sentiment);
+        $res = $this->callMegaLLMWhatsApp($question, $context, $conversationHistory, $profile, $sentiment);
         
         if (!$res || empty($res['answer'])) {
             // Track missed query
@@ -433,18 +457,13 @@ class AiAnswerService
     }
 
     /**
-     * Call Perplexity dengan prompt khusus WhatsApp yang lebih conversational
+     * Call MegaLLM dengan prompt khusus WhatsApp yang lebih conversational
      * 
      * @param BusinessProfile|null $profile Optional profile to use (overrides default)
      * @param array $sentiment Hasil deteksi sentimen dari detectSentiment()
      */
-    protected function callWhatsAppAI(string $question, string $context, array $history = [], ?BusinessProfile $profile = null, array $sentiment = []): ?array
+    protected function callMegaLLMWhatsApp(string $question, string $context, array $history = [], ?BusinessProfile $profile = null, array $sentiment = []): ?array
     {
-        $apiKey = config('services.perplexity.key');
-        $baseUrl = rtrim((string) config('services.perplexity.url', 'https://api.perplexity.ai'), '/');
-        $model = (string) config('services.perplexity.model', 'sonar-pro');
-        $timeout = (int) config('services.perplexity.timeout', 60);
-
         $now = now()->format('l, d F Y H:i');
         $tomorrow = now()->addDay()->format('l');
 
@@ -460,6 +479,17 @@ class AiAnswerService
         if (!$profile) {
             Log::warning('⚠️ No active BusinessProfile found, using fallback.');
             $systemPrompt = "Kamu adalah asisten virtual yang membantu. Jawab pertanyaan user dengan sopan.";
+            // Fallback terminology for when no profile
+            $terminology = [
+                'user' => 'Pelanggan',
+                'user_plural' => 'Pelanggan',
+                'product' => 'Produk',
+                'product_plural' => 'Produk',
+                'category' => 'Kategori',
+                'staff' => 'Staff',
+                'action' => 'pemesanan',
+                'place' => 'tempat',
+            ];
         } else {
             // Replace placeholders in the stored template
             $systemPrompt = str_replace(
@@ -471,6 +501,9 @@ class AiAnswerService
             // INJECT BUSINESS CATEGORY & IDENTITY
             $industryLabel = $profile->getIndustryLabel();
             $systemPrompt .= "\n\nIDENTITAS BISNIS:\n- Nama: {$profile->business_name}\n- Kategori: {$industryLabel}\n- TUGAS: Hanya menjawab pertanyaan seputar {$industryLabel} di {$profile->business_name}.";
+            
+            // Get effective terminology for this business type
+            $terminology = $profile->getEffectiveTerminology();
         }
 
         // 8) ADD AI TRAINING EXAMPLES (STYLE LEARNING)
@@ -518,15 +551,28 @@ ATURAN KONSISTENSI & KEJUJURAN:
 
         // ATURAN GREETING (CONTEXT AWARE)
         // Jika ada history (percakapan berlanjut), JANGAN greeting berlebihan.
+        $historyCount = count($history);
         if (!empty($history)) {
-            $systemPrompt .= "\n\nATURAN GREETING (PENTING):";
-            $systemPrompt .= "\n- INI ADALAH LANJUTAN PERCAKAPAN. JANGAN gunakan kata sapaan seperti 'Halo', 'Hai', 'Selamat pagi' lagi.";
-            $systemPrompt .= "\n- Langsung jawab ke inti pertanyaan user.";
-            $systemPrompt .= "\n- Contoh Salah: 'Halo kak! Untuk harga kopi...'";
-            $systemPrompt .= "\n- Contoh Benar: 'Untuk harga kopi susu Rp18.000 kak...'";
+            $systemPrompt .= "\n\n🚫 ATURAN GREETING - WAJIB DIPATUHI (SANGAT PENTING - LANGGAR = ERROR):";
+            $systemPrompt .= "\n- INI ADALAH LANJUTAN PERCAKAPAN (sudah {$historyCount} pesan sebelumnya).";
+            $systemPrompt .= "\n- DILARANG KERAS menggunakan kata sapaan seperti 'Halo', 'Hai', 'Hi', 'Selamat' di awal jawaban.";
+            $systemPrompt .= "\n- DILARANG KERAS mengatakan 'Maaf kak, maksudnya...' atau 'Maaf saya tidak paham' - ini SANGAT MENYEBALKAN!";
+            $systemPrompt .= "\n- DILARANG KERAS menanyakan 'Mau yang mana?' atau 'Tanya tentang apa?' - user sudah JELAS dari history!";
+            $systemPrompt .= "\n- LANGSUNG JAWAB PERTANYAAN, tanpa basa-basi, tanpa sapaan, tanpa permintaan maaf.";
+            $systemPrompt .= "\n- Jawaban HARUS dimulai langsung dengan informasi yang diminta.";
+            $systemPrompt .= "\n\nContoh SALAH (AKAN MENYEBABKAN ERROR):";
+            $systemPrompt .= "\n❌ 'Halo kak! Untuk harga {$terminology['product']}...'";
+            $systemPrompt .= "\n❌ 'Maaf kak, maksudnya tanya tentang {$profile->business_name}?' - JANGAN PERNAH!";
+            $systemPrompt .= "\n❌ 'Maaf kak, saya tidak paham' - JANGAN PERNAH!";
+            $systemPrompt .= "\n❌ 'Mau yang mana?' - JANGAN PERNAH!";
+            $systemPrompt .= "\n❌ 'Bisa dijelaskan lagi?' - JANGAN PERNAH!";
+            $systemPrompt .= "\n\nContoh BENAR (HARUS SEPERTI INI):";
+            $systemPrompt .= "\n✅ 'Untuk {$terminology['product']} A harga Rp50.000...' - LANGSUNG INFO!";
+            $systemPrompt .= "\n✅ '{$terminology['staff']} kami tersedia hari Senin jam 09:00...' - LANGSUNG INFO!";
+            $systemPrompt .= "\n✅ 'Rp75.000 sudah termasuk pajak.' - LANGSUNG INFO!";
         } else {
             $systemPrompt .= "\n\nATURAN GREETING:";
-            $systemPrompt .= "\n- Karena ini awal percakapan, SAPA user dengan ramah (Halo/Hai).";
+            $systemPrompt .= "\n- Karena ini awal percakapan (pesan pertama), SAPA user dengan ramah (Halo/Hai).";
         }
 
         // Tambahkan instruksi konteks percakapan
@@ -534,7 +580,7 @@ ATURAN KONSISTENSI & KEJUJURAN:
 - SELALU perhatikan history chat sebelumnya
 - Jika user hanya bilang 'boleh', 'oke', 'iya', 'mau' dll, itu berarti SETUJU dengan tawaranmu sebelumnya
 - JANGAN tanya ulang 'ada apa?' jika user sudah setuju - langsung lanjutkan ke aksi berikutnya
-- Contoh: Jika kamu tawarkan demo dan user bilang 'boleh', LANGSUNG arahkan ke cara daftar demo";
+- Contoh: Jika kamu tawarkan {$terminology['action']} dan user bilang 'boleh', LANGSUNG arahkan ke cara {$terminology['action']}";
 
         // Tambahkan instruksi berdasarkan sentimen
         $sentimentType = $sentiment['sentiment'] ?? 'neutral';
@@ -624,34 +670,25 @@ ATURAN KONSISTENSI & KEJUJURAN:
             ];
         }
 
-        $payload = [
-            "model" => $model,
-            "temperature" => 0.1, // SANGAT RENDAH agar jawaban konsisten dan tidak kreatif/mengarang
-            "messages" => $messages,
-        ];
+        // Gunakan AiProviderService dengan failover
+        $providerService = app(AiProviderService::class);
+        $result = $providerService->chatCompletion($messages, null);
 
-        try {
-            Log::info('🤖 Perplexity Payload:', $payload); // DEBUG PAYLOAD
+        if (!$result['success']) {
+            Log::error('❌ All AI providers failed for WhatsApp', ['error' => $result['error']]);
+            return null;
+        }
 
-            $http = Http::timeout($timeout)
-                ->withToken($apiKey)
-                ->acceptJson()
-                ->asJson()
-                ->post($baseUrl . '/chat/completions', $payload);
+        Log::info('✅ AI Provider success for WhatsApp', [
+            'provider' => $result['provider'], 
+            'model' => $result['model']
+        ]);
 
-            if (!$http->ok()) {
-                Log::error('❌ WhatsApp AI HTTP error', [
-                    'status' => $http->status(),
-                    'body' => $http->body(), // CAPTURE ERROR BODY
-                ]);
-                return null;
-            }
+        $text = $result['answer'];
+        if (!$text) return null;
 
-            $text = $http->json('choices.0.message.content');
-            if (!$text) return null;
-
-            $json = $this->safeJsonDecode((string)$text);
-            if (!$json) return null;
+        $json = $this->safeJsonDecode((string)$text);
+        if (!$json) return null;
 
             $answer = trim((string)($json['answer'] ?? ''));
             if ($answer === '') return null;
@@ -660,14 +697,85 @@ ATURAN KONSISTENSI & KEJUJURAN:
             $answer = preg_replace('/\[\d+\]/', '', $answer);
             $answer = trim($answer);
 
-            return [
-                'answer' => $answer,
-                'confidence' => max(0, min(1, (float)($json['confidence'] ?? 0.7))),
-            ];
-        } catch (\Throwable $e) {
-            Log::error('❌ WhatsApp AI error', ['err' => $e->getMessage()]);
-            return null;
-        }
+            // POST-PROCESSING: Hapus greeting jika ada history (fallback jika AI tidak patuh)
+            $historyCount = count($history);
+            Log::debug('🧹 Post-processing check', [
+                'history_count' => $historyCount,
+                'original_answer' => $answer,
+            ]);
+            
+            if ($historyCount > 0) {
+                $originalAnswer = $answer;
+                
+                // Hapus greeting patterns di awal jawaban - MORE COMPREHENSIVE
+                $greetingPatterns = [
+                    // Basic greetings
+                    '/^(Halo|Hai|Hi|Hello|Hey)[\s,!.]+/iu',
+                    '/^(Selamat\s+(pagi|siang|sore|malam))[\s,!.]+/iu',
+                    
+                    // "Maaf kak..." variations (the most annoying one!)
+                    '/^(Maaf\s+(ya\s+)?kak,?\s+maksudnya)[\s,!.:]*/iu',
+                    '/^(Maaf\s+kak,?\s+(ya\s+)?maksudnya)[\s,!.:]*/iu',
+                    '/^(Maaf,?\s+maksudnya)[\s,!.:]*/iu',
+                    '/^(Maksudnya,?\s+maaf)[\s,!.:]*/iu',
+                    '/^(Maaf\s+(ya\s+)?kak?)[\s,!.]+/iu',
+                    
+                    // "Saya tidak paham" variations
+                    '/^(Maaf,?\s+saya\s+(tidak\s+)?(paham|mengerti))[\s,!.]+/iu',
+                    '/^(Saya\s+(tidak\s+)?(paham|mengerti))[\s,!.]+/iu',
+                    
+                    // "Mau yang mana" variations
+                    '/^(Mau\s+(yang\s+)?mana)[\s?.]+/iu',
+                    '/^(Mau\s+tanya\s+tentang)[\s?.]+/iu',
+                    '/^(Tanya\s+tentang)[\s?.]+/iu',
+                    
+                    // Greeting + question combos
+                    '/^(Halo|Hai|Hi)[\s,!.]+\s*(kak|kakak|mba|mas)[\s,!.]+/iu',
+                    '/^(Halo|Hai|Hi)[\s,!.]+\s*(kak|kakak|mba|mas)?[\s,!.]+/iu',
+                ];
+                
+                $iteration = 0;
+                $maxIterations = 3; // Prevent infinite loops
+                do {
+                    $changed = false;
+                    foreach ($greetingPatterns as $pattern) {
+                        $newAnswer = preg_replace($pattern, '', $answer);
+                        if ($newAnswer !== $answer) {
+                            $answer = $newAnswer;
+                            $changed = true;
+                            Log::debug('🧹 Pattern matched and removed', [
+                                'pattern' => $pattern,
+                                'current_answer' => $answer,
+                            ]);
+                        }
+                    }
+                    $iteration++;
+                } while ($changed && $iteration < $maxIterations);
+                
+                $answer = trim($answer);
+                
+                // Also remove leading emoji that might be left after greeting removal
+                $answer = preg_replace('/^[\s\p{P}\p{So}]+/u', '', $answer);
+                $answer = trim($answer);
+                
+                // Capitalize first letter
+                if (!empty($answer)) {
+                    $answer = ucfirst($answer);
+                }
+                
+                if ($originalAnswer !== $answer) {
+                    Log::info('🧹 Greeting removed by post-processing', [
+                        'original' => $originalAnswer,
+                        'cleaned' => $answer,
+                        'history_count' => $historyCount,
+                    ]);
+                }
+            }
+
+        return [
+            'answer' => $answer,
+            'confidence' => max(0, min(1, (float)($json['confidence'] ?? 0.7))),
+        ];
     }
 
     protected function searchRelevantArticles(string $question, int $limit = 4, ?int $profileId = null, ?int $userId = null, ?BusinessProfile $profile = null)
@@ -940,23 +1048,13 @@ ATURAN KONSISTENSI & KEJUJURAN:
         return $result;
     }
 
-    protected function callPerplexity(string $question, string $context): ?array
+    /**
+     * Call AI Provider dengan failover otomatis (MegaLLM -> SumoPod)
+     */
+    protected function callMegaLLM(string $question, string $context): ?array
     {
-        $apiKey = config('services.perplexity.key');
-        $baseUrl = rtrim((string) config('services.perplexity.url', 'https://api.perplexity.ai'), '/');
-        $model = (string) config('services.perplexity.model', 'sonar-pro');
-        $timeout = (int) config('services.perplexity.timeout', 60);
-
         $now = now()->format('l, d F Y H:i');
         $tomorrow = now()->addDay()->format('l');
-
-        // Note: For answerFromKb (Legacy/Web), we might want to use the profile too, 
-        // but for now let's keep it robust by using a generic or profile-based prompt if needed.
-        // For simplicity in this refactor, we'll keep the existing prompt structure for web widget
-        // but arguably we should unify it.
-        // Let's stick to the existing web-widget prompt to not break that specific flow, 
-        // as the user focused on the business logic which seems more relevant to the conversational bot.
-        // Actually, let's use the profile here too for consistency!
         
         $profile = BusinessProfile::getActive();
         if ($profile) {
@@ -973,77 +1071,53 @@ Output HARUS JSON valid: { "answer": "...", "confidence": 0.0-1.0 }
 SYS;
         }
 
-        $payload = [
-            "model" => $model,
-            "temperature" => 0.2,
-            "messages" => [
-                ["role" => "system", "content" => $system],
-                ["role" => "user", "content" => "KONTEKS:\n".$context."\n\nPERTANYAAN:\n".$question],
-            ],
+        $messages = [
+            ["role" => "system", "content" => $system],
+            ["role" => "user", "content" => "KONTEKS:\n".$context."\n\nPERTANYAAN:\n".$question],
         ];
 
-        // retry sederhana (timeout/429/5xx)
-        $tries = 3;
-        for ($i = 1; $i <= $tries; $i++) {
-            try {
-                $http = Http::timeout($timeout)
-                    ->withToken($apiKey)
-                    ->acceptJson()
-                    ->asJson()
-                    ->post($baseUrl . '/chat/completions', $payload);
+        // Gunakan AiProviderService dengan failover
+        $providerService = app(AiProviderService::class);
+        $result = $providerService->chatCompletion($messages, null);
 
-                if (!$http->ok()) {
-                    Log::error('❌ Perplexity HTTP not ok', [
-                        'try' => $i,
-                        'status' => $http->status(),
-                        'body' => $http->body(),
-                    ]);
-
-                    // kalau 429/5xx → coba lagi
-                    if (in_array($http->status(), [429, 500, 502, 503, 504], true) && $i < $tries) {
-                        usleep(400000 * $i); // 0.4s, 0.8s, 1.2s
-                        continue;
-                    }
-
-                    return null;
-                }
-
-                $text = $http->json('choices.0.message.content');
-                if (!$text) {
-                    Log::error('❌ Perplexity empty response content', ['raw' => $http->json()]);
-                    return null;
-                }
-
-                $json = $this->safeJsonDecode((string)$text);
-                if (!$json) {
-                    Log::error('❌ Perplexity response not JSON', ['text' => $text]);
-                    return null;
-                }
-
-                $answer = trim((string)($json['answer'] ?? ''));
-                $confidence = (float)($json['confidence'] ?? 0);
-
-                if ($answer === '') return null;
-
-                // 🧹 Bersihkan citation markers seperti [1], [2], [10]
-                $answer = preg_replace('/\[\d+\]/', '', $answer);
-                $answer = trim($answer);
-
-                return [
-                    'answer' => $answer,
-                    'confidence' => max(0, min(1, $confidence)),
-                ];
-            } catch (\Throwable $e) {
-                Log::error('❌ Perplexity call error', ['try' => $i, 'err' => $e->getMessage()]);
-                if ($i < $tries) {
-                    usleep(500000 * $i);
-                    continue;
-                }
-                return null;
-            }
+        if (!$result['success']) {
+            Log::error('❌ All AI providers failed for KB call', ['error' => $result['error']]);
+            return null;
         }
 
-        return null;
+        Log::info('✅ AI Provider success for KB', ['provider' => $result['provider'], 'model' => $result['model']]);
+
+        $text = $result['answer'];
+        $json = $this->safeJsonDecode((string)$text);
+        
+        if (!$json) {
+            Log::error('❌ AI response not JSON', ['text' => $text]);
+            return null;
+        }
+
+        $answer = trim((string)($json['answer'] ?? ''));
+        $confidence = (float)($json['confidence'] ?? 0);
+
+        if ($answer === '') return null;
+
+        // 🧹 Bersihkan citation markers seperti [1], [2], [10]
+        $answer = preg_replace('/\[\d+\]/', '', $answer);
+        $answer = trim($answer);
+
+        return [
+            'answer' => $answer,
+            'confidence' => max(0, min(1, $confidence)),
+        ];
+    }
+
+    /**
+     * Legacy: Call Perplexity API (fallback)
+     * @deprecated Use callMegaLLM instead
+     */
+    protected function callPerplexity(string $question, string $context): ?array
+    {
+        // Delegate ke MegaLLM
+        return $this->callMegaLLM($question, $context);
     }
 
     protected function safeJsonDecode(string $text): ?array
@@ -1070,8 +1144,11 @@ SYS;
     {
         if (empty($history)) return null;
 
-        $apiKey = config('services.perplexity.key');
+        $apiKey = config('services.megallm.key') ?? config('services.perplexity.key');
         if (!$apiKey) return null;
+        
+        $baseUrl = rtrim((string) config('services.megallm.url', 'https://ai.megallm.io/v1'), '/');
+        $model = (string) config('services.megallm.model', 'mistral-large-3-675b-instruct-2512');
 
         $historyText = "";
         foreach (array_slice($history, -10) as $msg) {
@@ -1080,7 +1157,7 @@ SYS;
         }
 
         $payload = [
-            "model" => config('services.perplexity.model', 'sonar-pro'),
+            "model" => $model,
             "messages" => [
                 ["role" => "system", "content" => "Berikan ringkasan 1 kalimat singkat (maksimal 15 kata) tentang inti pembicaraan/masalah user ini dalam Bahasa Indonesia. Langsung berikan ringkasannya saja tanpa kata pengantar."],
                 ["role" => "user", "content" => "RIWAYAT CHAT:\n" . $historyText],
@@ -1089,7 +1166,7 @@ SYS;
         ];
 
         try {
-            $http = Http::timeout(20)->withToken($apiKey)->post(rtrim((string)config('services.perplexity.url', 'https://api.perplexity.ai'), '/') . '/chat/completions', $payload);
+            $http = Http::timeout(20)->withToken($apiKey)->post($baseUrl . '/chat/completions', $payload);
             if ($http->ok()) {
                 return trim((string)$http->json('choices.0.message.content'));
             }
@@ -1107,8 +1184,11 @@ SYS;
     {
         if (empty($history)) return [];
 
-        $apiKey = config('services.perplexity.key');
+        $apiKey = config('services.megallm.key') ?? config('services.perplexity.key');
         if (!$apiKey) return [];
+        
+        $baseUrl = rtrim((string) config('services.megallm.url', 'https://ai.megallm.io/v1'), '/');
+        $model = (string) config('services.megallm.model', 'mistral-large-3-675b-instruct-2512');
 
         $profile = $profile ?? BusinessProfile::getActive();
         $businessContext = $profile ? "Nama Bisnis: {$profile->business_name}. " : "";
@@ -1120,7 +1200,7 @@ SYS;
         }
 
         $payload = [
-            "model" => config('services.perplexity.model', 'sonar-pro'),
+            "model" => $model,
             "messages" => [
                 ["role" => "system", "content" => "Kamu adalah asisten ahli untuk Customer Service. {$businessContext}Berdasarkan riwayat chat, berikan 3 pilihan balasan singkat (Quick Replies) yang paling relevan untuk dikirim Admin ke User. Gunakan Bahasa Indonesia yang sopan dan ramah. Output HARUS JSON format: {\"suggestions\": [\"Opsi 1\", \"Opsi 2\", \"Opsi 3\"]}"],
                 ["role" => "user", "content" => "RIWAYAT CHAT:\n" . $historyText],
@@ -1129,7 +1209,7 @@ SYS;
         ];
 
         try {
-            $http = Http::timeout(20)->withToken($apiKey)->post(rtrim((string)config('services.perplexity.url', 'https://api.perplexity.ai'), '/') . '/chat/completions', $payload);
+            $http = Http::timeout(20)->withToken($apiKey)->post($baseUrl . '/chat/completions', $payload);
             if ($http->ok()) {
                 $content = $http->json('choices.0.message.content');
                 $json = $this->safeJsonDecode($content);
@@ -1148,21 +1228,25 @@ SYS;
     {
         if ($messages->isEmpty()) return "Tidak ada aktivitas chat hari ini.";
 
-        $apiKey = config('services.perplexity.key');
+        $apiKey = config('services.megallm.key') ?? config('services.perplexity.key');
         if (!$apiKey) return null;
+        
+        $baseUrl = rtrim((string) config('services.megallm.url', 'https://ai.megallm.io/v1'), '/');
+        $model = (string) config('services.megallm.model', 'mistral-large-3-675b-instruct-2512');
 
         $businessName = $profile?->business_name ?? 'Bisnis';
         
         // Prepare message data for AI (limit to avoid token overflow)
         $messageDump = "";
         foreach ($messages->take(100) as $msg) {
-            $sender = $msg->is_from_me ? 'Bot/CS' : 'User';
+            // FIX: Use direction field instead of is_from_me (which doesn't exist in DB)
+            $sender = $msg->direction === 'outgoing' ? 'Bot/CS' : 'User';
             $text = $msg->message ?: $msg->bot_reply;
             $messageDump .= "[{$msg->created_at->format('H:i')}] {$sender}: {$text}\n";
         }
 
         $payload = [
-            "model" => config('services.perplexity.model', 'sonar-pro'),
+            "model" => $model,
             "messages" => [
                 ["role" => "system", "content" => "Berikan ringkasan aktivitas chat hari ini dalam Bahasa Indonesia dengan gaya visual yang menarik (Gunakan emoji).
                 
@@ -1181,7 +1265,7 @@ ATURAN KETAT:
         ];
 
         try {
-            $http = Http::timeout(60)->withToken($apiKey)->post(rtrim((string)config('services.perplexity.url', 'https://api.perplexity.ai'), '/') . '/chat/completions', $payload);
+            $http = Http::timeout(60)->withToken($apiKey)->post($baseUrl . '/chat/completions', $payload);
             if ($http->ok()) {
                 return trim((string)$http->json('choices.0.message.content'));
             }
@@ -1355,54 +1439,73 @@ ATURAN KETAT:
                 ->filter(fn($w) => mb_strlen($w) >= 3)
                 ->values();
             
-            $suggestions = $articles->map(function ($article) use ($questionWords) {
+            $suggestions = $articles->map(function ($article) use ($questionWords, $questionLower) {
+                $titleLower = Str::lower($article->title);
                 $content = Str::lower($article->title . ' ' . $article->content . ' ' . $article->tags);
                 $matchCount = 0;
+                $titleMatch = false;
                 
                 foreach ($questionWords as $word) {
                     if (Str::contains($content, $word)) {
                         $matchCount++;
+                        // Extra weight if word matches in title
+                        if (Str::contains($titleLower, $word)) {
+                            $matchCount += 2;
+                            $titleMatch = true;
+                        }
                     }
                 }
                 
+                // Calculate score with bonus for title match
                 $score = $questionWords->count() > 0 
-                    ? $matchCount / $questionWords->count() 
+                    ? $matchCount / ($questionWords->count() * 3) 
                     : 0;
                 
                 return [
                     'article' => $article,
                     'score' => $score,
+                    'titleMatch' => $titleMatch,
                 ];
             })
-            ->filter(fn($item) => $item['score'] > 0.1) // Minimal 10% match
+            ->filter(fn($item) => $item['score'] > 0.3) // Increased to 30% minimum match
             ->sortByDesc('score')
             ->take(3);
             
-            if ($suggestions->isEmpty()) return null;
+            // Only use smart fallback if we have high confidence suggestions
+            $highConfidenceSuggestions = $suggestions->filter(fn($item) => $item['score'] > 0.5 || $item['titleMatch']);
+            
+            if ($highConfidenceSuggestions->isEmpty()) return null;
             
             // Build fallback response dengan suggestions
             $businessName = $profile->business_name ?? 'Kami';
             $fallbackMsg = "Mohon maaf kak, saya tidak menemukan info spesifik tentang pertanyaan tersebut.\n\n";
-            $fallbackMsg .= "Mungkin yang Anda cari:\n";
             
-            foreach ($suggestions as $i => $item) {
-                $num = $i + 1;
-                $title = $item['article']->title;
-                $fallbackMsg .= "{$num}. {$title}\n";
+            // Only suggest if we have good matches
+            if ($highConfidenceSuggestions->count() > 0) {
+                $fallbackMsg .= "Mungkin yang Anda cari:\n";
+                
+                foreach ($highConfidenceSuggestions as $i => $item) {
+                    $num = $i + 1;
+                    $title = $item['article']->title;
+                    $fallbackMsg .= "{$num}. {$title}\n";
+                }
+                
+                $fallbackMsg .= "\n";
             }
             
-            $fallbackMsg .= "\nAtau bisa langsung hubungi Admin {$businessName} ya. 😊";
+            $fallbackMsg .= "Atau bisa langsung hubungi Admin {$businessName} ya. 😊";
             
             Log::info('💡 Smart fallback triggered', [
                 'question' => $question,
-                'suggestions' => $suggestions->pluck('article.title')->toArray(),
+                'suggestions' => $highConfidenceSuggestions->pluck('article.title')->toArray(),
+                'scores' => $highConfidenceSuggestions->pluck('score')->toArray(),
             ]);
             
             return [
                 'answer' => $fallbackMsg,
                 'confidence' => 0.6,
                 'source' => 'smart_fallback',
-                'suggestions' => $suggestions->pluck('article.id')->toArray(),
+                'suggestions' => $highConfidenceSuggestions->pluck('article.id')->toArray(),
             ];
             
         } catch (\Throwable $e) {

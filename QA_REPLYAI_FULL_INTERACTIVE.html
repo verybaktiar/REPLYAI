@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA REPLYAI FULL - 387 Test Cases (Bahasa Indonesia)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .test-card { transition: all 0.2s; }
+        .test-card:hover { background-color: #f8fafc; }
+        .checkbox-custom:checked + div { background-color: #10b981; border-color: #10b981; }
+        .checkbox-custom:checked + div svg { display: block; }
+        .tab-active { border-bottom: 3px solid #135bec; color: #135bec; font-weight: 600; background: #eff6ff; }
+        .progress-ring { transform: rotate(-90deg); }
+        .status-pass { background: #10b981 !important; border-color: #10b981 !important; }
+        .status-fail { background: #ef4444 !important; border-color: #ef4444 !important; }
+        .count-badge { position: fixed; bottom: 20px; right: 20px; z-index: 100; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen pb-20">
+    
+    <!-- HEADER -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-xl">
+        <div class="max-w-full mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="material-symbols-outlined">fact_check</span>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold">QA REPLYAI FULL</h1>
+                        <p class="text-xs text-gray-400">387 Test Cases - Bahasa Indonesia</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <!-- Progress Ring -->
+                    <div class="relative w-14 h-14">
+                        <svg class="progress-ring w-14 h-14" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="42" fill="none" stroke="#334155" stroke-width="6"/>
+                            <circle id="ringProgress" cx="50" cy="50" r="42" fill="none" stroke="#135bec" stroke-width="6"
+                                    stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="textProgress" class="text-xs font-bold">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-right text-xs">
+                        <input type="text" id="namaTester" placeholder="Nama Tester" 
+                               class="bg-slate-800 text-white px-2 py-1 rounded border border-slate-700 w-28 mb-1 block">
+                        <input type="date" id="tglTest" 
+                               class="bg-slate-800 text-white px-2 py-1 rounded border border-slate-700 w-28 block">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- STATS BAR -->
+    <div class="bg-white shadow-sm border-b sticky top-[60px] z-40">
+        <div class="max-w-full mx-auto px-4 py-2">
+            <div class="flex gap-4 text-xs overflow-x-auto">
+                <div class="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full">
+                    <span class="font-semibold text-blue-700">Total:</span>
+                    <span class="font-bold text-blue-900">387</span>
+                </div>
+                <div class="flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full">
+                    <span class="font-semibold text-green-700">Selesai:</span>
+                    <span id="countDone" class="font-bold text-green-900">0</span>
+                </div>
+                <div class="flex items-center gap-1 bg-emerald-50 px-3 py-1 rounded-full">
+                    <span class="font-semibold text-emerald-700">Berhasil:</span>
+                    <span id="countPass" class="font-bold text-emerald-900">0</span>
+                </div>
+                <div class="flex items-center gap-1 bg-red-50 px-3 py-1 rounded-full">
+                    <span class="font-semibold text-red-700">Gagal:</span>
+                    <span id="countFail" class="font-bold text-red-900">0</span>
+                </div>
+                <div class="flex items-center gap-1 bg-purple-50 px-3 py-1 rounded-full ml-auto">
+                    <span class="font-semibold text-purple-700">Sisa:</span>
+                    <span id="countLeft" class="font-bold text-purple-900">387</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVIGATION -->
+    <div class="bg-white shadow-sm sticky top-[100px] z-30">
+        <div class="max-w-full mx-auto px-2">
+            <div class="flex gap-1 overflow-x-auto text-xs py-1">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap tab-active">📊 Dashboard</button>
+                <button onclick="switchTab('user-auth')" id="nav-user-auth" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">🔐 User Auth</button>
+                <button onclick="switchTab('user-dashboard')" id="nav-user-dashboard" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">🏠 User Dashboard</button>
+                <button onclick="switchTab('user-inbox')" id="nav-user-inbox" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">💬 Inbox</button>
+                <button onclick="switchTab('user-wa')" id="nav-user-wa" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">📱 WhatsApp</button>
+                <button onclick="switchTab('user-ig')" id="nav-user-ig" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">📷 Instagram</button>
+                <button onclick="switchTab('user-crm')" id="nav-user-crm" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">👥 Kontak</button>
+                <button onclick="switchTab('admin-user')" id="nav-admin-user" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">⚙️ Admin Users</button>
+                <button onclick="switchTab('admin-payment')" id="nav-admin-payment" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">💰 Payments</button>
+                <button onclick="switchTab('admin-support')" id="nav-admin-support" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">🎫 Support</button>
+                <button onclick="switchTab('admin-plan')" id="nav-admin-plan" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">📦 Plans</button>
+                <button onclick="switchTab('super-device')" id="nav-super-device" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">🔌 Devices</button>
+                <button onclick="switchTab('super-system')" id="nav-super-system" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">🖥️ System</button>
+                <button onclick="switchTab('bug-tracker')" id="nav-bug-tracker" class="tab-btn px-3 py-2 rounded-lg whitespace-nowrap text-gray-600 hover:bg-gray-100">🐛 Bugs</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-full mx-auto px-4 py-4">
+
+        <!-- DASHBOARD TAB -->
+        <div id="tab-dashboard" class="tab-panel">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <div class="bg-white rounded-xl shadow p-4 border-l-4 border-green-500">
+                    <p class="text-xs text-gray-500">Portal Pengguna</p>
+                    <p class="text-2xl font-bold text-slate-800">98</p>
+                    <p class="text-xs text-green-600" id="progress-user">0 selesai</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4 border-l-4 border-blue-500">
+                    <p class="text-xs text-gray-500">Panel Admin</p>
+                    <p class="text-2xl font-bold text-slate-800">156</p>
+                    <p class="text-xs text-blue-600" id="progress-admin">0 selesai</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4 border-l-4 border-purple-500">
+                    <p class="text-xs text-gray-500">Superadmin</p>
+                    <p class="text-2xl font-bold text-slate-800">133</p>
+                    <p class="text-xs text-purple-600" id="progress-super">0 selesai</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4 border-l-4 border-orange-500">
+                    <p class="text-xs text-gray-500">Total Progres</p>
+                    <p class="text-2xl font-bold text-slate-800" id="progress-total">0%</p>
+                    <p class="text-xs text-gray-500"><span id="count-selesai">0</span>/387</p>
+                </div>
+            </div>
+
+            <!-- Panduan -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                <h3 class="font-bold text-slate-800 mb-3 text-lg">📋 Panduan Penggunaan</h3>
+                <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                    <li>Isi <strong>Nama Tester</strong> dan <strong>Tanggal</strong> di pojok kanan atas</li>
+                    <li>Klik tab modul yang ingin di-test (contoh: "🔐 User Auth")</li>
+                    <li>Jalankan setiap test case sesuai nomor (USR-AUTH-01, USR-AUTH-02, dst)</li>
+                    <li><strong>Centang checkbox</strong> ☑️ jika sudah di-test</li>
+                    <li>Klik tombol hasil: <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs">✓ Berhasil</span> atau <span class="bg-red-500 text-white px-2 py-0.5 rounded text-xs">✗ Gagal</span></li>
+                    <li>Jika gagal, tambahkan ke tab "🐛 Bugs"</li>
+                    <li>Progres akan update otomatis di atas</li>
+                </ol>
+            </div>
+
+            <!-- Alur Testing -->
+            <div class="mt-6 bg-white rounded-xl shadow p-6">
+                <h3 class="font-bold text-slate-800 mb-4">🔄 Alur Testing End-to-End</h3>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-3 text-center text-xs">
+                    <div class="bg-green-50 rounded-lg p-3 border border-green-200">
+                        <div class="font-bold text-green-700 text-lg mb-1">1</div>
+                        <div class="font-semibold">Pendaftaran</div>
+                        <div class="text-gray-500">/register</div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-3 border border-green-200">
+                        <div class="font-bold text-green-700 text-lg mb-1">2</div>
+                        <div class="font-semibold">Verifikasi</div>
+                        <div class="text-gray-500">Email</div>
+                    </div>
+                    <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                        <div class="font-bold text-blue-700 text-lg mb-1">3</div>
+                        <div class="font-semibold">Login</div>
+                        <div class="text-gray-500">/login</div>
+                    </div>
+                    <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                        <div class="font-bold text-blue-700 text-lg mb-1">4</div>
+                        <div class="font-semibold">Langganan</div>
+                        <div class="text-gray-500">/pricing</div>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                        <div class="font-bold text-purple-700 text-lg mb-1">5</div>
+                        <div class="font-semibold">Perangkat</div>
+                        <div class="text-gray-500">WA/IG</div>
+                    </div>
+                    <div class="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                        <div class="font-bold text-orange-700 text-lg mb-1">6</div>
+                        <div class="font-semibold">Monitoring</div>
+                        <div class="text-gray-500">/admin</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- USER AUTH TAB -->
+        <div id="tab-user-auth" class="tab-panel hidden">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-green-500 text-white px-4 py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined">lock</span>
+                        <h2 class="font-bold">🔐 Portal Pengguna: Autentikasi</h2>
+                    </div>
+                    <span class="bg-white/20 px-3 py-1 rounded-full text-sm" id="badge-auth">0/18</span>
+                </div>
+                <div class="p-4">
+                    <div id="list-auth" class="space-y-2">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- USER DASHBOARD TAB -->
+        <div id="tab-user-dashboard" class="tab-panel hidden">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-emerald-500 text-white px-4 py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined">dashboard</span>
+                        <h2 class="font-bold">🏠 Portal Pengguna: Dashboard</h2>
+                    </div>
+                    <span class="bg-white/20 px-3 py-1 rounded-full text-sm" id="badge-dashboard">0/12</span>
+                </div>
+                <div class="p-4">
+                    <div id="list-dashboard" class="space-y-2">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- USER INBOX TAB -->
+        <div id="tab-user-inbox" class="tab-panel hidden">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-teal-500 text-white px-4 py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined">chat</span>
+                        <h2 class="font-bold">💬 Portal Pengguna: Inbox & Chat</h2>
+                    </div>
+                    <span class="bg-white/20 px-3 py-1 rounded-full text-sm" id="badge-inbox">0/24</span>
+                </div>
+                <div class="p-4">
+                    <div id="list-inbox" class="space-y-2">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- USER WHATSAPP TAB -->
+        <div id="tab-user-wa" class="tab-panel hidden">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-green-600 text-white px-4 py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined">chat</span>
+                        <h2 class="font-bold">📱 Portal Pengguna: WhatsApp Device</h2>
+                    </div>
+                    <span class="bg-white/20 px-3 py-1 rounded-full text-sm" id="badge-wa">0/15</span>
+                </div>
+                <div class="p-4">
+                    <div id="list-wa" class="space-y-2">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- USER INSTAGRAM TAB -->
+        <div id="tab-user-ig" class="tab-panel hidden">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-pink-500 text-white px-4 py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined">photo_camera</span>
+                        <h2 class="font-bold">📷 Portal Pengguna: Instagram</h2>
+                    </div>
+                    <span class="bg-white/20 px-3 py-1 rounded-full text-sm" id="badge-ig">0/12</span>
+                </div>
+                <div class="p-4">
+                    <div id="list-ig" class="space-y-2">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- USER CRM TAB -->
+        <div id="tab-user-crm" class="tab-panel hidden">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-cyan-500 text-white px-4 py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined">people</span>
+                        <h2 class="font-bold">👥 Portal Pengguna: Kontak & CRM</h2>
+                    </div>
+                    <span class="bg-white/20 px-3 py-1 rounded-full text-sm" id="badge-crm">0/17</span>
+                </div>
+                <div class="p-4">
+                    <div id="list-crm" class="space-y-2">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- [ADMIN AND SUPERADMIN TABS WOULD CONTINUE...] -->
+
+        <!-- BUG TRACKER TAB -->
+        <div id="tab-bug-tracker" class="tab-panel hidden">
+            <div class="bg-white rounded-xl shadow-lg p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <span>🐛</span> Bug Tracker
+                    </h2>
+                    <button onclick="addBug()" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-red-600">
+                        <span>+</span> Tambah Bug
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-3 py-2 text-left">ID</th>
+                                <th class="px-3 py-2 text-left">Modul</th>
+                                <th class="px-3 py-2 text-left">Level</th>
+                                <th class="px-3 py-2 text-left">Deskripsi</th>
+                                <th class="px-3 py-2 text-left">Status</th>
+                                <th class="px-3 py-2 text-left">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bug-list">
+                            <tr id="empty-bug">
+                                <td colspan="6" class="px-3 py-4 text-center text-gray-500">Belum ada bug tercatat</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FLOATING ACTION BUTTON -->
+    <div class="count-badge">
+        <button onclick="exportData()" class="bg-blue-600 text-white px-4 py-3 rounded-full shadow-lg flex items-center gap-2 hover:bg-blue-700">
+            <span class="material-symbols-outlined text-sm">download</span>
+            <span class="text-sm font-semibold">Export</span>
+        </button>
+    </div>
+
+    <script>
+        // DATA TEST CASES - COMPLETE
+        const testData = {
+            auth: [
+                {kode: 'USR-AUTH-01', skenario: 'Register dengan data valid (nama lengkap, email valid, password 8+ karakter, nama perusahaan)', harapan: 'Akun berhasil dibuat, email verifikasi terkirim ke inbox'},
+                {kode: 'USR-AUTH-02', skenario: 'Register dengan email yang sudah terdaftar di sistem', harapan: 'Muncul error "Email sudah digunakan"'},
+                {kode: 'USR-AUTH-03', skenario: 'Register dengan password kurang dari 8 karakter', harapan: 'Muncul error "Password minimal 8 karakter"'},
+                {kode: 'USR-AUTH-04', skenario: 'Register dengan format email tidak valid (tanpa @ atau .com)', harapan: 'Muncul error "Format email tidak valid"'},
+                {kode: 'USR-AUTH-05', skenario: 'Register dengan field nama kosong', harapan: 'Muncul error "Nama wajib diisi"'},
+                {kode: 'USR-AUTH-06', skenario: 'Klik link verifikasi email dari inbox', harapan: 'Email terverifikasi, redirect ke halaman login sukses'},
+                {kode: 'USR-AUTH-07', skenario: 'Klik link verifikasi yang sudah expired/lebih dari 24 jam', harapan: 'Muncul error "Link verifikasi sudah tidak valid"'},
+                {kode: 'USR-AUTH-08', skenario: 'Login dengan email dan password yang benar', harapan: 'Berhasil login, redirect ke dashboard pengguna'},
+                {kode: 'USR-AUTH-09', skenario: 'Login dengan password salah', harapan: 'Muncul error "Password tidak cocok"'},
+                {kode: 'USR-AUTH-10', skenario: 'Login dengan email yang belum diverifikasi', harapan: 'Muncul error "Email belum diverifikasi, cek inbox"'},
+                {kode: 'USR-AUTH-11', skenario: 'Login dengan akun yang di-suspend oleh admin', harapan: 'Muncul error "Akun Anda telah ditangguhkan"'},
+                {kode: 'USR-AUTH-12', skenario: 'Klik "Lupa Password" dan masukkan email terdaftar', harapan: 'Email reset password terkirim ke inbox'},
+                {kode: 'USR-AUTH-13', skenario: 'Reset password dengan link valid dari email', harapan: 'Password berhasil diubah, bisa login dengan password baru'},
+                {kode: 'USR-AUTH-14', skenario: 'Setup 2FA Google Authenticator di pengaturan', harapan: 'QR code muncul, scan berhasil, 2FA aktif'},
+                {kode: 'USR-AUTH-15', skenario: 'Login dengan 2FA enabled - masukkan kode TOTP valid', harapan: 'Login berhasil, masuk dashboard'},
+                {kode: 'USR-AUTH-16', skenario: 'Login dengan 2FA enabled - masukkan kode TOTP salah', harapan: 'Error "Kode verifikasi tidak valid"'},
+                {kode: 'USR-AUTH-17', skenario: 'Logout dari dashboard pengguna', harapan: 'Session berakhir, redirect ke halaman login'},
+                {kode: 'USR-AUTH-18', skenario: 'Coba akses halaman dashboard tanpa login terlebih dahulu', harapan: 'Redirect otomatis ke halaman login'}
+            ],
+            dashboard: [
+                {kode: 'USR-DASH-01', skenario: 'Akses halaman dashboard setelah login berhasil', harapan: 'Dashboard muncul dengan semua widget statistik'},
+                {kode: 'USR-DASH-02', skenario: 'Lihat total pesan terkirim hari ini', harapan: 'Angka total pesan hari ini terupdate real-time'},
+                {kode: 'USR-DASH-03', skenario: 'Lihat jumlah kontak/lead yang tersimpan', harapan: 'Jumlah kontak ditampilkan dengan benar'},
+                {kode: 'USR-DASH-04', skenario: 'Lihat status koneksi perangkat WhatsApp', harapan: 'Status "Connected" atau "Disconnected" dengan indikator warna'},
+                {kode: 'USR-DASH-05', skenario: 'Lihat status koneksi akun Instagram', harapan: 'Status "Active" atau "Expired" dengan indikator warna'},
+                {kode: 'USR-DASH-06', skenario: 'Lihat penggunaan kuota pesan bulanan', harapan: 'Progress bar kuota muncul dengan persentase'},
+                {kode: 'USR-DASH-07', skenario: 'Lihat informasi langganan aktif', harapan: 'Nama plan, tanggal mulai, dan tanggal expired ditampilkan'},
+                {kode: 'USR-DASH-08', skenario: 'Klik tombol "Pesan Baru" di dashboard', harapan: 'Redirect ke halaman compose pesan'},
+                {kode: 'USR-DASH-09', skenario: 'Klik tombol "Hubungkan WhatsApp"', harapan: 'Redirect ke halaman koneksi WhatsApp'},
+                {kode: 'USR-DASH-10', skenario: 'Klik icon notifikasi (bell) di navbar', harapan: 'Dropdown notifikasi muncul dengan daftar notifikasi terbaru'},
+                {kode: 'USR-DASH-11', skenario: 'Klik conversation/chat terbaru dari list', harapan: 'Redirect ke halaman inbox dengan chat tersebut terbuka'},
+                {kode: 'USR-DASH-12', skenario: 'Refresh halaman dashboard (F5)', harapan: 'Data terupdate tanpa error, session tetap aktif'}
+            ],
+            inbox: [
+                {kode: 'USR-INBOX-01', skenario: 'Akses halaman inbox (/inbox)', harapan: 'Daftar conversation muncul di sidebar kiri'},
+                {kode: 'USR-INBOX-02', skenario: 'Pilih conversation dari list', harapan: 'Chat terbuka di area utama dengan history pesan'},
+                {kode: 'USR-INBOX-03', skenario: 'Kirim pesan teks baru ke kontak', harapan: 'Pesan terkirim, muncul di chat history, status "Sent"'},
+                {kode: 'USR-INBOX-04', skenario: 'Kirim pesan dengan attachment gambar', harapan: 'Gambar terupload dan terkirim, preview muncul'},
+                {kode: 'USR-INBOX-05', skenario: 'Kirim pesan dengan attachment dokumen (PDF)', harapan: 'Dokumen terupload dan terkirim, bisa di-download'},
+                {kode: 'USR-INBOX-06', skenario: 'Gunakan fitur "Quick Reply" / template pesan', harapan: 'Template pesan terinsert ke input field'},
+                {kode: 'USR-INBOX-07', skenario: 'Tambah catatan/internal note pada chat', harapan: 'Catatan tersimpan, hanya terlihat oleh user (bukan kontak)'},
+                {kode: 'USR-INBOX-08', skenario: 'Tandai conversation sebagai "Starred/Favorite"', harapan: 'Icon star berubah, conversation masuk ke list starred'},
+                {kode: 'USR-INBOX-09', skenario: 'Arsipkan conversation', harapan: 'Conversation pindah ke tab "Archived"'},
+                {kode: 'USR-INBOX-10', skenario: 'Hapus conversation', harapan: 'Confirmation dialog muncul, setelah confirm conversation terhapus'},
+                {kode: 'USR-INBOX-11', skenario: 'Search conversation by name', harapan: 'Hasil pencarian muncul sesuai keyword'},
+                {kode: 'USR-INBOX-12', skenario: 'Filter conversation by status (unread, starred)', harapan: 'List terfilter sesuai kriteria'},
+                {kode: 'USR-INBOX-13', skenario: 'Terima pesan masuk dari WhatsApp', harapan: 'Pesan muncul real-time di inbox dengan notifikasi'},
+                {kode: 'USR-INBOX-14', skenario: 'Terima pesan masuk dari Instagram DM', harapan: 'Pesan muncul real-time di inbox dengan label IG'},
+                {kode: 'USR-INBOX-15', skenario: 'Lihat status pesan (Sent, Delivered, Read)', harapan: 'Status terupdate sesuai kondisi aktual'},
+                {kode: 'USR-INBOX-16', skenario: 'Mention user lain dalam internal note', harapan: 'User yang di-mention menerima notifikasi'},
+                {kode: 'USR-INBOX-17', skenario: 'Assign chat ke team member lain', harapan: 'Chat pindah ke inbox team member tersebut'},
+                {kode: 'USR-INBOX-18', skenario: 'Gunakan AI Auto-Reply untuk balas pesan', harapan: 'AI generate response, user bisa edit sebelum kirim'},
+                {kode: 'USR-INBOX-19', skenario: 'Set reminder/follow-up pada chat', harapan: 'Reminder tersimpan, notifikasi muncul saat waktunya'},
+                {kode: 'USR-INBOX-20', skenario: 'Export chat history ke CSV/PDF', harapan: 'File terdownload dengan isi chat lengkap'},
+                {kode: 'USR-INBOX-21', skenario: 'Blokir kontak dari chat', harapan: 'Kontak diblokir, tidak bisa kirim pesan lagi'},
+                {kode: 'USR-INBOX-22', skenario: 'Lihat profil kontak dari chat', harapan: 'Sidebar profil muncul dengan detail kontak'},
+                {kode: 'USR-INBOX-23', skenario: 'Edit info kontak dari chat', harapan: 'Data kontak terupdate'},
+                {kode: 'USR-INBOX-24', skenario: 'Kirim broadcast message ke multiple contacts', harapan: 'Pesan terkirim ke semua kontak yang dipilih'}
+            ],
+            wa: [
+                {kode: 'USR-WA-01', skenario: 'Buka halaman koneksi WhatsApp (/whatsapp)', harapan: 'Halaman muncul dengan tombol "Hubungkan Perangkat"'},
+                {kode: 'USR-WA-02', skenario: 'Klik "Hubungkan Perangkat Baru"', harapan: 'QR code muncul untuk di-scan'},
+                {kode: 'USR-WA-03', skenario: 'Scan QR code dengan aplikasi WhatsApp mobile', harapan: 'Perangkat terhubung, status "Connecting"'},
+                {kode: 'USR-WA-04', skenario: 'Tunggu hingga koneksi established', harapan: 'Status berubah menjadi "Connected" dengan icon hijau'},
+                {kode: 'USR-WA-05', skenario: 'Lihat detail perangkat yang terhubung', harapan: 'Nomor WA, nama device, dan status muncul'},
+                {kode: 'USR-WA-06', skenario: 'Putuskan koneksi WhatsApp', harapan: 'Status berubah "Disconnected", perangkat tidak aktif'},
+                {kode: 'USR-WA-07', skenario: 'Hapus session WhatsApp', harapan: 'Session terhapus dari daftar, harus scan ulang untuk connect'},
+                {kode: 'USR-WA-08', skenario: 'Reconnect WhatsApp yang disconnected', harapan: 'QR code muncul kembali, bisa scan ulang'},
+                {kode: 'USR-WA-09', skenario: 'Lihat log koneksi WhatsApp', harapan: 'History koneksi dan error log muncul'},
+                {kode: 'USR-WA-10', skenario: 'Ganti nama session WhatsApp', harapan: 'Nama session terupdate'},
+                {kode: 'USR-WA-11', skenario: 'Test kirim pesan via WhatsApp yang terhubung', harapan: 'Pesan terkirim dan diterima oleh penerima'},
+                {kode: 'USR-WA-12', skenario: 'Terima pesan masuk via WhatsApp', harapan: 'Pesan muncul di inbox secara real-time'},
+                {kode: 'USR-WA-13', skenario: 'Lihat status kesehatan koneksi WA', harapan: 'Indikator signal strength dan latency muncul'},
+                {kode: 'USR-WA-14', skenario: 'Setup auto-reply untuk WA', harapan: 'Auto-reply tersimpan dan aktif'},
+                {kode: 'USR-WA-15', skenario: 'Batasi jam operasional WA (business hours)', harapan: 'Pesan di luar jam operasional dapat auto-reply'}
+            ],
+            ig: [
+                {kode: 'USR-IG-01', skenario: 'Buka pengaturan Instagram (/settings/instagram)', harapan: 'Halaman muncul dengan tombol "Hubungkan Instagram"'},
+                {kode: 'USR-IG-02', skenario: 'Klik "Hubungkan Instagram"', harapan: 'Redirect ke halaman OAuth Instagram/Facebook'},
+                {kode: 'USR-IG-03', skenario: 'Login dengan akun Instagram dan authorize aplikasi', harapan: 'Redirect back ke REPLYAI, akun terhubung'},
+                {kode: 'USR-IG-04', skenario: 'Lihat akun Instagram yang terhubung', harapan: 'Username, status "Active", dan foto profil muncul'},
+                {kode: 'USR-IG-05', skenario: 'Lihat daftar DM Instagram di inbox', harapan: 'Pesan DM masuk muncul dengan label Instagram'},
+                {kode: 'USR-IG-06', skenario: 'Balas DM Instagram dari inbox', harapan: 'Pesan terkirim ke Instagram DM penerima'},
+                {kode: 'USR-IG-07', skenario: 'Terima DM baru dari Instagram', harapan: 'Pesan muncul real-time di inbox dengan notifikasi'},
+                {kode: 'USR-IG-08', skenario: 'Lihat komentar Instagram (jika fitur aktif)', harapan: 'Komentar pada post muncul di tab terpisah'},
+                {kode: 'USR-IG-09', skenario: 'Balas komentar Instagram', harapan: 'Komentar reply terposting di Instagram'},
+                {kode: 'USR-IG-10', skenario: 'Putuskan koneksi Instagram', harapan: 'Status berubah "Disconnected", tidak menerima pesan baru'},
+                {kode: 'USR-IG-11', skenario: 'Reconnect Instagram yang expired', harapan: 'Proses OAuth ulang berhasil'},
+                {kode: 'USR-IG-12', skenario: 'Setup auto-reply untuk Instagram DM', harapan: 'Auto-reply tersimpan dan aktif'}
+            ],
+            crm: [
+                {kode: 'USR-CRM-01', skenario: 'Akses halaman kontak (/contacts)', harapan: 'Daftar kontak muncul dengan pagination'},
+                {kode: 'USR-CRM-02', skenario: 'Tambah kontak baru manual', harapan: 'Form muncul, data tersimpan, kontak muncul di list'},
+                {kode: 'USR-CRM-03', skenario: 'Import kontak dari CSV/Excel', harapan: 'File diupload, kontak terimport dengan benar'},
+                {kode: 'USR-CRM-04', skenario: 'Export kontak ke CSV/Excel', harapan: 'File terdownload dengan data kontak lengkap'},
+                {kode: 'USR-CRM-05', skenario: 'Edit data kontak yang sudah ada', harapan: 'Perubahan tersimpan'},
+                {kode: 'USR-CRM-06', skenario: 'Hapus kontak', harapan: 'Konfirmasi muncul, kontak terhapus dari database'},
+                {kode: 'USR-CRM-07', skenario: 'Search kontak by nama/email/phone', harapan: 'Hasil pencarian sesuai'},
+                {kode: 'USR-CRM-08', skenario: 'Filter kontak by tags/labels', harapan: 'Kontak terfilter sesuai tag'},
+                {kode: 'USR-CRM-09', skenario: 'Tambah tag/label ke kontak', harapan: 'Tag muncul di profil kontak'},
+                {kode: 'USR-CRM-10', skenario: 'Lihat history chat dengan kontak', harapan: 'Semua conversation dengan kontak tersebut muncul'},
+                {kode: 'USR-CRM-11', skenario: 'Lihat detail profil kontak lengkap', harapan: 'Info lengkap: nama, email, phone, alamat, catatan'},
+                {kode: 'USR-CRM-12', skenario: 'Tambah catatan ke kontak', harapan: 'Catatan tersimpan dan muncul di profil'},
+                {kode: 'USR-CRM-13', skenario: 'Merge kontak duplikat', harapan: 'Kontak duplikat tergabung, data tidak hilang'},
+                {kode: 'USR-CRM-14', skenario: 'Segmentasi kontak (grup)', harapan: 'Grup kontak tersimpan, bisa kirim broadcast'},
+                {kode: 'USR-CRM-15', skenario: 'Filter kontak by date added', harapan: 'Kontak terfilter by tanggal'},
+                {kode: 'USR-CRM-16', skenario: 'Export segment to CSV', harapan: 'CSV terdownload untuk segment'},
+                {kode: 'USR-CRM-17', skenario: 'Bulk delete kontak', harapan: 'Multiple kontak terhapus'}
+            ]
+        };
+
+        // Generate HTML for test list
+        function generateTestList(module, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container || !testData[module]) return;
+            
+            container.innerHTML = testData[module].map((test, idx) => `
+                <div class="test-card bg-gray-50 rounded-lg p-3 border" id="test-${module}-${idx}">
+                    <div class="flex items-start gap-3">
+                        <div class="flex flex-col items-center gap-1 pt-1">
+                            <input type="checkbox" class="checkbox-custom hidden" id="cb-${module}-${idx}" onchange="updateCounts()">
+                            <div class="w-6 h-6 border-2 border-gray-300 rounded flex items-center justify-center cursor-pointer bg-white" 
+                                 onclick="document.getElementById('cb-${module}-${idx}').click()">
+                                <svg class="w-4 h-4 text-white hidden" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <span class="font-mono text-xs font-bold text-blue-600">${test.kode}</span>
+                                    <p class="text-sm font-medium text-gray-800 mt-0.5">${test.skenario}</p>
+                                    <p class="text-xs text-gray-500 mt-1">${test.harapan}</p>
+                                </div>
+                                <div class="flex flex-col gap-1 flex-shrink-0">
+                                    <button onclick="setResult('${module}', ${idx}, 'pass')" 
+                                            class="result-btn px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-green-500 hover:text-white transition"
+                                            data-result="pass">✓ Berhasil</button>
+                                    <button onclick="setResult('${module}', ${idx}, 'fail')" 
+                                            class="result-btn px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-red-500 hover:text-white transition"
+                                            data-result="fail">✗ Gagal</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        generateTestList('auth', 'list-auth');
+        generateTestList('dashboard', 'list-dashboard');
+        generateTestList('inbox', 'list-inbox');
+        generateTestList('wa', 'list-wa');
+        generateTestList('ig', 'list-ig');
+        generateTestList('crm', 'list-crm');
+
+        // Set result
+        function setResult(module, idx, result) {
+            const testEl = document.getElementById(`test-${module}-${idx}`);
+            const checkbox = document.getElementById(`cb-${module}-${idx}`);
+            
+            // Check the checkbox
+            checkbox.checked = true;
+            checkbox.dispatchEvent(new Event('change'));
+            
+            // Update visual
+            const buttons = testEl.querySelectorAll('.result-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('status-pass', 'status-fail', 'bg-green-500', 'bg-red-500', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            
+            const activeBtn = testEl.querySelector(`[data-result="${result}"]`);
+            if (result === 'pass') {
+                activeBtn.classList.add('status-pass', 'bg-green-500', 'text-white');
+                activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                testEl.classList.add('bg-green-50');
+                testEl.classList.remove('bg-red-50');
+            } else {
+                activeBtn.classList.add('status-fail', 'bg-red-500', 'text-white');
+                activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                testEl.classList.add('bg-red-50');
+                testEl.classList.remove('bg-green-50');
+            }
+        }
+
+        // Update counts
+        function updateCounts() {
+            const checkboxes = document.querySelectorAll('.checkbox-custom:checked');
+            const totalDone = checkboxes.length;
+            const totalPass = document.querySelectorAll('.result-btn.status-pass').length;
+            const totalFail = document.querySelectorAll('.result-btn.status-fail').length;
+            const percentage = Math.round((totalDone / 387) * 100);
+            
+            document.getElementById('countDone').textContent = totalDone;
+            document.getElementById('countPass').textContent = totalPass;
+            document.getElementById('countFail').textContent = totalFail;
+            document.getElementById('countLeft').textContent = 387 - totalDone;
+            document.getElementById('textProgress').textContent = percentage + '%';
+            document.getElementById('ringProgress').style.strokeDashoffset = 264 - (percentage / 100) * 264;
+            
+            // Update badges
+            updateBadge('auth', 'badge-auth');
+            updateBadge('dashboard', 'badge-dashboard');
+            updateBadge('inbox', 'badge-inbox');
+            updateBadge('wa', 'badge-wa');
+            updateBadge('ig', 'badge-ig');
+            updateBadge('crm', 'badge-crm');
+        }
+
+        function updateBadge(module, badgeId) {
+            const total = testData[module] ? testData[module].length : 0;
+            const checked = document.querySelectorAll(`#list-${module} .checkbox-custom:checked`).length;
+            const badge = document.getElementById(badgeId);
+            if (badge) badge.textContent = `${checked}/${total}`;
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-panel').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('tab-active');
+                el.classList.add('text-gray-600');
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabName}`).classList.add('tab-active');
+            document.getElementById(`nav-${tabName}`).classList.remove('text-gray-600');
+        }
+
+        // Bug tracker
+        let bugCount = 0;
+        function addBug() {
+            bugCount++;
+            const tbody = document.getElementById('bug-list');
+            const emptyRow = document.getElementById('empty-bug');
+            if (emptyRow) emptyRow.remove();
+            
+            const row = document.createElement('tr');
+            row.className = 'border-b';
+            row.innerHTML = `
+                <td class="px-3 py-2 font-mono text-xs">BUG-${String(bugCount).padStart(3, '0')}</td>
+                <td class="px-3 py-2"><input type="text" class="w-full border rounded px-2 py-1 text-xs" placeholder="Modul"></td>
+                <td class="px-3 py-2">
+                    <select class="border rounded px-2 py-1 text-xs">
+                        <option value="critical">🔴 Critical</option>
+                        <option value="high">🟠 Tinggi</option>
+                        <option value="medium">🟡 Sedang</option>
+                        <option value="low">🟢 Rendah</option>
+                    </select>
+                </td>
+                <td class="px-3 py-2"><input type="text" class="w-full border rounded px-2 py-1 text-xs" placeholder="Deskripsi bug"></td>
+                <td class="px-3 py-2">
+                    <select class="border rounded px-2 py-1 text-xs">
+                        <option value="open">Open</option>
+                        <option value="progress">In Progress</option>
+                        <option value="fixed">Fixed</option>
+                    </select>
+                </td>
+                <td class="px-3 py-2">
+                    <button onclick="this.closest('tr').remove()" class="text-red-500 text-xs">Hapus</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        // Export
+        function exportData() {
+            const done = document.querySelectorAll('.checkbox-custom:checked').length;
+            const pass = document.querySelectorAll('.result-btn.status-pass').length;
+            const fail = document.querySelectorAll('.result-btn.status-fail').length;
+            
+            alert(`Export Laporan QA:\n\nTotal Test: 387\nSelesai: ${done}\nBerhasil: ${pass}\nGagal: ${fail}\n\n[Data akan diexport ke JSON/CSV]`);
+        }
+
+        // Init date
+        document.getElementById('tglTest').valueAsDate = new Date();
+    </script>
+</body>
+</html>

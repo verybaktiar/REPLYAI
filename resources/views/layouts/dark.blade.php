@@ -24,7 +24,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     
     <!-- Tailwind & App JS -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('build/assets/app-fDSZ1D-r.css') }}" />
+    <script type="module" src="{{ asset('build/assets/app-C4lgtJz4.js') }}"></script>
     
     <style>
         ::-webkit-scrollbar { width: 6px; }
@@ -65,6 +66,17 @@
                 </div>
                 
                 <div class="flex items-center gap-4">
+                    <!-- 💳 Pending Payment Badge -->
+                    @if(isset($pendingPaymentCount) && $pendingPaymentCount > 0)
+                    <a href="{{ route('checkout.payment', $pendingPayment->invoice_number) }}" 
+                       class="relative flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 rounded-full transition group"
+                       title="Klik untuk melihat detail pembayaran">
+                        <span class="material-symbols-outlined text-[18px] text-yellow-400">payments</span>
+                        <span class="text-xs font-bold text-yellow-400">{{ $pendingPaymentCount }} Pending</span>
+                        <span class="absolute -top-1 -right-1 size-3 bg-red-500 rounded-full animate-pulse"></span>
+                    </a>
+                    @endif
+                    
                     <!-- Notifications (Announcements) -->
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="relative size-9 rounded-full bg-surface-dark border border-border-dark flex items-center justify-center text-text-secondary hover:text-white transition group">
@@ -135,6 +147,65 @@
             <!-- Scrollable Content -->
             <div class="flex-1 overflow-y-auto p-4 lg:p-10 pb-24 lg:pb-10 pt-24 lg:pt-10 scroll-smooth custom-scrollbar {{ session()->has('impersonating_from_admin') ? 'mt-11' : '' }}">
                 <div class="max-w-7xl mx-auto">
+                    
+                    <!-- 💳 Pending Payment Alert -->
+                    @if(isset($pendingPayment) && $pendingPayment)
+                    <div class="mb-6 bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-red-500/10 border border-yellow-500/30 rounded-2xl p-4 lg:p-5">
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div class="flex items-start gap-4">
+                                <div class="size-12 lg:size-14 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-2xl lg:text-3xl text-yellow-400">payments</span>
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-bold text-base lg:text-lg mb-1">
+                                        Pembayaran Menunggu
+                                    </h3>
+                                    <p class="text-text-secondary text-sm mb-2">
+                                        Anda memiliki invoice <span class="font-mono text-yellow-400">{{ $pendingPayment->invoice_number }}</span> 
+                                        untuk paket <span class="font-semibold text-white">{{ $pendingPayment->plan->name ?? 'Unknown' }}</span>
+                                    </p>
+                                    <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400">
+                                        <span class="flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[14px]">schedule</span>
+                                            Expires {{ $pendingPayment->expires_at->diffForHumans() }}
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[14px]">payments</span>
+                                            Rp {{ number_format($pendingPayment->total, 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <a href="{{ route('checkout.payment', $pendingPayment->invoice_number) }}" 
+                                   class="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-sm rounded-xl transition flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[18px]">payment</span>
+                                    Bayar Sekarang
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress bar showing time remaining -->
+                        @php
+                            $totalHours = 24;
+                            $elapsedHours = $pendingPayment->created_at->diffInHours(now());
+                            $remainingPercent = max(0, 100 - ($elapsedHours / $totalHours * 100));
+                            $barColor = $remainingPercent > 50 ? 'bg-yellow-400' : ($remainingPercent > 25 ? 'bg-orange-400' : 'bg-red-400');
+                        @endphp
+                        <div class="mt-4 pt-4 border-t border-yellow-500/20">
+                            <div class="flex items-center justify-between text-xs mb-2">
+                                <span class="text-slate-400">Waktu tersisa</span>
+                                <span class="{{ $remainingPercent > 25 ? 'text-yellow-400' : 'text-red-400' }} font-bold">
+                                    {{ $pendingPayment->expires_at->diffForHumans(['parts' => 2]) }}
+                                </span>
+                            </div>
+                            <div class="h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
+                                <div class="h-full {{ $barColor }} transition-all duration-500" style="width: {{ $remainingPercent }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                    
                     @yield('content')
                 </div>
             </div>

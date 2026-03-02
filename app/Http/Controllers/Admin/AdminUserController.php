@@ -125,9 +125,25 @@ class AdminUserController extends Controller
 
     /**
      * Toggle VIP status user
+     * 
+     * SECURITY: Superadmin only
      */
     public function toggleVip(User $user)
     {
+        $admin = Auth::guard('admin')->user();
+        
+        // Authorization check - defense in depth
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_vip_toggle_attempt',
+                "Attempted to toggle VIP status without superadmin privilege",
+                ['user_id' => $user->id, 'user_email' => $user->email],
+                $user,
+                7
+            );
+            abort(403, 'Only superadmin can modify VIP status.');
+        }
         $oldStatus = $user->is_vip;
         $user->is_vip = !$user->is_vip;
         $user->save();
@@ -154,9 +170,25 @@ class AdminUserController extends Controller
 
     /**
      * Toggle verification status user (verify/unverify manually)
+     * 
+     * SECURITY: Superadmin only
      */
     public function toggleVerify(User $user)
     {
+        $admin = Auth::guard('admin')->user();
+        
+        // Authorization check - defense in depth
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_verify_toggle_attempt',
+                "Attempted to toggle verification status without superadmin privilege",
+                ['user_id' => $user->id, 'user_email' => $user->email],
+                $user,
+                7
+            );
+            abort(403, 'Only superadmin can modify verification status.');
+        }
         $wasVerified = $user->email_verified_at !== null;
         
         if ($wasVerified) {
@@ -191,9 +223,26 @@ class AdminUserController extends Controller
 
     /**
      * Suspend a user
+     * 
+     * SECURITY: Superadmin only
      */
     public function suspend(User $user): RedirectResponse
     {
+        $admin = Auth::guard('admin')->user();
+        
+        // Authorization check - defense in depth
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_suspend_attempt',
+                "Attempted to suspend user without superadmin privilege",
+                ['user_id' => $user->id, 'user_email' => $user->email],
+                $user,
+                8
+            );
+            abort(403, 'Only superadmin can suspend users.');
+        }
+        
         if ($user->is_admin) {
             return back()->with('error', 'Tidak bisa suspend admin');
         }
@@ -209,9 +258,25 @@ class AdminUserController extends Controller
 
     /**
      * Activate a suspended user
+     * 
+     * SECURITY: Superadmin only
      */
     public function activate(User $user): RedirectResponse
     {
+        $admin = Auth::guard('admin')->user();
+        
+        // Authorization check - defense in depth
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_activate_attempt',
+                "Attempted to activate user without superadmin privilege",
+                ['user_id' => $user->id, 'user_email' => $user->email],
+                $user,
+                7
+            );
+            abort(403, 'Only superadmin can activate users.');
+        }
         $user->update(['is_suspended' => false]);
 
         // Log to both systems for compatibility
@@ -223,9 +288,25 @@ class AdminUserController extends Controller
 
     /**
      * Assign subscription manual ke user
+     * 
+     * SECURITY: Superadmin only - Revenue impact
      */
     public function assignSubscription(Request $request, User $user)
     {
+        $admin = Auth::guard('admin')->user();
+        
+        // Authorization check - defense in depth
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_subscription_assign_attempt',
+                "Attempted to assign subscription without superadmin privilege",
+                ['user_id' => $user->id, 'plan_id' => $request->plan_id],
+                $user,
+                8
+            );
+            abort(403, 'Only superadmin can assign subscriptions.');
+        }
         $request->validate([
             'plan_id' => 'required|exists:plans,id',
             'duration_months' => 'required|integer|min:1|max:24',
@@ -282,9 +363,25 @@ class AdminUserController extends Controller
 
     /**
      * Reset usage records user
+     * 
+     * SECURITY: Superadmin only
      */
     public function resetUsage(User $user)
     {
+        $admin = Auth::guard('admin')->user();
+        
+        // Authorization check - defense in depth
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_reset_usage_attempt',
+                "Attempted to reset usage without superadmin privilege",
+                ['user_id' => $user->id, 'user_email' => $user->email],
+                $user,
+                6
+            );
+            abort(403, 'Only superadmin can reset usage records.');
+        }
         // Cek apakah UsageRecord model ada
         if (class_exists(\App\Models\UsageRecord::class)) {
             \App\Models\UsageRecord::where('user_id', $user->id)->delete();
@@ -394,6 +491,21 @@ class AdminUserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
+        $admin = Auth::guard('admin')->user();
+        
+        // Authorization check - defense in depth
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_delete_attempt',
+                "Attempted to delete user without superadmin privilege",
+                ['user_id' => $user->id, 'user_email' => $user->email],
+                $user,
+                9 // Critical risk score
+            );
+            abort(403, 'Only superadmin can delete users.');
+        }
+        
         $userName = $user->name;
         $userId = $user->id;
 
@@ -436,14 +548,31 @@ class AdminUserController extends Controller
 
     /**
      * Impersonate user (login sebagai user)
+     * 
+     * SECURITY: Superadmin only - High privilege escalation risk
      */
     public function impersonate(User $user): RedirectResponse
     {
+        $admin = Auth::guard('admin')->user();
+        
+        // Extra authorization check - defense in depth
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_impersonate_attempt',
+                "Attempted to impersonate user without superadmin privilege",
+                ['user_id' => $user->id, 'user_email' => $user->email],
+                $user,
+                9 // Critical risk score
+            );
+            abort(403, 'Only superadmin can impersonate users.');
+        }
+        
         // DEBUG LOG
         \Log::info("Impersonate Request", [
             'target_user_id' => $user->id,
             'target_user_email' => $user->email,
-            'admin_id' => Auth::guard('admin')->id()
+            'admin_id' => $admin->getKey()
         ]);
 
         // Get admin ID before switching auth

@@ -16,7 +16,8 @@ class AutoReplyRuleController extends Controller
 {
     public function index()
     {
-        $rules = AutoReplyRule::orderByDesc('is_active')
+        $rules = AutoReplyRule::where('user_id', auth()->id())
+            ->orderByDesc('is_active')
             ->orderByDesc('priority')
             ->latest()
             ->get();
@@ -37,6 +38,7 @@ class AutoReplyRuleController extends Controller
         ]);
 
         $validated['is_active'] = $validated['is_active'] ?? true;
+        $validated['user_id'] = auth()->id();
 
         $rule = AutoReplyRule::create($validated);
 
@@ -57,6 +59,8 @@ class AutoReplyRuleController extends Controller
 
     public function updateAjax(Request $request, AutoReplyRule $rule)
     {
+        $this->authorize('update', $rule);
+        
         $validated = $request->validate([
             'trigger_keyword'   => ['required', 'string', 'max:255'],
             'response_text'     => ['required', 'string'],
@@ -85,6 +89,8 @@ class AutoReplyRuleController extends Controller
 
     public function destroyAjax(AutoReplyRule $rule)
     {
+        $this->authorize('delete', $rule);
+        
         $id = $rule->id;
         ActivityLogService::logDeleted($rule, "Menghapus aturan bot: {$rule->trigger_keyword}");
         $rule->delete();
@@ -113,6 +119,7 @@ class AutoReplyRuleController extends Controller
         ]);
 
         $rule = AutoReplyRule::create([
+            'user_id' => auth()->id(),
             'name' => $request->name,
             'trigger_keyword' => strtolower(trim($request->trigger_keyword)),
             'response_text' => $request->response_text,
@@ -127,6 +134,8 @@ class AutoReplyRuleController extends Controller
 
     public function edit(AutoReplyRule $rule)
     {
+        $this->authorize('view', $rule);
+        
         return view('pages.rules.edit', [
             'title' => 'Edit Rule',
             'rule' => $rule
@@ -135,6 +144,8 @@ class AutoReplyRuleController extends Controller
 
     public function update(Request $request, AutoReplyRule $rule)
     {
+        $this->authorize('update', $rule);
+        
         $request->validate([
             'name' => 'required|string',
             'trigger_keyword' => 'required|string',
@@ -155,6 +166,8 @@ class AutoReplyRuleController extends Controller
 
     public function destroy(AutoReplyRule $rule)
     {
+        $this->authorize('delete', $rule);
+        
         ActivityLogService::logDeleted($rule, "Menghapus aturan bot: " . ($rule->name ?? $rule->trigger_keyword));
         $rule->delete();
         return redirect()->route('rules.index')->with('success', 'Rule dihapus');
@@ -162,6 +175,8 @@ class AutoReplyRuleController extends Controller
 
     public function toggle(AutoReplyRule $rule)
     {
+        $this->authorize('update', $rule);
+        
         $rule->is_active = !$rule->is_active;
         $rule->save();
 
@@ -172,6 +187,8 @@ class AutoReplyRuleController extends Controller
  
     public function toggleAjax(AutoReplyRule $rule)
     {
+        $this->authorize('update', $rule);
+        
         $rule->is_active = ! $rule->is_active;
         $rule->save();
 

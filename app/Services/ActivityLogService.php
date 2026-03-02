@@ -28,7 +28,7 @@ class ActivityLogService
             'action' => $action,
             'description' => $description,
             'model_type' => $subject ? get_class($subject) : null,
-            'model_id' => $subject?->id,
+            'model_id' => $subject?->getKey() ?? null,
             'properties' => $properties,
             'ip_address' => Request::ip(),
             'user_agent' => Request::userAgent(),

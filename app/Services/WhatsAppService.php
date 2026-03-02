@@ -224,7 +224,7 @@ class WhatsAppService
                 'phone_number' => $phoneNumber,
                 'push_name' => $data['pushName'] ?? null,
                 'direction' => ($data['fromMe'] ?? false) ? 'outgoing' : 'incoming',
-                'message' => $data['message'],
+                'message' => $data['message'] ?? ($data['caption'] ?? ''),
                 'message_type' => $data['messageType'] ?? 'text',
                 'status' => 'read',
                 'user_id' => $userId,
@@ -234,7 +234,64 @@ class WhatsAppService
             ]
         );
 
+        // Store media record if message contains media
+        $this->storeMediaIfPresent($data, $message, $userId);
+
         return $message;
+    }
+
+    /**
+     * Store media record if message contains media
+     */
+    protected function storeMediaIfPresent(array $data, WaMessage $message, ?int $userId): void
+    {
+        if (!$userId) {
+            return;
+        }
+
+        // Check for media in different formats from webhook
+        $mediaUrl = $data['mediaUrl'] ?? $data['media_url'] ?? $data['fileUrl'] ?? $data['url'] ?? null;
+        $mimeType = $data['mimeType'] ?? $data['mime_type'] ?? 'application/octet-stream';
+        $filename = $data['filename'] ?? $data['fileName'] ?? ($data['messageType'] ?? 'file') . '_' . time();
+        $fileSize = $data['fileSize'] ?? $data['size'] ?? $data['file_length'] ?? null;
+
+        if (!$mediaUrl) {
+            return;
+        }
+
+        // Get or create conversation
+        $conversation = \App\Models\WaConversation::firstOrCreate(
+            ['phone_number' => $message->phone_number, 'user_id' => $userId],
+            [
+                'display_name' => $message->push_name ?? 'Unknown',
+                'session_status' => \App\Models\WaConversation::SESSION_ACTIVE,
+                'status' => \App\Models\WaConversation::STATUS_BOT_ACTIVE,
+            ]
+        );
+
+        // Use ChatMediaController to store media
+        \App\Http\Controllers\ChatMediaController::storeFromWebhook(
+            'whatsapp',
+            $conversation->id,
+            $message->id,
+            WaMessage::class,
+            [
+                'url' => $mediaUrl,
+                'mime_type' => $mimeType,
+                'filename' => $filename,
+                'size' => $fileSize,
+                'width' => $data['width'] ?? null,
+                'height' => $data['height'] ?? null,
+                'duration' => $data['duration'] ?? null,
+            ],
+            $userId
+        );
+
+        Log::info('WhatsApp media saved', [
+            'message_id' => $message->id,
+            'type' => $data['messageType'] ?? 'unknown',
+            'filename' => $filename,
+        ]);
     }
 
     /**
@@ -260,6 +317,7 @@ class WhatsAppService
         // Map Node status to DB status
         $dbStatus = match($status) {
             'waiting_qr' => 'scanning',
+            'initializing' => 'scanning',
             'connected' => 'connected',
             'disconnected' => 'disconnected',
             default => 'unknown'

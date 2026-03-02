@@ -3,6 +3,11 @@
 @section('title', 'Detail User')
 @section('page_title', 'Detail User')
 
+@php
+    $adminUser = Auth::guard('admin')->user();
+    $isSuperAdmin = $adminUser->isSuperAdmin();
+@endphp
+
 @section('content')
 
 <a href="{{ route('admin.users.index') }}" class="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6">
@@ -38,14 +43,17 @@
                         @endif
                     </div>
                 </div>
+                @if($isSuperAdmin)
                 <a href="{{ route('admin.users.edit', $user) }}" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-medium transition">
                     <span class="material-symbols-outlined align-middle mr-1">edit</span>
                     Edit
                 </a>
+                @endif
             </div>
 
-            <!-- Quick Actions -->
-            <div class="flex gap-3 pt-4 border-t border-slate-800">
+            @if($isSuperAdmin)
+            <!-- Quick Actions - Superadmin Only -->
+            <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-800">
                 <form action="{{ route('admin.users.toggle-vip', $user) }}" method="POST">
                     @csrf
                     @method('PATCH')
@@ -88,6 +96,13 @@
                     </button>
                 </form>
             </div>
+            @else
+            {{-- Read-only notice for non-superadmin --}}
+            <div class="flex items-center gap-2 pt-4 border-t border-slate-800 text-slate-500 text-sm">
+                <span class="material-symbols-outlined">info</span>
+                <span>Anda memiliki akses view-only untuk user ini.</span>
+            </div>
+            @endif
         </div>
 
         <!-- Payment History -->
@@ -132,7 +147,8 @@
             </div>
             @endif
 
-            <!-- Assign Subscription Form -->
+            @if($isSuperAdmin)
+            <!-- Assign Subscription Form - Superadmin Only -->
             <form action="{{ route('admin.users.assign-subscription', $user) }}" method="POST">
                 @csrf
                 <h4 class="text-sm font-medium mb-3">Assign Subscription Manual</h4>
@@ -155,6 +171,7 @@
                     </button>
                 </div>
             </form>
+            @endif
         </div>
     </div>
 </div>

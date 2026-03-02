@@ -9,6 +9,11 @@
             <div class="mb-8">
                 <h1 class="text-2xl font-bold text-white mb-2">{{ __('instagram.title') }}</h1>
                 <p class="text-gray-400">{{ __('instagram.subtitle') }}</p>
+                @include('components.page-help', [
+                    'title' => 'Pengaturan Instagram',
+                    'description' => 'Hubungkan dan konfigurasi akun Instagram bisnis Anda.',
+                    'tips' => ['Klik "Hubungkan Instagram" untuk login', 'Pilih akun bisnis yang ingin dihubungkan', 'Aktifkan auto-reply untuk respons otomatis', 'Cek status koneksi secara berkala']
+                ])
             </div>
 
             <!-- Flash Messages -->

@@ -98,8 +98,15 @@ class AnalyticsController extends Controller
      */
     public function resolveMissedQuery(Request $request, KbMissedQuery $query)
     {
+        \Log::info('resolveMissedQuery called', [
+            'query_id' => $query->id,
+            'user_id' => Auth::id(),
+            'request_data' => $request->all()
+        ]);
+        
         // Authorization check
         if ($query->user_id !== Auth::id()) {
+            \Log::warning('Unauthorized resolve attempt', ['query_user' => $query->user_id, 'auth_user' => Auth::id()]);
             abort(403);
         }
         
@@ -116,19 +123,35 @@ class AnalyticsController extends Controller
         // Optionally: Create training suggestion from this resolved query
         // This could feed into a future ML training pipeline
         
+        // Return JSON if AJAX request
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Query marked as resolved. Article linked successfully.'
+            ]);
+        }
+        
         return redirect()->back()->with('success', 'Query marked as resolved. Article linked successfully.');
     }
 
     /**
      * Ignore a missed query
      */
-    public function ignoreMissedQuery(KbMissedQuery $query)
+    public function ignoreMissedQuery(Request $request, KbMissedQuery $query)
     {
         if ($query->user_id !== Auth::id()) {
             abort(403);
         }
         
         $query->update(['status' => 'ignored']);
+        
+        // Return JSON if AJAX request
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Query ignored.'
+            ]);
+        }
         
         return redirect()->back()->with('success', 'Query ignored.');
     }

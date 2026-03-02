@@ -402,6 +402,16 @@
                         <span class="material-symbols-outlined" style="font-size: 18px;">refresh</span>
                     </button>
                     
+                    @if($selectedId)
+                    <!-- Media Gallery Button -->
+                    @include('components.chat.media-gallery', [
+                        'conversationType' => 'instagram',
+                        'conversationId' => $selectedId,
+                        'triggerLabel' => 'Media',
+                        'triggerIcon' => 'photo_library'
+                    ])
+                    @endif
+                    
                     <!-- Toggle Detail Panel Button -->
                     <button onclick="toggleDetailPanel()" class="hidden xl:flex p-1.5 lg:p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors" title="Toggle Detail Panel" id="toggle-panel-btn">
                         <span class="material-symbols-outlined" style="font-size: 18px;">right_panel_open</span>
@@ -520,7 +530,7 @@
                                             ? 'bg-[#135bec] text-white rounded-tr-none' 
                                             : 'bg-[#2a3446] text-slate-200 rounded-tl-none border border-white/5' 
                                         }}">
-                                        {!! $content !!}
+                                        {!! \App\Helpers\SecurityHelper::sanitizeWhatsAppMessage($content) !!}
                                     </div>
                                     
                                     <!-- Hover Actions (Reactions) -->

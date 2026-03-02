@@ -62,7 +62,11 @@ class WhatsAppWebhookController extends Controller
         // Get or create conversation and track user reply time
         $waConversation = WaConversation::firstOrCreate(
             ['phone_number' => $message->phone_number, 'user_id' => $message->user_id],
-            ['display_name' => $message->push_name, 'session_status' => WaConversation::SESSION_ACTIVE]
+            [
+                'display_name' => $message->push_name, 
+                'session_status' => WaConversation::SESSION_ACTIVE,
+                'status' => WaConversation::STATUS_BOT_ACTIVE,
+            ]
         );
         
         // Update last user reply time
@@ -158,11 +162,6 @@ class WhatsAppWebhookController extends Controller
     protected function processAutoReply(WaMessage $message, string $sessionId): void
     {
         try {
-            Log::info('🚀 processAutoReply START', [
-                'session_id' => $sessionId,
-                'message_id' => $message->id ?? 'null',
-                'phone' => $message->phone_number ?? 'null',
-            ]);
             // Fetch device to get its assigned business profile
             $device = WhatsAppDevice::with('businessProfile')
                 ->where('session_id', $sessionId)
@@ -170,18 +169,12 @@ class WhatsAppWebhookController extends Controller
             
             Log::info('Debug AutoReply Context', [
                 'session_id' => $sessionId,
-                'device_id' => $device?->id ?? 'null',
-                'device_user_id' => $device?->user_id ?? 'null',
-                'message_from' => $message->phone_number ?? 'null',
+                'device_id' => $device?->id,
+                'device_user_id' => $device?->user_id,
+                'message_from' => $message->phone_number
             ]);
 
-            // Safety check: If no device found, we cannot proceed
-            if (!$device) {
-                Log::warning('No WhatsApp device found for session', ['session_id' => $sessionId]);
-                return;
-            }
-
-            $businessProfile = $device->businessProfile;
+            $businessProfile = $device?->businessProfile;
 
             // Fallback: If device has no profile assigned, try to find one for the device's owner
             if (!$businessProfile && $device && $device->user_id) {
@@ -191,7 +184,7 @@ class WhatsAppWebhookController extends Controller
                     ->first();
                  
                  if ($businessProfile) {
-                     Log::info('Found BusinessProfile via UserID fallback', ['user_id' => $device->user_id, 'profile_id' => $businessProfile?->id]);
+                     Log::info('Found BusinessProfile via UserID fallback', ['user_id' => $device->user_id, 'profile_id' => $businessProfile->id]);
                  }
             }
             
@@ -230,13 +223,13 @@ class WhatsAppWebhookController extends Controller
                 $message->message, 
                 $conversationHistory, 
                 $businessProfile,
-                $device->user_id
+                $device?->user_id
             );
 
             Log::info('Debug AI Result', [
                 'has_answer' => !empty($aiResult['answer']),
                 'source' => $aiResult['source'] ?? 'unknown',
-                'user_id_used' => $device->user_id
+                'user_id_used' => $device?->user_id
             ]);
             
             if ($aiResult && !empty($aiResult['answer'])) {
@@ -265,30 +258,28 @@ class WhatsAppWebhookController extends Controller
                     ]);
 
                     // ALERT SYSTEM: Notify Admin if sentiment is frustrated
-                    if ($businessProfile) {
-                        $notifSettings = $businessProfile->notification_settings ?? [];
-                        if (($aiResult['sentiment'] ?? '') === 'frustrated' && 
-                            $businessProfile->admin_phone && 
-                            ($notifSettings['notify_frustrated'] ?? false)) {
-                            
-                            $alertMsg = "⚠️ *PERINGATAN SENTIMEN NEGATIF*\n\n" .
-                                        "Customer: *{$message->push_name}* (+{$message->phone_number})\n" .
-                                        "Pesan: _\"{$message->message}\"_\n\n" .
-                                        "Mohon segera cek dashboard untuk bantuan manual.";
-                                        
-                            $this->waService->sendMessage(
-                                $sessionId,
-                                $businessProfile->admin_phone . '@s.whatsapp.net',
-                                $alertMsg
-                            );
+                    $notifSettings = $businessProfile->notification_settings;
+                    if (($aiResult['sentiment'] ?? '') === 'frustrated' && 
+                        $businessProfile->admin_phone && 
+                        ($notifSettings['notify_frustrated'] ?? false)) {
+                        
+                        $alertMsg = "⚠️ *PERINGATAN SENTIMEN NEGATIF*\n\n" .
+                                    "Customer: *{$message->push_name}* (+{$message->phone_number})\n" .
+                                    "Pesan: _\"{$message->message}\"_\n\n" .
+                                    "Mohon segera cek dashboard untuk bantuan manual.";
+                                    
+                        $this->waService->sendMessage(
+                            $sessionId,
+                            $businessProfile->admin_phone . '@s.whatsapp.net',
+                            $alertMsg
+                        );
 
-                            Log::info('WhatsApp Admin Alert Sent', ['to' => $businessProfile->admin_phone]);
-                        }
-
-                        // Track AI Message Usage
-                        $tracker = app(\App\Services\UsageTrackingService::class);
-                        $tracker->track($businessProfile->user_id, \App\Models\UsageRecord::FEATURE_AI_MESSAGES);
+                        Log::info('WhatsApp Admin Alert Sent', ['to' => $businessProfile->admin_phone]);
                     }
+
+                    // Track AI Message Usage
+                    $tracker = app(\App\Services\UsageTrackingService::class);
+                    $tracker->track($businessProfile->user_id, \App\Models\UsageRecord::FEATURE_AI_MESSAGES);
                 } else {
                     Log::error('WhatsApp Auto-Reply Send Failed', [
                         'to' => $message->remote_jid,
@@ -302,11 +293,7 @@ class WhatsAppWebhookController extends Controller
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('WhatsApp Auto-Reply Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile(),
-            ]);
+            Log::error('WhatsApp Auto-Reply Error: ' . $e->getMessage());
         }
     }
 

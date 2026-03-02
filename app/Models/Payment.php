@@ -42,6 +42,7 @@ class Payment extends Model
         'metadata',
         'admin_notes',
         'approved_by',
+        'reminder_sent_at',
     ];
 
     /**

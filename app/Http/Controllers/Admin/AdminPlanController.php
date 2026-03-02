@@ -30,9 +30,25 @@ class AdminPlanController extends Controller
 
     /**
      * Update plan
+     * 
+     * SECURITY: Superadmin only - Business critical
      */
     public function update(Request $request, Plan $plan)
     {
+        $admin = Auth::guard('admin')->user();
+        
+        // Authorization check - defense in depth
+        if (!$admin->isSuperAdmin()) {
+            \App\Models\AdminActivityLog::log(
+                $admin,
+                'unauthorized_plan_update_attempt',
+                "Attempted to update plan without superadmin privilege",
+                ['plan_id' => $plan->id, 'plan_name' => $plan->name],
+                $plan,
+                8 // High risk score
+            );
+            abort(403, 'Only superadmin can modify plans.');
+        }
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'description' => 'nullable|string|max:500',

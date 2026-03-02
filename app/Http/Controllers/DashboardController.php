@@ -45,7 +45,8 @@ class DashboardController extends Controller
             'account_created' => true, // 1. Always true if logged in
             'wa_connected' => $waConnected,
             'kb_added' => KbArticle::exists(), // 3 (Filtered by User Global Scope)
-            'chat_tested' => Message::whereIn('conversation_id', $userConversationIds)->exists(), // 4
+            'chat_tested' => Message::whereIn('conversation_id', $userConversationIds)->exists() || 
+                             WaMessage::where('user_id', $userId)->exists(), // 4 - Include WhatsApp
             'ai_active' => AutoReplyRule::exists() || $user->csat_enabled, // 5
         ];
 
@@ -57,14 +58,28 @@ class DashboardController extends Controller
         $stats = Cache::remember($cacheKey, 300, function () use ($userConversationIds, $user) {
             
             // --- SECTION 2: STATS OVERVIEW ---
-            // 1. TOTAL MESSAGES (Incoming)
-            $totalMessagesToday = Message::whereIn('conversation_id', $userConversationIds)
+            // Include both Instagram (Message) and WhatsApp (WaMessage)
+            
+            // 1. TOTAL MESSAGES (Incoming) - Instagram
+            $igMessagesToday = Message::whereIn('conversation_id', $userConversationIds)
                 ->whereDate('created_at', Carbon::today())
                 ->count();
-                
-            $totalMessagesYesterday = Message::whereIn('conversation_id', $userConversationIds)
+            
+            // WhatsApp messages
+            $waMessagesToday = WaMessage::where('user_id', $user->id)
+                ->whereDate('created_at', Carbon::today())
+                ->count();
+            
+            $totalMessagesToday = $igMessagesToday + $waMessagesToday;
+            
+            // Yesterday
+            $igMessagesYesterday = Message::whereIn('conversation_id', $userConversationIds)
                 ->whereDate('created_at', Carbon::yesterday())
                 ->count();
+            $waMessagesYesterday = WaMessage::where('user_id', $user->id)
+                ->whereDate('created_at', Carbon::yesterday())
+                ->count();
+            $totalMessagesYesterday = $igMessagesYesterday + $waMessagesYesterday;
             
             $msgTrend = 0;
             if ($totalMessagesYesterday > 0) {
@@ -73,14 +88,28 @@ class DashboardController extends Controller
                 $msgTrend = 100;
             }
 
-            // 2. AI RESPONSES
-            $totalAutoReplies = AutoReplyLog::whereIn('conversation_id', $userConversationIds)
+            // 2. AI RESPONSES - Include WhatsApp auto-replies
+            $igAutoReplies = AutoReplyLog::whereIn('conversation_id', $userConversationIds)
                 ->whereDate('created_at', Carbon::today())
                 ->count();
             
-            $totalYesterdayAutoReplies = AutoReplyLog::whereIn('conversation_id', $userConversationIds)
+            // Count WhatsApp AI replies (messages with bot_reply not null)
+            $waAutoReplies = WaMessage::where('user_id', $user->id)
+                ->whereNotNull('bot_reply')
+                ->whereDate('created_at', Carbon::today())
+                ->count();
+            
+            $totalAutoReplies = $igAutoReplies + $waAutoReplies;
+            
+            // Yesterday AI replies
+            $igAutoRepliesYesterday = AutoReplyLog::whereIn('conversation_id', $userConversationIds)
                 ->whereDate('created_at', Carbon::yesterday())
                 ->count();
+            $waAutoRepliesYesterday = WaMessage::where('user_id', $user->id)
+                ->whereNotNull('bot_reply')
+                ->whereDate('created_at', Carbon::yesterday())
+                ->count();
+            $totalYesterdayAutoReplies = $igAutoRepliesYesterday + $waAutoRepliesYesterday;
 
             $aiTrend = 0;
             if ($totalYesterdayAutoReplies > 0) {
@@ -90,22 +119,39 @@ class DashboardController extends Controller
             }
 
             // --- AI RATE ---
-            $userMessagesCount = Message::whereIn('conversation_id', $userConversationIds)
+            $igUserMessages = Message::whereIn('conversation_id', $userConversationIds)
                 ->where('sender_type', 'contact')
                 ->whereDate('created_at', Carbon::today())
                 ->count();
+            $waUserMessages = WaMessage::where('user_id', $user->id)
+                ->where('direction', 'incoming')
+                ->whereDate('created_at', Carbon::today())
+                ->count();
+            $userMessagesCount = $igUserMessages + $waUserMessages;
                 
             $aiRate = 0;
             if ($userMessagesCount > 0) {
                 $aiRate = round(($totalAutoReplies / $userMessagesCount) * 100);
             }
 
+            // --- PENDING REPLIES (WhatsApp unread) ---
+            // WhatsApp: status != 'read' for incoming messages
+            $waPending = WaMessage::where('user_id', $user->id)
+                ->where('direction', 'incoming')
+                ->where('status', '!=', 'read')
+                ->count();
+            // Instagram: tidak ada kolom is_read, gunakan waPending saja
+            $pendingReplies = $waPending;
+
+            // --- KB ARTICLES ---
+            $kbArticles = KbArticle::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->count();
+
             // --- FORECAST (Estimasi kuota habis) ---
-            // Simple logic: If rate continues, when will they hit 1000? (Example quota)
-            // This is a placeholder for real business logic
             $dailyRate = $totalMessagesToday > 0 ? $totalMessagesToday : 1;
-            $quota = 10000; // Example quota
-            $used = $totalMessagesToday; // Total usage
+            $quota = 10000;
+            $used = $totalMessagesToday;
             $remaining = $quota - $used;
             $daysLeft = round($remaining / $dailyRate);
 
@@ -115,7 +161,9 @@ class DashboardController extends Controller
                 'ai_responses' => $totalAutoReplies,
                 'ai_trend' => $aiTrend,
                 'ai_rate' => $aiRate,
-                'forecast_days' => $daysLeft
+                'forecast_days' => $daysLeft,
+                'pending_replies' => $pendingReplies,
+                'kb_articles' => $kbArticles,
             ];
         });
 
@@ -138,16 +186,30 @@ class DashboardController extends Controller
         // --- SECTION 4: CHART DATA (7 Days Trend) ---
         // Cached for 1 hour as historical data doesn't change often
         $chartCacheKey = "dashboard_chart_{$userId}";
-        $trend7Days = Cache::remember($chartCacheKey, 3600, function () use ($userConversationIds) {
+        $trend7Days = Cache::remember($chartCacheKey, 3600, function () use ($userConversationIds, $userId) {
             $data = [];
             for ($i = 6; $i >= 0; $i--) {
                 $date = Carbon::today()->subDays($i);
-                $msgCount = Message::whereIn('conversation_id', $userConversationIds)
+                // Instagram messages
+                $igMsgCount = Message::whereIn('conversation_id', $userConversationIds)
                     ->whereDate('created_at', $date)
                     ->count();
-                $aiCount = AutoReplyLog::whereIn('conversation_id', $userConversationIds)
+                // WhatsApp messages
+                $waMsgCount = WaMessage::where('user_id', $userId)
                     ->whereDate('created_at', $date)
                     ->count();
+                $msgCount = $igMsgCount + $waMsgCount;
+                
+                // Instagram AI replies
+                $igAiCount = AutoReplyLog::whereIn('conversation_id', $userConversationIds)
+                    ->whereDate('created_at', $date)
+                    ->count();
+                // WhatsApp AI replies (messages with bot_reply)
+                $waAiCount = WaMessage::where('user_id', $userId)
+                    ->whereNotNull('bot_reply')
+                    ->whereDate('created_at', $date)
+                    ->count();
+                $aiCount = $igAiCount + $waAiCount;
                 
                 $data[] = [
                     'date' => $date->format('d M'),

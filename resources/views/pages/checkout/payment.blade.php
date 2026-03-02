@@ -71,17 +71,17 @@
                         <div class="text-xl font-bold font-mono">{{ $payment->invoice_number }}</div>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs text-slate-400">Status</div>
+                        <div class="text-xs text-slate-400 mb-1">Status</div>
                         @if($payment->status === 'pending')
-                            <span class="inline-flex items-center gap-1 text-yellow-400 font-medium">
-                                <span class="material-symbols-outlined text-lg">schedule</span>
-                                Menunggu Pembayaran
-                            </span>
+                            <div class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full">
+                                <span class="material-symbols-outlined text-yellow-400">schedule</span>
+                                <span class="font-bold text-yellow-400 text-sm">Menunggu Pembayaran</span>
+                            </div>
                         @elseif($payment->status === 'paid')
-                            <span class="inline-flex items-center gap-1 text-green-400 font-medium">
-                                <span class="material-symbols-outlined text-lg">check_circle</span>
-                                Lunas
-                            </span>
+                            <div class="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-full">
+                                <span class="material-symbols-outlined text-green-400">check_circle</span>
+                                <span class="font-bold text-green-400 text-sm">Lunas</span>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -95,12 +95,26 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-400">Durasi</span>
-                        <span>{{ $payment->duration_months }} bulan</span>
+                        <span>
+                            {{ $payment->duration_months }} bulan
+                            @if($payment->duration_months == 12)
+                                @php
+                                    $equivalentMonthly = $payment->total > 0 ? round($payment->total / 12) : 0;
+                                @endphp
+                                <span class="text-green-400 text-sm">(setara Rp {{ number_format($equivalentMonthly, 0, ',', '.') }}/bulan)</span>
+                            @endif
+                        </span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-400">Harga</span>
                         <span>Rp {{ number_format($payment->amount, 0, ',', '.') }}</span>
                     </div>
+                    @if($payment->duration_months == 12 && $payment->plan->price_yearly < ($payment->plan->price_monthly * 12))
+                    <div class="flex justify-between text-green-400 text-sm">
+                        <span>🎉 Hemat</span>
+                        <span>Rp {{ number_format(($payment->plan->price_monthly * 12) - $payment->plan->price_yearly, 0, ',', '.') }}</span>
+                    </div>
+                    @endif
                     @if($payment->discount > 0)
                     <div class="flex justify-between text-green-400">
                         <span>Diskon</span>
@@ -175,10 +189,30 @@
                             <h4 class="font-semibold mb-3 text-sm text-slate-300">Transfer ke Rekening:</h4>
                             <div class="space-y-3">
                                 @foreach($bankInfo as $bank)
-                                <div class="p-3 rounded-lg bg-slate-800/50">
-                                    <div class="font-bold text-sm mb-1">{{ $bank['bank'] }}</div>
-                                    <div class="font-mono text-lg tracking-wider">{{ $bank['account_number'] }}</div>
-                                    <div class="text-slate-400 text-xs mt-1">a.n. {{ $bank['account_name'] }}</div>
+                                @php
+                                    $bankColors = [
+                                        'BCA' => 'bg-blue-600',
+                                        'Mandiri' => 'bg-yellow-600',
+                                        'BNI' => 'bg-green-600',
+                                        'BRI' => 'bg-blue-700',
+                                    ];
+                                    $bankColor = $bankColors[$bank['bank']] ?? 'bg-slate-600';
+                                @endphp
+                                <div class="flex items-start gap-3 p-4 rounded-xl bg-slate-800/50 border border-slate-700">
+                                    <div class="w-14 h-14 {{ $bankColor }} rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-lg">
+                                        {{ substr($bank['bank'], 0, 3) }}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-bold text-white mb-1">{{ $bank['bank'] }}</div>
+                                        <div class="font-mono text-xl tracking-wider text-white mb-1">{{ $bank['account_number'] }}</div>
+                                        <div class="text-slate-400 text-xs">a.n. {{ $bank['account_name'] }}</div>
+                                    </div>
+                                    <button type="button" 
+                                            onclick="navigator.clipboard.writeText('{{ $bank['account_number'] }}')"
+                                            class="shrink-0 p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition"
+                                            title="Copy nomor rekening">
+                                        <span class="material-symbols-outlined text-sm">content_copy</span>
+                                    </button>
                                 </div>
                                 @endforeach
                             </div>

@@ -23,6 +23,13 @@
             <h1 class="text-2xl font-bold">Pengaturan CSAT</h1>
             <p class="text-slate-400">Atur survey kepuasan pelanggan</p>
         </div>
+
+        @include('components.page-help', [
+            'title' => 'Pengaturan CSAT',
+            'description' => 'Konfigurasi survei kepuasan pelanggan.',
+            'tips' => ['Aktifkan/nonaktifkan survei CSAT', 'Atur pesan survei yang akan ditampilkan', 'Pilih kapan survei muncul (after chat/resolved)', 'Lihat hasil aggregat rating']
+        ])
+
         <a href="{{ route('csat.index') }}" class="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-medium transition">
             <span class="material-symbols-outlined text-lg">bar_chart</span>
             Lihat Analitik

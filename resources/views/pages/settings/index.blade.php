@@ -10,6 +10,11 @@
 <body class="bg-[#111722] text-white flex items-center justify-center h-screen">
     <div class="text-center">
         <h1 class="text-4xl font-bold mb-4">Settings</h1>
+        @include('components.page-help', [
+            'title' => 'Pengaturan Profil',
+            'description' => 'Kelola informasi bisnis dan preferensi akun Anda.',
+            'tips' => ['Update foto profil dan nama bisnis', 'Atur zona waktu untuk jadwal yang tepat', 'Ganti password secara berkala', 'Kelola notifikasi email']
+        ])
         <p class="text-gray-400">Feature Coming Soon</p>
         <a href="{{ route('dashboard') }}" class="mt-6 inline-block text-blue-500 hover:underline">Back to Dashboard</a>
     </div>

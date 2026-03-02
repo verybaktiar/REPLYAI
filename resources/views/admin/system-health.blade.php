@@ -60,7 +60,20 @@
         <div class="w-2.5 h-2.5 rounded-full {{ $queueStatus ? 'bg-green-500' : 'bg-red-500' }}"></div>
         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Queue Worker</span>
     </div>
-    <p class="text-sm font-bold text-white">{{ $queueStatus ? 'RUNNING' : 'STOPPED' }}</p>
+    <div class="flex items-center justify-between">
+        <p class="text-sm font-bold text-white">{{ $queueStatus ? 'RUNNING' : 'STOPPED' }}</p>
+        @if(!$queueStatus)
+        <form action="{{ route('admin.system-health.service-action') }}" method="POST" class="inline">
+            @csrf
+            <input type="hidden" name="service_name" value="laravel-queue">
+            <input type="hidden" name="action" value="start">
+            <button type="submit" class="px-2 py-1 rounded bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition text-xs font-bold flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">play_arrow</span>
+                Start
+            </button>
+        </form>
+        @endif
+    </div>
 </div>
 
 <!-- WA Service Status -->
@@ -69,7 +82,20 @@
         <div class="w-2.5 h-2.5 rounded-full {{ $waServiceStatus ? 'bg-green-500' : 'bg-red-500' }}"></div>
         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">WA Service</span>
     </div>
-    <p class="text-sm font-bold text-white">{{ $waServiceStatus ? 'RUNNING' : 'STOPPED' }}</p>
+    <div class="flex items-center justify-between">
+        <p class="text-sm font-bold text-white">{{ $waServiceStatus ? 'RUNNING' : 'STOPPED' }}</p>
+        @if(!$waServiceStatus)
+        <form action="{{ route('admin.system-health.service-action') }}" method="POST" class="inline">
+            @csrf
+            <input type="hidden" name="service_name" value="wa-service">
+            <input type="hidden" name="action" value="start">
+            <button type="submit" class="px-2 py-1 rounded bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition text-xs font-bold flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">play_arrow</span>
+                Start
+            </button>
+        </form>
+        @endif
+    </div>
 </div>
 
     <!-- System Ports Status -->
@@ -79,7 +105,20 @@
             <div class="w-2.5 h-2.5 rounded-full {{ $port['status'] === 'online' ? 'bg-green-500' : 'bg-red-500' }}"></div>
             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ $port['name'] }}</span>
         </div>
-        <p class="text-sm font-bold text-white">{{ $port['status'] === 'online' ? 'PORT ' . $port['port'] . ' RUNNING' : 'OFFLINE' }}</p>
+        <div class="flex items-center justify-between">
+            <p class="text-sm font-bold text-white">{{ $port['status'] === 'online' ? 'PORT ' . $port['port'] . ' RUNNING' : 'OFFLINE' }}</p>
+            @if($port['status'] === 'offline' && $port['name'] === 'Redis')
+            <button type="button" onclick="startRedis()" class="px-2 py-1 rounded bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition text-xs font-bold flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">play_arrow</span>
+                Start
+            </button>
+            @elseif($port['status'] === 'offline' && str_contains($port['name'], 'Laravel'))
+            <button type="button" onclick="startLaravel()" class="px-2 py-1 rounded bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition text-xs font-bold flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">play_arrow</span>
+                Start
+            </button>
+            @endif
+        </div>
     </div>
     @endforeach
 </div>
@@ -344,5 +383,57 @@
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') hideLogs();
     });
+
+    // Start Redis Service
+    function startRedis() {
+        if (!confirm('Start Redis service?\n\nThis will execute: redis-server')) return;
+        
+        fetch('{{ route("admin.system-health.start-system-service") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ service: 'redis' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Redis service started successfully!');
+                location.reload();
+            } else {
+                alert('Failed to start Redis: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    }
+
+    // Start Laravel App
+    function startLaravel() {
+        if (!confirm('Start Laravel development server?\n\nThis will execute: php artisan serve')) return;
+        
+        fetch('{{ route("admin.system-health.start-system-service") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ service: 'laravel' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Laravel development server started successfully!\n\nApp running at: http://127.0.0.1:8000');
+                location.reload();
+            } else {
+                alert('Failed to start Laravel: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    }
 </script>
 @endpush

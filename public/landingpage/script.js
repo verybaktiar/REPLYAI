@@ -140,7 +140,8 @@ async function loadPricingFromAPI() {
 
     try {
         const response = await fetch('/api/plans');
-        const plans = await response.json();
+        const data = await response.json();
+        const plans = data.plans || data; // Handle both formats
 
         if (plans && plans.length > 0) {
             // Clear existing static pricing

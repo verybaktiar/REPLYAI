@@ -68,20 +68,73 @@ return [
         'webhook_key' => env('WA_SERVICE_KEY', 'replyai-wa-secret'),
     ],
 
-    // 'megallm' => [
-    //     'key' => env('MEGALLM_API_KEY'),
-    //     'url' => env('MEGALLM_BASE_URL', 'https://ai.megallm.io/v1'),
-    //     'model' => env('MEGALLM_MODEL', 'mistral-large-3-675b-instruct-2512'),
-    //     'timeout' => (int) env('MEGALLM_TIMEOUT', 90),
-    //     'retries' => (int) env('MEGALLM_RETRIES', 2),
-    //     'retry_sleep_ms' => (int) env('MEGALLM_RETRY_SLEEP_MS', 700),
-    //     'fallback_models' => env('MEGALLM_FALLBACK_MODELS', ''),
-    // ],
+    'megallm' => [
+        'enabled' => env('MEGALLM_ENABLED', true),
+        'key' => env('MEGALLM_API_KEY'),
+        'url' => env('MEGALLM_BASE_URL', 'https://ai.megallm.io/v1'),
+        'model' => env('MEGALLM_MODEL', 'moonshotai/kimi-k2-instruct-0905'),
+        'timeout' => (int) env('MEGALLM_TIMEOUT', 90),
+        'retries' => (int) env('MEGALLM_RETRIES', 2),
+        'retry_sleep_ms' => (int) env('MEGALLM_RETRY_SLEEP_MS', 700),
+        'fallback_models' => env('MEGALLM_FALLBACK_MODELS', 'deepseek-ai/deepseek-v3.1,gemini-2.5-flash'),
+    ],
 
+    'sumopod' => [
+        'enabled' => env('SUMOPOD_ENABLED', true),
+        'key' => env('SUMOPOD_API_KEY'),
+        'url' => env('SUMOPOD_BASE_URL', 'https://ai.sumopod.com/v1'),
+        'model' => env('SUMOPOD_MODEL', 'kimi-k2-5-260127-free'),
+        'timeout' => (int) env('SUMOPOD_TIMEOUT', 90),
+        'retries' => (int) env('SUMOPOD_RETRIES', 2),
+        'retry_sleep_ms' => (int) env('SUMOPOD_RETRY_SLEEP_MS', 700),
+        'fallback_models' => env('SUMOPOD_FALLBACK_MODELS', 'seed-2-0-mini-free,whisper-1'),
+    ],
 
+    'ai_failover' => [
+        'enabled' => env('AI_FAILOVER_ENABLED', true),
+        'primary' => env('AI_PRIMARY_PROVIDER', 'megallm'),
+        'secondary' => env('AI_SECONDARY_PROVIDER', 'sumopod'),
+    ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | CAPTCHA Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Pilihan provider: 'hcaptcha', 'recaptcha', 'turnstile'
+    | - hCaptcha: Gratis 1 juta/bulan, privacy-focused (recommended)
+    | - reCAPTCHA v3: Gratis 1 juta/bulan, Google
+    | - Cloudflare Turnstile: Gratis unlimited
+    |
+    */
+    'captcha' => [
+        'enabled' => env('CAPTCHA_ENABLED', false),
+        'provider' => env('CAPTCHA_PROVIDER', 'hcaptcha'), // hcaptcha, recaptcha, turnstile
+        'site_key' => env('CAPTCHA_SITE_KEY'),
+        'secret' => env('CAPTCHA_SECRET'),
+    ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | AI Suggestions Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for AI-powered reply suggestions feature.
+    | Supports: 'openai', 'claude', 'megallm'
+    |
+    */
+    'ai_suggestions' => [
+        'enabled' => env('AI_SUGGESTIONS_ENABLED', true),
+        'provider' => env('AI_SUGGESTIONS_PROVIDER', 'megallm'), // openai, claude, megallm
+        'model' => env('AI_SUGGESTIONS_MODEL', 'mistral-large-3-675b-instruct-2512'),
+        'cache_duration' => (int) env('AI_SUGGESTIONS_CACHE_DURATION', 300), // 5 minutes
+        'max_context_messages' => (int) env('AI_SUGGESTIONS_MAX_CONTEXT', 10),
+        'fallback_enabled' => true,
+    ],
 
-
+    'claude' => [
+        'key' => env('CLAUDE_API_KEY'),
+        'model' => env('CLAUDE_MODEL', 'claude-3-haiku-20240307'),
+    ],
 
 ];

@@ -41,9 +41,26 @@ class AdminPaymentController extends Controller
 
     /**
      * Approve payment dan aktivasi subscription
+     * 
+     * SECURITY: Finance and Superadmin only
      */
     public function approve(Request $request, Payment $payment)
     {
+        $admin = Auth::guard('admin')->user();
+        
+        // Authorization check - defense in depth
+        if (!$admin->canManagePayments()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_payment_approval_attempt',
+                "Attempted to approve payment without authorization",
+                ['payment_id' => $payment->id, 'invoice' => $payment->invoice_number],
+                $payment,
+                8 // High risk score
+            );
+            abort(403, 'You do not have permission to approve payments.');
+        }
+        
         if ($payment->status !== 'pending') {
             return back()->with('error', 'Payment ini sudah diproses sebelumnya.');
         }
@@ -112,9 +129,26 @@ class AdminPaymentController extends Controller
 
     /**
      * Reject payment
+     * 
+     * SECURITY: Finance and Superadmin only
      */
     public function reject(Request $request, Payment $payment)
     {
+        $admin = Auth::guard('admin')->user();
+        
+        // Authorization check - defense in depth
+        if (!$admin->canManagePayments()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_payment_reject_attempt',
+                "Attempted to reject payment without authorization",
+                ['payment_id' => $payment->id, 'invoice' => $payment->invoice_number],
+                $payment,
+                8 // High risk score
+            );
+            abort(403, 'You do not have permission to reject payments.');
+        }
+        
         $request->validate([
             'reason' => 'required|string|max:500',
         ]);

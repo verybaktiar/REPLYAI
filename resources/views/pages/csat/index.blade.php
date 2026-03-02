@@ -23,6 +23,13 @@
             <h1 class="text-2xl font-bold">Customer Satisfaction</h1>
             <p class="text-slate-400">Pantau kepuasan pelanggan dari rating CSAT</p>
         </div>
+
+        @include('components.page-help', [
+            'title' => 'Customer Satisfaction',
+            'description' => 'Kelola rating dan feedback dari pelanggan.',
+            'tips' => ['Lihat rating yang diberikan pelanggan', 'Baca feedback untuk perbaikan layanan', 'Filter berdasarkan rating (1-5 bintang)', 'Respons terhadap feedback negatif']
+        ])
+
         <div class="flex items-center gap-4">
             <!-- Status Badge -->
             @if($user->csat_enabled)

@@ -63,9 +63,37 @@
                     <label class="block text-sm font-medium mb-2">Paket</label>
                     <select name="plan_id" class="w-full bg-surface-light border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-primary">
                         <option value="">-- Tidak ada --</option>
-                        @foreach($plans as $plan)
-                        <option value="{{ $plan->id }}">{{ $plan->name }}</option>
-                        @endforeach
+                        
+                        @php
+                            $groupedPlans = $plans->groupBy('tier');
+                        @endphp
+                        
+                        {{-- UMKM Plans --}}
+                        @if($groupedPlans->has('umkm'))
+                        <optgroup label="🟢 UMKM (Starter)">
+                            @foreach($groupedPlans->get('umkm') as $plan)
+                            <option value="{{ $plan->id }}">{{ $plan->name }}</option>
+                            @endforeach
+                        </optgroup>
+                        @endif
+                        
+                        {{-- Business Plans --}}
+                        @if($groupedPlans->has('business'))
+                        <optgroup label="🔵 Business (Growth)">
+                            @foreach($groupedPlans->get('business') as $plan)
+                            <option value="{{ $plan->id }}">{{ $plan->name }}</option>
+                            @endforeach
+                        </optgroup>
+                        @endif
+                        
+                        {{-- Enterprise Plans --}}
+                        @if($groupedPlans->has('enterprise'))
+                        <optgroup label="🟣 Enterprise (Custom)">
+                            @foreach($groupedPlans->get('enterprise') as $plan)
+                            <option value="{{ $plan->id }}">{{ $plan->name }}</option>
+                            @endforeach
+                        </optgroup>
+                        @endif
                     </select>
                 </div>
                 <div>

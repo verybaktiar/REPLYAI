@@ -1,19 +1,29 @@
-const CACHE_NAME = 'replyai-v6';
-const ASSETS = [
-  '/dashboard',
-  '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap',
-  'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap'
-];
+const CACHE_NAME = 'replyai-v7';
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
+// Skip service worker for navigation requests
+self.addEventListener('fetch', event => {
+  // Don't cache navigation requests
+  if (event.request.mode === 'navigate') {
+    return;
+  }
+  
+  // Only cache static assets
+  if (event.request.destination === 'image' || 
+      event.request.destination === 'style' ||
+      event.request.destination === 'script' ||
+      event.request.url.includes('/build/')) {
+    event.respondWith(
+      caches.match(event.request).then(response => {
+        return response || fetch(event.request);
+      })
+    );
+  }
 });
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(response => response || fetch(event.request))
-  );
+self.addEventListener('install', event => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
 });

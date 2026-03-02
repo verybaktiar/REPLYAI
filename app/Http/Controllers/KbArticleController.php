@@ -9,13 +9,19 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Services\AiAnswerService;
 use App\Services\ActivityLogService;
+use App\Services\Security\SsrfProtectionService;
 
 class KbArticleController extends Controller
 {
     public function index()
     {
-        $articles = KbArticle::with('businessProfile')->orderByDesc('updated_at')->get();
-        $businessProfiles = BusinessProfile::orderBy('business_name')->get();
+        $articles = KbArticle::with('businessProfile')
+            ->where('user_id', auth()->id())
+            ->orderByDesc('updated_at')
+            ->get();
+        $businessProfiles = BusinessProfile::where('user_id', auth()->id())
+            ->orderBy('business_name')
+            ->get();
         return view('pages.kb.index', compact('articles', 'businessProfiles'));
     }
 
@@ -30,6 +36,7 @@ class KbArticleController extends Controller
         ]);
 
         $articleData = [
+            'user_id'   => auth()->id(),
             'title'     => $validated['title'] ?? null,
             'content'   => $validated['content'],
             'tags'      => $validated['tags'] ?? null,
@@ -52,6 +59,8 @@ class KbArticleController extends Controller
     /**
      * Import dari URL (manual)
      * POST /kb/import-url (AJAX)
+     * 
+     * SECURITY: SSRF protection - URL divalidasi sebelum di-fetch
      */
     public function importUrl(Request $request)
     {
@@ -62,6 +71,23 @@ class KbArticleController extends Controller
         ]);
 
         $url = $validated['url'];
+
+        // SECURITY: SSRF Protection - Validasi URL
+        if (!SsrfProtectionService::isUrlSafe($url)) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'URL tidak aman. Tidak boleh mengakses alamat IP private atau localhost.',
+            ], 400);
+        }
+
+        // Sanitize URL
+        $url = SsrfProtectionService::sanitizeUrl($url);
+        if (!$url) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'URL tidak valid.',
+            ], 400);
+        }
 
         // Coba fetch dengan SSL verification, jika gagal coba tanpa SSL verification
         try {
@@ -98,6 +124,11 @@ class KbArticleController extends Controller
          * Kalau ketemu -> fetch JSON -> format jadi jadwal rapi
          */
         $ajaxUrl = $this->tryFindDatatableAjaxUrl($html, $url);
+
+        // SECURITY: Validasi AJAX URL juga
+        if ($ajaxUrl && !SsrfProtectionService::isUrlSafe($ajaxUrl)) {
+            $ajaxUrl = null; // Ignore unsafe AJAX URL
+        }
 
         if ($ajaxUrl) {
             try {
@@ -170,6 +201,7 @@ class KbArticleController extends Controller
             }
 
             $article = KbArticle::create([
+                'user_id'    => auth()->id(),
                 'title'      => $file->getClientOriginalName(),
                 'content'    => $text,
                 'source_url' => 'File: ' . $file->getClientOriginalName(),
@@ -194,6 +226,8 @@ class KbArticleController extends Controller
 
     public function toggle(KbArticle $kb)
     {
+        $this->authorize('update', $kb);
+        
         $kb->is_active = !$kb->is_active;
         $kb->save();
 
@@ -204,6 +238,14 @@ class KbArticleController extends Controller
 
     public function destroy(KbArticle $kb)
     {
+        \Log::info('Delete KB requested', [
+            'kb_id' => $kb->id,
+            'kb_user_id' => $kb->user_id,
+            'auth_user_id' => auth()->id(),
+        ]);
+        
+        $this->authorize('delete', $kb);
+        
         ActivityLogService::logDeleted($kb, "Menghapus artikel KB: " . ($kb->title ?? 'Tanpa Judul'));
         $kb->delete();
         return response()->json(['ok' => true]);
@@ -214,6 +256,8 @@ class KbArticleController extends Controller
      */
     public function update(Request $request, KbArticle $kb)
     {
+        $this->authorize('update', $kb);
+        
         $validated = $request->validate([
             'title'   => ['nullable', 'string', 'max:255'],
             'content' => ['required', 'string'],
@@ -259,6 +303,8 @@ class KbArticleController extends Controller
      */
     public function updateProfile(Request $request, KbArticle $kb)
     {
+        $this->authorize('update', $kb);
+        
         $request->validate([
             'business_profile_id' => ['nullable', 'exists:business_profiles,id'],
         ]);

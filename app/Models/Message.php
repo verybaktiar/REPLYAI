@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Message extends Model
 {
@@ -27,5 +28,13 @@ class Message extends Model
     public function conversation()
     {
         return $this->belongsTo(Conversation::class);
+    }
+
+    /**
+     * Get media attachments for this message
+     */
+    public function media()
+    {
+        return $this->morphMany(ChatMedia::class, 'message');
     }
 }

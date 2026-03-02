@@ -12,7 +12,8 @@
     <!-- Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -104,10 +105,13 @@
           </div>
 
           <!-- Import Section (Tabs) -->
-          <div class="rounded-xl border border-border-dark bg-surface-dark overflow-hidden">
+          <div class="rounded-xl border border-border-dark bg-surface-dark overflow-hidden" x-data="scrapeManager()">
               <div class="flex border-b border-border-dark overflow-x-auto custom-scrollbar no-scrollbar">
                   <button id="tab-url" class="flex-none px-6 py-4 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors whitespace-nowrap">
                       <span class="material-symbols-outlined align-middle mr-1 text-[18px]">link</span> {{ __('kb.tab_url') }}
+                  </button>
+                  <button id="tab-scrape" class="flex-none px-6 py-4 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors whitespace-nowrap">
+                      <span class="material-symbols-outlined align-middle mr-1 text-[18px]">travel_explore</span> Scrape Website
                   </button>
                   <button id="tab-file" class="flex-none px-6 py-4 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#1f2b40] border-b-2 border-transparent transition-colors whitespace-nowrap">
                       <span class="material-symbols-outlined align-middle mr-1 text-[18px]">upload_file</span> {{ __('kb.tab_file') }}
@@ -136,6 +140,163 @@
                   </div>
                 </div>
                 <p class="text-xs text-text-secondary">Gunakan URL resmi untuk akurasi data AI.</p>
+              </div>
+
+              <!-- Content Scrape Website (Puppeteer) -->
+              <div id="panel-scrape" class="hidden p-6 space-y-4">
+                  <div class="bg-[#1f2b40] rounded-lg p-4 border border-border-dark">
+                      <div class="flex items-start gap-3">
+                          <span class="material-symbols-outlined text-primary text-2xl">travel_explore</span>
+                          <div class="flex-1">
+                              <h4 class="font-bold text-white mb-1">Import Otomatis dari Website</h4>
+                              <p class="text-xs text-text-secondary mb-3">
+                                  Sistem akan membuka website menggunakan browser otomatis dan mengekstrak informasi penting seperti harga, fitur, dan FAQ. 
+                                  <span class="text-yellow-400">Estimasi waktu: 10-30 detik.</span>
+                              </p>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- Form Input -->
+                  <div class="grid grid-cols-12 gap-3">
+                      <div class="col-span-12 sm:col-span-6">
+                          <label class="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">URL Website</label>
+                          <input x-model="scrapeUrl" type="text" placeholder="https://replai.my.id/"
+                              class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+                      </div>
+                      <div class="col-span-12 sm:col-span-4">
+                          <label class="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">Nama KB (Opsional)</label>
+                          <input x-model="scrapeName" type="text" placeholder="Daftar Harga Replai"
+                              class="w-full rounded-lg border border-border-dark bg-[#111722] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary">
+                      </div>
+                      <div class="col-span-12 sm:col-span-2 flex items-end">
+                          <button @click="startScrape()" :disabled="isLoading || !scrapeUrl"
+                              class="w-full px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                              <span x-show="!isLoading" class="material-symbols-outlined text-[18px]">play_arrow</span>
+                              <span x-show="isLoading" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                              <span x-text="isLoading ? 'Memulai...' : 'Analisis'"></span>
+                          </button>
+                      </div>
+                  </div>
+
+                  <!-- Rate Limit Warning -->
+                  <div x-show="rateLimitSeconds > 0" class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 flex items-center gap-2">
+                      <span class="material-symbols-outlined text-yellow-400">timer</span>
+                      <p class="text-xs text-yellow-400">
+                          Rate limit aktif. Tunggu <span x-text="rateLimitSeconds" class="font-bold"></span> detik lagi.
+                      </p>
+                  </div>
+
+                  <!-- Progress Section -->
+                  <div x-show="currentJobId && !showPreview" class="bg-[#111722] rounded-lg p-4 border border-border-dark">
+                      <div class="flex items-center justify-between mb-2">
+                          <span class="text-sm font-bold text-white" x-text="progressStep"></span>
+                          <span class="text-xs text-text-secondary" x-text="progressPercent + '%'"></span>
+                      </div>
+                      <div class="h-2 bg-border-dark rounded-full overflow-hidden">
+                          <div class="h-full bg-primary transition-all duration-500" :style="'width: ' + progressPercent + '%'"></div>
+                      </div>
+                      <p x-show="status === 'failed'" class="text-xs text-red-400 mt-2" x-text="errorMessage"></p>
+                  </div>
+
+                  <!-- Preview Section -->
+                  <div x-show="showPreview" class="space-y-4">
+                      <div class="flex items-center justify-between">
+                          <h4 class="font-bold text-white flex items-center gap-2">
+                              <span class="material-symbols-outlined text-green-400">check_circle</span>
+                              Hasil Ekstraksi
+                          </h4>
+                          <button @click="resetScrape()" class="text-xs text-text-secondary hover:text-white flex items-center gap-1">
+                              <span class="material-symbols-outlined text-[16px]">refresh</span> Ulangi
+                          </button>
+                      </div>
+
+                      <!-- Select All Actions -->
+                      <div class="flex gap-2 mb-3">
+                          <button @click="selectAll()" 
+                                  class="px-3 py-1.5 text-xs font-medium bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition">
+                              Pilih Semua
+                          </button>
+                          <button @click="deselectAll()" 
+                                  class="px-3 py-1.5 text-xs font-medium bg-surface-light text-text-secondary rounded-lg hover:bg-slate-700 transition">
+                              Batal Pilih
+                          </button>
+                          <span class="ml-auto text-xs text-text-secondary" x-text="selectedEntities.length + ' item dipilih'"></span>
+                      </div>
+                      
+                      <!-- Detected Entities -->
+                      <div class="bg-[#111722] rounded-lg p-4 border border-border-dark space-y-3">
+                          <!-- Business Info -->
+                          <div x-show="previewData.title">
+                              <p class="text-xs text-text-secondary mb-1">Nama Bisnis</p>
+                              <p class="text-sm text-white font-medium" x-text="previewData.title"></p>
+                          </div>
+
+                          <!-- Pricing Packages -->
+                          <div x-show="entities.pricingCount > 0">
+                              <p class="text-xs text-text-secondary mb-2">Paket Terdeteksi (<span x-text="entities.pricingCount"></span>)</p>
+                              <div class="space-y-2">
+                                  <template x-for="(pkg, index) in scrapedData.pricing" :key="index">
+                                      <label class="flex items-start gap-3 p-3 bg-[#1f2b40] rounded-lg cursor-pointer hover:bg-[#243045] transition">
+                                          <input type="checkbox" x-model="selectedEntities" :value="'pricing_' + pkg.name" class="mt-0.5 rounded border-border-dark bg-[#111722] text-primary focus:ring-primary">
+                                          <div class="flex-1">
+                                              <p class="text-sm font-bold text-white" x-text="pkg.name"></p>
+                                              <p class="text-xs text-green-400" x-text="pkg.price + (pkg.period ? '/' + pkg.period : '')"></p>
+                                              <p class="text-xs text-text-secondary mt-1" x-show="pkg.features.length > 0">
+                                                  <span x-text="pkg.features.slice(0, 3).join(', ')"></span>
+                                                  <span x-show="pkg.features.length > 3">...</span>
+                                              </p>
+                                          </div>
+                                      </label>
+                                  </template>
+                              </div>
+                          </div>
+
+                          <!-- FAQ -->
+                          <div x-show="entities.faqCount > 0">
+                              <p class="text-xs text-text-secondary mb-2">FAQ Terdeteksi (<span x-text="entities.faqCount"></span>)</p>
+                              <div class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                                  <template x-for="(faq, index) in scrapedData.faq" :key="index">
+                                      <label class="flex items-start gap-3 p-3 bg-[#1f2b40] rounded-lg cursor-pointer hover:bg-[#243045] transition">
+                                          <input type="checkbox" x-model="selectedEntities" :value="'faq_' + faq.question" class="mt-0.5 rounded border-border-dark bg-[#111722] text-primary focus:ring-primary">
+                                          <div class="flex-1">
+                                              <p class="text-sm text-white" x-text="(index + 1) + '. ' + faq.question.substring(0, 80) + (faq.question.length > 80 ? '...' : '')"></p>
+                                          </div>
+                                      </label>
+                                  </template>
+                              </div>
+                          </div>
+
+                          <!-- About -->
+                          <div x-show="entities.hasAbout">
+                              <label class="flex items-start gap-3 p-3 bg-[#1f2b40] rounded-lg cursor-pointer hover:bg-[#243045] transition">
+                                  <input type="checkbox" x-model="includeAbout" class="mt-0.5 rounded border-border-dark bg-[#111722] text-primary focus:ring-primary">
+                                  <div class="flex-1">
+                                      <p class="text-sm font-bold text-white">Tentang/Deksripsi</p>
+                                      <p class="text-xs text-text-secondary" x-text="scrapedData.about?.substring(0, 100) + '...'"></p>
+                                  </div>
+                              </label>
+                          </div>
+                      </div>
+
+                      <!-- Debug Info -->
+                      <div x-show="selectedEntities.length === 0 && (entities.pricingCount > 0 || entities.faqCount > 0)" 
+                           class="text-xs text-amber-400 bg-amber-400/10 px-3 py-2 rounded-lg">
+                          ⚠️ Pilih minimal satu item di atas untuk menyimpan
+                      </div>
+                      
+                      <!-- Actions -->
+                      <div class="flex gap-3">
+                          <button @click="saveToKb()" 
+                                  :disabled="isSaving || (selectedEntities.length === 0 && !includeAbout)"
+                                  :class="{ 'opacity-50 cursor-not-allowed': isSaving || (selectedEntities.length === 0 && !includeAbout) }"
+                                  class="flex-1 px-4 py-3 rounded-lg bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition flex items-center justify-center gap-2">
+                              <span x-show="!isSaving" class="material-symbols-outlined text-[18px]">save</span>
+                              <span x-show="isSaving" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                              <span x-text="isSaving ? 'Menyimpan...' : 'Simpan ke Knowledge Base'"></span>
+                          </button>
+                      </div>
+                  </div>
               </div>
 
               <!-- Content File -->
@@ -526,15 +687,17 @@ async function updateKbProfile(kbId, profileId) {
 
   // ===== TAB SWITCHING
   const tabUrl = document.getElementById('tab-url');
+  const tabScrape = document.getElementById('tab-scrape');
   const tabFile = document.getElementById('tab-file');
   const tabManual = document.getElementById('tab-manual');
   const panelUrl = document.getElementById('panel-url');
+  const panelScrape = document.getElementById('panel-scrape');
   const panelFile = document.getElementById('panel-file');
   const panelManual = document.getElementById('panel-manual');
 
   function switchTab(mode){
-      const tabs = [tabUrl, tabFile, tabManual];
-      const panels = [panelUrl, panelFile, panelManual];
+      const tabs = [tabUrl, tabScrape, tabFile, tabManual];
+      const panels = [panelUrl, panelScrape, panelFile, panelManual];
       
       tabs.forEach(t => t?.classList.remove('text-white', 'bg-[#1f2b40]', 'border-primary'));
       tabs.forEach(t => t?.classList.add('text-gray-400', 'border-transparent'));
@@ -543,6 +706,9 @@ async function updateKbProfile(kbId, profileId) {
       if(mode === 'url'){
           tabUrl.className = "flex-none px-6 py-4 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors whitespace-nowrap";
           panelUrl.classList.remove('hidden');
+      } else if(mode === 'scrape') {
+          tabScrape.className = "flex-none px-6 py-4 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors whitespace-nowrap";
+          panelScrape.classList.remove('hidden');
       } else if(mode === 'file') {
           tabFile.className = "flex-none px-6 py-4 text-sm font-bold text-white bg-[#1f2b40] border-b-2 border-primary transition-colors whitespace-nowrap";
           panelFile.classList.remove('hidden');
@@ -553,6 +719,7 @@ async function updateKbProfile(kbId, profileId) {
   }
 
   tabUrl?.addEventListener('click', () => switchTab('url'));
+  tabScrape?.addEventListener('click', () => switchTab('scrape'));
   tabFile?.addEventListener('click', () => switchTab('file'));
   tabManual?.addEventListener('click', () => switchTab('manual'));
 
@@ -674,16 +841,30 @@ async function updateKbProfile(kbId, profileId) {
     if(del){
       if(!confirm('Hapus KB ini?')) return;
       const id = del.dataset.id;
-      const res = await fetch(`/kb/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'X-CSRF-TOKEN': csrf,
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
+      try {
+        const res = await fetch(`/kb/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'X-CSRF-TOKEN': csrf,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          }
+        });
+        if(!res.ok) {
+          const errData = await res.json();
+          alert('Gagal menghapus: ' + (errData.message || res.statusText));
+          return;
         }
-      });
-      const data = await res.json();
-      if(data.ok) document.getElementById(`kb-${id}`)?.remove();
+        const data = await res.json();
+        if(data.ok) {
+          document.getElementById(`kb-${id}`)?.remove();
+        } else {
+          alert('Gagal menghapus: ' + (data.message || 'Unknown error'));
+        }
+      } catch(e) {
+        console.error('Delete error:', e);
+        alert('Terjadi kesalahan saat menghapus. Coba refresh halaman.');
+      }
       return;
     }
   });
@@ -800,6 +981,256 @@ async function updateKbProfile(kbId, profileId) {
   });
 
 })();
+
+// ================= SCRAPE MANAGER (Alpine.js) =================
+function scrapeManager() {
+    return {
+        // Form inputs
+        scrapeUrl: '',
+        scrapeName: '',
+        businessProfileId: '',
+        
+        // State
+        isLoading: false,
+        isSaving: false,
+        currentJobId: null,
+        status: null,
+        progressPercent: 0,
+        progressStep: '',
+        errorMessage: '',
+        rateLimitSeconds: 0,
+        
+        // Preview data
+        showPreview: false,
+        scrapedData: {},
+        entities: {},
+        previewData: {},
+        selectedEntities: [],
+        includeAbout: true,
+        
+        // Polling interval
+        pollInterval: null,
+        
+        async startScrape() {
+            if (!this.scrapeUrl) {
+                alert('Masukkan URL website terlebih dahulu');
+                return;
+            }
+            
+            // Reset state
+            this.resetScrape();
+            this.isLoading = true;
+            this.errorMessage = '';
+            
+            try {
+                const response = await fetch('/kb/scrape/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        url: this.scrapeUrl,
+                        target_name: this.scrapeName,
+                        business_profile_id: this.businessProfileId || null
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.status === 'completed') {
+                    // Direct completion (synchronous)
+                    this.currentJobId = data.job_id;
+                    this.scrapedData = data.data || {};
+                    this.entities = data.entities || {};
+                    this.previewData = data.preview || {};
+                    this.status = 'completed';
+                    this.progressPercent = 100;
+                    this.progressStep = 'Selesai';
+                    
+                    // Pre-select all entities
+                    this.selectedEntities = [];
+                    if (this.scrapedData.pricing && Array.isArray(this.scrapedData.pricing)) {
+                        this.scrapedData.pricing.forEach(pkg => {
+                            if (pkg.name) {
+                                this.selectedEntities.push('pricing_' + pkg.name);
+                            }
+                        });
+                    }
+                    if (this.scrapedData.faq && Array.isArray(this.scrapedData.faq)) {
+                        this.scrapedData.faq.forEach(faq => {
+                            if (faq.question) {
+                                this.selectedEntities.push('faq_' + faq.question);
+                            }
+                        });
+                    }
+                    
+                    this.showPreview = true;
+                } else if (data.success) {
+                    // Async mode - start polling
+                    this.currentJobId = data.job_id;
+                    this.status = 'pending';
+                    this.progressStep = 'Menunggu antrian...';
+                    this.progressPercent = 5;
+                    this.startPolling();
+                } else {
+                    if (data.retry_after) {
+                        this.startRateLimitCountdown(data.retry_after);
+                    }
+                    alert(data.message);
+                }
+            } catch (err) {
+                console.error('Start scrape error:', err);
+                alert('Gagal memulai scraping. Coba lagi.');
+            } finally {
+                this.isLoading = false;
+            }
+        },
+        
+
+        
+        startPolling() {
+            if (this.pollInterval) clearInterval(this.pollInterval);
+            
+            this.pollInterval = setInterval(async () => {
+                if (!this.currentJobId) return;
+                
+                try {
+                    const response = await fetch('/kb/scrape/status/' + this.currentJobId);
+                    const data = await response.json();
+                    
+                    this.status = data.status;
+                    this.progressPercent = data.progress_percent;
+                    this.progressStep = data.progress_step;
+                    
+                    if (data.status === 'completed') {
+                        clearInterval(this.pollInterval);
+                        this.scrapedData = data.data || {};
+                        this.entities = data.entities || {};
+                        this.previewData = data.preview || {};
+                        
+                        console.log('Scraping completed:', this.scrapedData, this.entities);
+                        
+                        // Pre-select all entities
+                        this.selectedEntities = [];
+                        if (this.scrapedData.pricing && Array.isArray(this.scrapedData.pricing)) {
+                            this.scrapedData.pricing.forEach(pkg => {
+                                if (pkg.name) {
+                                    this.selectedEntities.push('pricing_' + pkg.name);
+                                }
+                            });
+                        }
+                        if (this.scrapedData.faq && Array.isArray(this.scrapedData.faq)) {
+                            this.scrapedData.faq.forEach(faq => {
+                                if (faq.question) {
+                                    this.selectedEntities.push('faq_' + faq.question);
+                                }
+                            });
+                        }
+                        
+                        this.showPreview = true;
+                    } else if (data.status === 'failed') {
+                        clearInterval(this.pollInterval);
+                        this.errorMessage = data.error || 'Gagal mengekstrak data dari website';
+                    }
+                } catch (err) {
+                    console.error('Poll error:', err);
+                }
+            }, 2000); // Poll every 2 seconds
+        },
+        
+        startRateLimitCountdown(seconds) {
+            this.rateLimitSeconds = seconds;
+            const interval = setInterval(() => {
+                this.rateLimitSeconds--;
+                if (this.rateLimitSeconds <= 0) {
+                    clearInterval(interval);
+                }
+            }, 1000);
+        },
+        
+        selectAll() {
+            this.selectedEntities = [];
+            if (this.scrapedData.pricing && Array.isArray(this.scrapedData.pricing)) {
+                this.scrapedData.pricing.forEach(pkg => {
+                    if (pkg.name) {
+                        this.selectedEntities.push('pricing_' + pkg.name);
+                    }
+                });
+            }
+            if (this.scrapedData.faq && Array.isArray(this.scrapedData.faq)) {
+                this.scrapedData.faq.forEach(faq => {
+                    if (faq.question) {
+                        this.selectedEntities.push('faq_' + faq.question);
+                    }
+                });
+            }
+            this.includeAbout = true;
+        },
+        
+        deselectAll() {
+            this.selectedEntities = [];
+            this.includeAbout = false;
+        },
+        
+        async saveToKb() {
+            // Also include about if checked
+            let entitiesToSave = [...this.selectedEntities];
+            if (this.includeAbout && this.scrapedData.about) {
+                entitiesToSave.push('about_section');
+            }
+            
+            if (entitiesToSave.length === 0) {
+                alert('Pilih minimal satu entitas untuk disimpan');
+                return;
+            }
+            
+            this.isSaving = true;
+            
+            try {
+                const response = await fetch('/kb/scrape/save/' + this.currentJobId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        selected_entities: entitiesToSave,
+                        custom_title: this.scrapeName || this.previewData.title
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Berhasil disimpan ke Knowledge Base!');
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Gagal menyimpan');
+                }
+            } catch (err) {
+                console.error('Save error:', err);
+                alert('Gagal menyimpan. Coba lagi.');
+            } finally {
+                this.isSaving = false;
+            }
+        },
+        
+        resetScrape() {
+            this.currentJobId = null;
+            this.status = null;
+            this.progressPercent = 0;
+            this.progressStep = '';
+            this.showPreview = false;
+            this.scrapedData = {};
+            this.entities = {};
+            this.previewData = {};
+            this.selectedEntities = [];
+            this.includeAbout = true;
+            if (this.pollInterval) clearInterval(this.pollInterval);
+        }
+    };
+}
 </script>
 </body>
 </html>

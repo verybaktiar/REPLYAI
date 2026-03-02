@@ -10,11 +10,30 @@ use App\Models\AdminActivityLog;
 
 class AdminFeatureFlagController extends Controller
 {
+    private function checkAuthorization(): void
+    {
+        $admin = Auth::guard('admin')->user();
+        
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_feature_flag_access',
+                'Attempted to access feature flags without superadmin privilege',
+                ['url' => request()->fullUrl()],
+                null,
+                8
+            );
+            abort(403, 'Only Superadmin can manage feature flags.');
+        }
+    }
+
     /**
      * Tampilkan halaman pengelolaan feature flags
      */
     public function index()
     {
+        $this->checkAuthorization();
+        
         $settings = SystemSetting::orderBy('group')->orderBy('label')->get();
         $groups = $settings->groupBy('group');
 
@@ -26,6 +45,8 @@ class AdminFeatureFlagController extends Controller
      */
     public function update(Request $request)
     {
+        $this->checkAuthorization();
+        
         $request->validate([
             'settings' => 'required|array',
         ]);
@@ -60,6 +81,8 @@ class AdminFeatureFlagController extends Controller
      */
     public function toggle(Request $request, SystemSetting $setting)
     {
+        $this->checkAuthorization();
+        
         $oldValue = $setting->value;
         $newValue = $oldValue == '1' ? '0' : '1';
         

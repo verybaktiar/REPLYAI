@@ -38,7 +38,13 @@
                 
                 <!-- Title -->
                 <h1 class="text-2xl font-bold mb-4">Upgrade Diperlukan</h1>
-                
+
+                @include('components.page-help', [
+                    'title' => 'Upgrade Diperlukan',
+                    'description' => 'Fitur ini memerlukan paket langganan yang lebih tinggi.',
+                    'tips' => ['Lihat fitur yang tersedia di paket Anda', 'Bandingkan paket untuk melihat fitur tambahan', 'Upgrade untuk membuka fitur terkunci', 'Hubungi support untuk paket kustom']
+                ])
+
                 <!-- Message -->
                 <p class="text-slate-400 mb-6">
                     @if(session('upgrade_prompt'))

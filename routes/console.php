@@ -129,4 +129,56 @@ app()->booted(function () {
         ->withoutOverlapping()
         ->appendOutputTo(storage_path('logs/cleanup.log'));
 
+    // ==========================================
+    // KB WEB SCRAPING JOBS
+    // ==========================================
+    
+    // Process pending scrape jobs every minute
+    $schedule->command('scrape:process --once')
+        ->everyMinute()
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/scrape-jobs.log'));
+
+    // ==========================================
+    // CHAT AUTOMATION SCHEDULER
+    // ==========================================
+    
+    // Check and send follow-up messages every 15 minutes
+    $schedule->command('automations:check-followups')
+        ->everyFifteenMinutes()
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/automations-followup.log'));
+
+    // Cleanup old scrape data - daily at 04:00
+    $schedule->command('scrape:cleanup')
+        ->dailyAt('04:00')
+        ->withoutOverlapping();
+
+    // ==========================================
+    // PAYMENT SYSTEM SCHEDULERS
+    // ==========================================
+    
+    // 💳 Cleanup expired pending payments - hourly
+    $schedule->command('payments:cleanup-expired --force')
+        ->hourly()
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/payments-cleanup.log'));
+    
+    // 💳 Send pending payment reminders - every 2 hours
+    // Remind users 4 hours before expiration
+    $schedule->command('payments:send-reminders --hours=4')
+        ->everyTwoHours()
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/payment-reminders.log'));
+
+    // ==========================================
+    // SCHEDULED REPORTS
+    // ==========================================
+    
+    // 📊 Send scheduled reports - hourly
+    $schedule->command('reports:send-scheduled')
+        ->hourly()
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/scheduled-reports.log'));
+
 });

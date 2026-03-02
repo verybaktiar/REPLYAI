@@ -200,20 +200,32 @@
             <!-- Actions -->
             <div class="flex flex-col sm:flex-row gap-3 fade-in-up delay-600">
                 <a href="{{ route('subscription.index') }}" 
-                   class="flex-1 py-3 px-6 bg-slate-800 hover:bg-slate-700 rounded-xl font-semibold text-center border border-slate-700 transition inline-flex items-center justify-center gap-2">
+                   class="flex-1 py-4 px-6 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-center border border-slate-700 transition inline-flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-lg">receipt_long</span>
                     Lihat Subscription
                 </a>
                 <a href="{{ route('dashboard') }}" 
-                   class="flex-1 py-3 px-6 bg-primary hover:bg-primary/90 rounded-xl font-semibold text-center transition inline-flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-lg">rocket_launch</span>
+                   class="flex-1 py-4 px-6 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 rounded-xl font-bold text-center transition inline-flex items-center justify-center gap-2 text-lg shadow-lg shadow-primary/20">
+                    <span class="material-symbols-outlined text-xl">rocket_launch</span>
                     Mulai Sekarang
                 </a>
             </div>
         </div>
 
+        <!-- Social Proof -->
+        <div class="text-center mt-6 mb-4 fade-in-up delay-600">
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-full border border-slate-700">
+                <div class="flex -space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-primary/40 border border-slate-700"></div>
+                    <div class="w-6 h-6 rounded-full bg-purple-500/40 border border-slate-700"></div>
+                    <div class="w-6 h-6 rounded-full bg-emerald-500/40 border border-slate-700"></div>
+                </div>
+                <span class="text-xs text-slate-400">Bergabung dengan <strong class="text-white">1,000+</strong> pengguna lainnya</span>
+            </div>
+        </div>
+
         <!-- Receipt Download (Optional) -->
-        <div class="text-center mt-6 text-sm text-slate-500 fade-in-up delay-600">
+        <div class="text-center text-sm text-slate-500 fade-in-up delay-600">
             <p>Email konfirmasi sudah dikirim ke alamat email Anda.</p>
         </div>
 

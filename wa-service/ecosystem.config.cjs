@@ -4,7 +4,7 @@ module.exports = {
     script : "./index.js",
     watch  : true,
     env: {
-      LARAVEL_WEBHOOK_URL: "http://127.0.0.1:8000/api/whatsapp/webhook",
+      LARAVEL_WEBHOOK_URL: "http://replai.my.id/api/whatsapp/webhook",
       PORT: 3001,
       WA_SERVICE_KEY: "replyai-wa-secret"
     }

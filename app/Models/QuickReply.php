@@ -15,9 +15,28 @@ class QuickReply extends Model
         'shortcut',
         'message',
         'is_active',
+        'category',
+        'usage_count',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'usage_count' => 'integer',
     ];
+
+    /**
+     * Scope for active quick replies
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope by category
+     */
+    public function scopeByCategory($query, $category)
+    {
+        return $query->where('category', $category);
+    }
 }

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Services\BackupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use App\Models\AdminActivityLog;
 use Exception;
 
 class AdminBackupController extends Controller
@@ -17,8 +19,27 @@ class AdminBackupController extends Controller
         $this->backupService = $backupService;
     }
 
+    private function checkAuthorization(): void
+    {
+        $admin = Auth::guard('admin')->user();
+        
+        if (!$admin->isSuperAdmin()) {
+            AdminActivityLog::log(
+                $admin,
+                'unauthorized_backup_access',
+                'Attempted to access backups without superadmin privilege',
+                ['url' => request()->fullUrl()],
+                null,
+                8
+            );
+            abort(403, 'Only Superadmin can manage backups.');
+        }
+    }
+
     public function index()
     {
+        $this->checkAuthorization();
+        
         $backups = [];
         $directory = storage_path('app/backups');
         
@@ -46,8 +67,18 @@ class AdminBackupController extends Controller
 
     public function create()
     {
+        $this->checkAuthorization();
+        
         try {
-            $this->backupService->generateBackup();
+            $filename = $this->backupService->generateBackup();
+            
+            AdminActivityLog::log(
+                Auth::guard('admin')->user(),
+                'create_backup',
+                "Generated backup: {$filename}",
+                ['filename' => $filename]
+            );
+            
             return back()->with('success', 'Backup berhasil digenerate!');
         } catch (Exception $e) {
             return back()->with('error', 'Gagal generate backup: ' . $e->getMessage());
@@ -56,6 +87,8 @@ class AdminBackupController extends Controller
 
     public function download($filename)
     {
+        $this->checkAuthorization();
+        
         $path = storage_path('app/backups/' . $filename);
         if (file_exists($path)) {
             return response()->download($path);
@@ -65,9 +98,19 @@ class AdminBackupController extends Controller
 
     public function destroy($filename)
     {
+        $this->checkAuthorization();
+        
         $path = storage_path('app/backups/' . $filename);
         if (file_exists($path)) {
             unlink($path);
+            
+            AdminActivityLog::log(
+                Auth::guard('admin')->user(),
+                'delete_backup',
+                "Deleted backup: {$filename}",
+                ['filename' => $filename]
+            );
+            
             return back()->with('success', 'Backup berhasil dihapus.');
         }
         return back()->with('error', 'Gagal menghapus file.');
